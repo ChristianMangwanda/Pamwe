@@ -63,6 +63,45 @@ export async function savePushToken(token: string) {
     .eq('id', user.id);
 }
 
+// On sign-out: this device no longer speaks for that user. Without this, an
+// account switch leaves the OLD user's row holding this device's token and
+// their partner's pushes land on the wrong person's phone.
+export async function clearPushToken() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+
+  await supabase
+    .from('users')
+    .update({ expo_push_token: null })
+    .eq('id', user.id);
+}
+
+// iOS can rotate the underlying APNs token; re-derive and persist the Expo
+// token when that happens so pushes keep flowing.
+export function watchPushTokenRotation() {
+  return Notifications.addPushTokenListener(() => {
+    registerForPushNotifications().then((token) => {
+      if (token) savePushToken(token);
+    });
+  });
+}
+
+// Schedule the daily reminder from the user's saved preference — never a
+// hardcoded default (a launch-time 06:30 call used to override Settings).
+export async function scheduleMorningFromPrefs() {
+  try {
+    const status = await getNotificationPermissionStatus();
+    if (status !== 'granted') return;
+    const prefs = await getNotificationPrefs();
+    const [hour, minute] = (prefs?.notification_morning_time ?? '06:30:00')
+      .split(':')
+      .map(Number);
+    await scheduleMorningNotification(hour, minute);
+  } catch {
+    // best-effort — Settings re-schedules whenever the user changes the time
+  }
+}
+
 export type NotificationPrefs = {
   notification_morning_time: string; // 'HH:MM:SS'
   notification_partner: boolean;

@@ -82,20 +82,26 @@ export async function getUserCouple(userId?: string) {
   }
   if (!uid) return null;
 
-  const { data: profile } = await supabase
+  // Distinguish "no couple" (null) from "query failed" (throw): swallowing
+  // errors here made the auth gate re-onboard paired couples on a network
+  // blip — from where they could create a SECOND couple.
+  const { data: profile, error: profileError } = await supabase
     .from('users')
     .select('couple_id')
     .eq('id', uid)
     .single();
 
+  // PGRST116 = no profile row yet (signup-trigger race) — genuinely no couple.
+  if (profileError && profileError.code !== 'PGRST116') throw profileError;
   if (!profile?.couple_id) return null;
 
-  const { data: couple } = await supabase
+  const { data: couple, error: coupleError } = await supabase
     .from('couples')
     .select()
     .eq('id', profile.couple_id)
-    .single();
+    .maybeSingle();
 
+  if (coupleError) throw coupleError;
   return couple;
 }
 

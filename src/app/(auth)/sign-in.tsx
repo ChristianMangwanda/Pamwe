@@ -42,6 +42,8 @@ export default function SignInScreen() {
     try {
       await GoogleSignin.hasPlayServices();
       const result = await GoogleSignin.signIn();
+      // v16 resolves (not throws) on cancel — a dismissed picker is a no-op.
+      if (result.type !== 'success') return;
       const idToken = result.data?.idToken;
       if (!idToken) throw new Error('No idToken received from Google.');
       setLoading(true);

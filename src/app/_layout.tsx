@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Linking from 'expo-linking';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -25,7 +25,6 @@ import * as Sentry from '@sentry/react-native';
 import { AuthProvider } from '../providers/AuthProvider';
 import { ThemeProvider, useTheme } from '../providers/ThemeProvider';
 import { supabase } from '../lib/supabase';
-import { registerForPushNotifications, savePushToken, scheduleMorningNotification } from '../lib/notifications';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -89,21 +88,31 @@ function RootLayout() {
     return () => subscription.remove();
   }, []);
 
-  useEffect(() => {
-    registerForPushNotifications().then((token) => {
-      if (token) {
-        savePushToken(token);
-        scheduleMorningNotification(6, 30);
-      }
-    });
-  }, []);
+  // Push registration is auth-scoped and lives in AuthProvider — a cold-launch
+  // registration here ran before any sign-in existed, so a first session never
+  // saved its token (and the reminder was reset to a hardcoded 06:30).
 
   const handleDeepLink = async (url: string) => {
+    // Supabase magic links deliver the session in the URL *fragment*
+    // (#access_token=...) or as ?code= (PKCE). Linking.parse only surfaces
+    // query params, so parse the fragment ourselves and handle both.
     const { queryParams } = Linking.parse(url);
-    const access_token = queryParams?.access_token as string | undefined;
-    const refresh_token = queryParams?.refresh_token as string | undefined;
-    if (access_token && refresh_token) {
-      await supabase.auth.setSession({ access_token, refresh_token });
+    const fragParams = new URLSearchParams(url.split('#')[1] ?? '');
+    const access_token =
+      (queryParams?.access_token as string | undefined) ?? fragParams.get('access_token') ?? undefined;
+    const refresh_token =
+      (queryParams?.refresh_token as string | undefined) ?? fragParams.get('refresh_token') ?? undefined;
+    const code = queryParams?.code as string | undefined;
+    try {
+      if (access_token && refresh_token) {
+        const { error } = await supabase.auth.setSession({ access_token, refresh_token });
+        if (!error) router.replace('/');
+      } else if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (!error) router.replace('/');
+      }
+    } catch {
+      // Malformed/expired link — leave the user where they are.
     }
   };
 

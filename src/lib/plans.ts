@@ -88,18 +88,34 @@ export async function completePlan(couplePlanId: string) {
 }
 
 export async function getActiveCouPlan(coupleId: string) {
+  // maybeSingle + limit(1): if a second active row ever appears despite the
+  // couple_plans_one_active index, degrade to the newest instead of erroring
+  // (a .single() here used to hard-fail the whole Today tab).
   const { data, error } = await supabase
     .from('couple_plans')
     .select('*, plan:plans(*)')
     .eq('couple_id', coupleId)
     .eq('status', 'active')
-    .single();
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
-  if (error && error.code !== 'PGRST116') throw error;
+  if (error) throw error;
   return data;
 }
 
+// Enrolling always completes any existing active enrollment first, so every
+// entry point (onboarding plan-select, plan detail, Today fallbacks) is safe.
+// The DB's couple_plans_one_active unique index is the backstop.
 export async function enrollInPlan(coupleId: string, planId: string) {
+  const { error: completeError } = await supabase
+    .from('couple_plans')
+    .update({ status: 'completed' })
+    .eq('couple_id', coupleId)
+    .eq('status', 'active');
+
+  if (completeError) throw completeError;
+
   const { data, error } = await supabase
     .from('couple_plans')
     .insert({
@@ -112,7 +128,16 @@ export async function enrollInPlan(coupleId: string, planId: string) {
     .select('*, plan:plans(*)')
     .single();
 
-  if (error) throw error;
+  if (error) {
+    // 23505 on couple_plans_one_active: the partner enrolled at the same
+    // moment (both land on plan-select right after pairing). Their enrollment
+    // IS the couple's plan — adopt it instead of surfacing an error.
+    if ((error as { code?: string }).code === '23505') {
+      const existing = await getActiveCouPlan(coupleId);
+      if (existing) return existing;
+    }
+    throw error;
+  }
   return data;
 }
 
@@ -138,15 +163,7 @@ export async function advancePlanDay(couplePlanId: string, currentDay: number) {
 }
 
 export async function switchPlan(coupleId: string, newPlanId: string) {
-  // Mark any active plans for this couple as 'completed' (status change is allowed by RLS).
-  const { error: completeError } = await supabase
-    .from('couple_plans')
-    .update({ status: 'completed' })
-    .eq('couple_id', coupleId)
-    .eq('status', 'active');
-
-  if (completeError) throw completeError;
-
-  // Insert a fresh active enrollment for the new plan, day 1.
+  // enrollInPlan completes existing actives itself now; kept as a named
+  // export because the switch flow reads better at call sites.
   return enrollInPlan(coupleId, newPlanId);
 }

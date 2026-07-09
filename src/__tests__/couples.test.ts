@@ -22,6 +22,7 @@ function chainMock(overrides: Record<string, any> = {}) {
     is: jest.fn(() => chain),
     gt: jest.fn(() => chain),
     single: jest.fn(() => Promise.resolve({ data: overrides.data ?? null, error: overrides.error ?? null })),
+    maybeSingle: jest.fn(() => Promise.resolve({ data: overrides.data ?? null, error: overrides.error ?? null })),
   };
   return chain;
 }
