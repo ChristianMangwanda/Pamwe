@@ -36,13 +36,23 @@ cd ios && xcodebuild -workspace Pamwe.xcworkspace -scheme Pamwe \
   -allowProvisioningUpdates build 2>&1 | tee /tmp/pamwe-build.log
 grep -nE "error:" /tmp/pamwe-build.log | head -50
 
-# Supabase — LOCAL for dev/testing (hosted project is paused; pay-to-host at launch)
+# Supabase — LOCAL for dev/testing; hosted = project jcyhhxgomhopkoqesbkb (free tier, dedicated account)
 supabase start                         # bring up the local stack (Docker)
 ./scripts/local_dev_seed.sh            # dev users Christian/Ammy + paired couple + M'Cheyne
 supabase status                        # local URLs/keys · Studio http://127.0.0.1:54323
 # .env points at local (LAN IP http://10.0.0.205:54321). Hosted config saved in
 # env.hosted.backup. psql isn't on PATH — run SQL via: docker exec -i supabase_db_Pamwe psql -U postgres -d postgres
-# When launching: apply supabase/migrations/* + seeds/plan_metadata.sql to the hosted project via MCP.
+#
+# ⚠️ HOSTED PROJECT IDENTITY — do not mix these up:
+#   • ACTIVE: jcyhhxgomhopkoqesbkb — free tier on a DEDICATED Supabase account
+#     (separate email), created 2026-07-09. The .mcp.json `supabase` server points
+#     here; sanity-check with get_project_url before any hosted mutation.
+#   • DEAD:   freftpwigrkjytusnqhx — old project on Christian's MAIN account (paused;
+#     that account's 2-project free quota belongs to his other projects). Never
+#     restore or apply anything there. env.hosted.backup may still hold its old
+#     values until the cutover rewrites it.
+# When cutting over: apply supabase/migrations/* + seeds/plan_metadata.sql to
+# jcyhhxgomhopkoqesbkb via MCP.
 ```
 
 `LANG=en_US.UTF-8` and `LC_ALL=en_US.UTF-8` are set in `~/.bash_profile` — needed for CocoaPods on Homebrew Ruby 4. Don't remove.
