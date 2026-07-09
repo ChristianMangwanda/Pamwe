@@ -35,11 +35,11 @@ Deno.serve(async (req) => {
 
   const { data: partner } = await supabase
     .from("users")
-    .select("expo_push_token, notification_partner")
+    .select("expo_push_token, notification_prayer")
     .eq("id", partnerId)
     .single();
 
-  if (!partner?.expo_push_token || partner.notification_partner === false) {
+  if (!partner?.expo_push_token || partner.notification_prayer === false) {
     return new Response("Partner has no token or opted out", { status: 200 });
   }
 

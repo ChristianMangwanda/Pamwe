@@ -46,13 +46,32 @@ Deno.serve(async (req) => {
     if (c) partnerId = c.partner_a_id === userId ? c.partner_b_id : c.partner_a_id;
   }
 
-  // 2. Delete the departing user's OWN content. None of these cascade from
+  // 2. Delete the departing user's voice recordings from storage BEFORE the
+  //    rows that locate them are removed (privacy promise: deletion removes
+  //    recordings; debug tour finding #10).
+  const { data: voiceEntries } = await admin
+    .from("entries")
+    .select("couple_plan_id, day_number")
+    .eq("user_id", userId)
+    .eq("entry_type", "voice");
+  const audioPaths = (voiceEntries ?? []).map(
+    (e) => `${e.couple_plan_id}/${e.day_number}/${userId}.m4a`
+  );
+  if (audioPaths.length) {
+    try {
+      await admin.storage.from("voice-entries").remove(audioPaths);
+    } catch {
+      // best-effort; row deletion proceeds regardless
+    }
+  }
+
+  // 3. Delete the departing user's OWN content. None of these cascade from
   //    auth.users, so they must be removed by hand before the auth-row delete.
   await admin.from("prayer_marks").delete().eq("user_id", userId);
   await admin.from("entries").delete().eq("user_id", userId);
   await admin.from("prayers").delete().eq("author_id", userId);
 
-  // 3. Demote the couple — never DELETE the couples row, because
+  // 4. Demote the couple — never DELETE the couples row, because
   //    couples -> couple_plans -> entries and couples -> prayers cascade would
   //    destroy the surviving partner's data.
   if (couple) {
@@ -82,7 +101,7 @@ Deno.serve(async (req) => {
     }
   }
 
-  // 4. Notify the surviving partner (best-effort) and route them to unpaired.
+  // 5. Notify the surviving partner (best-effort) and route them to unpaired.
   if (partnerId) {
     const { data: partner } = await admin
       .from("users").select("expo_push_token").eq("id", partnerId).single();
@@ -105,7 +124,7 @@ Deno.serve(async (req) => {
     }
   }
 
-  // 5. Delete the auth user — public.users cascades, and nothing else now
+  // 6. Delete the auth user — public.users cascades, and nothing else now
   //    references this auth.users row.
   const { error: delErr } = await admin.auth.admin.deleteUser(userId);
   if (delErr) {

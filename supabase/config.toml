@@ -386,6 +386,20 @@ deno_version = 2
 [functions.ask-pamwe]
 verify_jwt = true
 
+# Webhook targets (called by DB triggers with the service-role bearer) and the
+# JWT-validating delete routine — declared so deploy posture is reproducible.
+[functions.notify-partner]
+verify_jwt = false
+
+[functions.notify-new-prayer]
+verify_jwt = false
+
+[functions.notify-freeze]
+verify_jwt = false
+
+[functions.delete-account]
+verify_jwt = true
+
 [analytics]
 enabled = true
 port = 54327
