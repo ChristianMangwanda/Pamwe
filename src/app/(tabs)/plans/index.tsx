@@ -1,14 +1,14 @@
 import { useCallback, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { MagnifyingGlass, ArrowRight, CaretRight, Plus, Flower } from 'phosphor-react-native';
+import { MagnifyingGlass, ArrowRight, CaretRight, Plus, Flower, CheckCircle } from 'phosphor-react-native';
 import { Screen } from '../../../components/ui/Screen';
 import { Text } from '../../../components/ui/Text';
 import { StripedBanner } from '../../../components/ui/StripedBanner';
 import { fonts } from '../../../constants/typography';
 import { useTheme } from '../../../providers/ThemeProvider';
 import { useCouple } from '../../../providers/CoupleProvider';
-import { getCuratedPlans, getCouplePlans } from '../../../lib/plans';
+import { getCuratedPlans, getCouplePlans, getCompletedCouplePlans } from '../../../lib/plans';
 import { haptics } from '../../../lib/haptics';
 
 export default function PlansScreen() {
@@ -17,17 +17,20 @@ export default function PlansScreen() {
   const { couple, couplePlan } = useCouple();
   const [curated, setCurated] = useState<any[]>([]);
   const [myPlans, setMyPlans] = useState<any[]>([]);
+  const [completed, setCompleted] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const [c, mine] = await Promise.all([
+      const [c, mine, done] = await Promise.all([
         getCuratedPlans(),
         couple?.id ? getCouplePlans(couple.id) : Promise.resolve([]),
+        couple?.id ? getCompletedCouplePlans(couple.id) : Promise.resolve([]),
       ]);
       setCurated(c);
       setMyPlans(mine);
+      setCompleted(done);
     } catch {
       // Leave lists as-is; pull-to-refresh can retry.
     } finally {
@@ -49,6 +52,15 @@ export default function PlansScreen() {
   const currentDay = couplePlan?.current_day ?? 1;
   const activeTotal = activePlan?.duration_days ?? 1;
   const activePct = Math.max(0, Math.min(1, (currentDay - 1) / activeTotal));
+
+  // One row per finished plan (a plan can be completed twice), newest first,
+  // and never the plan that's being read right now.
+  const seenPlanIds = new Set<string>();
+  const completedPlans = completed.filter((cp) => {
+    if (!cp.plan || cp.plan_id === activePlan?.id || seenPlanIds.has(cp.plan_id)) return false;
+    seenPlanIds.add(cp.plan_id);
+    return true;
+  });
 
   const metaLine = (p: any) => `${p.book_label ?? p.title} · ${p.duration_days} days`;
 
@@ -106,6 +118,27 @@ export default function PlansScreen() {
                 <View style={styles.flex}>
                   <Text style={[styles.myTitle, { color: colors.ink }]}>{p.title}</Text>
                   <Text style={[styles.myMeta, { color: colors.muted }]}>{metaLine(p)}</Text>
+                </View>
+                <CaretRight size={15} color={colors.accent2} weight="regular" />
+              </TouchableOpacity>
+            ))}
+          </View>
+        </>
+      )}
+
+      {completedPlans.length > 0 && (
+        <>
+          <Text variant="eyebrow" color={colors.muted} style={styles.eyebrow}>Completed</Text>
+          <View style={styles.myList}>
+            {completedPlans.map((cp) => (
+              <TouchableOpacity key={cp.id} activeOpacity={0.85} onPress={() => open(cp.plan.id)}
+                style={[styles.myRow, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+                <View style={[styles.myIcon, { backgroundColor: colors.surface2, borderColor: colors.lineAccent }]}>
+                  <CheckCircle size={20} color={colors.accent2} weight="fill" />
+                </View>
+                <View style={styles.flex}>
+                  <Text style={[styles.myTitle, { color: colors.ink }]}>{cp.plan.title}</Text>
+                  <Text style={[styles.myMeta, { color: colors.muted }]}>Completed · {cp.plan.duration_days} days · tap to begin again</Text>
                 </View>
                 <CaretRight size={15} color={colors.accent2} weight="regular" />
               </TouchableOpacity>

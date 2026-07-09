@@ -38,6 +38,20 @@ export async function getCouplePlans(coupleId: string) {
   return data ?? [];
 }
 
+// Completed runs for the Plans tab's "Completed" section — newest first. A plan
+// can appear more than once (re-taking is allowed); the UI dedupes by plan_id.
+export async function getCompletedCouplePlans(coupleId: string) {
+  const { data, error } = await supabase
+    .from('couple_plans')
+    .select('id, plan_id, start_date, status, plan:plans(*)')
+    .eq('couple_id', coupleId)
+    .eq('status', 'completed')
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data ?? [];
+}
+
 export async function getPlan(planId: string) {
   const { data, error } = await supabase
     .from('plans')

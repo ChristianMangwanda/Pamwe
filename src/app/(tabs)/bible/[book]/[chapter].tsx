@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Pressable } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
@@ -26,10 +26,12 @@ export default function ChapterReader() {
   const { colors, mode, setMode } = useTheme();
   const insets = useSafeAreaInsets();
   const { couple } = useCouple();
-  const params = useLocalSearchParams<{ book: string; chapter: string; couplePlanId?: string; day?: string; planTitle?: string }>();
+  const params = useLocalSearchParams<{ book: string; chapter: string; verse?: string; couplePlanId?: string; day?: string; planTitle?: string }>();
   const bookName = decodeURIComponent(params.book ?? '');
   const chapterNum = Number(params.chapter ?? 0);
   const book = findBook(bookName);
+  // Jump target when arriving from the marks screen ("My highlights & notes").
+  const focusVerse = params.verse ? Number(params.verse) : undefined;
 
   const [translation, setTranslation] = useState<Translation>('web');
   const [verses, setVerses] = useState<BibleVerse[]>([]);
@@ -42,6 +44,22 @@ export default function ChapterReader() {
   const [highlights, setHighlights] = useState<VerseHighlight[]>([]);
   const [notes, setNotes] = useState<VerseNote[]>([]);
   const [selVerse, setSelVerse] = useState<number | null>(null);
+
+  // Scroll-to-verse plumbing: the passage measures the focus verse's line y
+  // (relative to itself); we add the passage's own offset in the scroll content.
+  const scrollRef = useRef<ScrollView>(null);
+  const [passageTop, setPassageTop] = useState(0);
+  const [focusY, setFocusY] = useState<number | null>(null);
+  const [flashVerse, setFlashVerse] = useState<number | null>(null);
+
+  useEffect(() => { if (focusVerse) setFlashVerse(focusVerse); }, [focusVerse]);
+
+  useEffect(() => {
+    if (focusY == null || passageTop <= 0 || flashVerse == null) return;
+    scrollRef.current?.scrollTo({ y: Math.max(passageTop + focusY - 96, 0), animated: true });
+    const t = setTimeout(() => setFlashVerse(null), 2400);
+    return () => clearTimeout(t);
+  }, [focusY, passageTop, flashVerse]);
 
   useEffect(() => {
     AsyncStorage.getItem('pamwe:readerScale').then((v) => { if (v) setScale(v as ReaderScale); });
@@ -124,28 +142,29 @@ export default function ChapterReader() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        {/* Device feedback: back link + translations + Aa in one row overflowed
+            and overlapped on-device, so the translation control gets its own row. */}
         <View style={styles.topRow}>
           <TouchableOpacity onPress={() => router.back()} hitSlop={10} style={styles.chaptersLink} accessibilityRole="button" accessibilityLabel="Chapters">
             <CaretLeft size={15} color={colors.accent2} weight="bold" />
             <Text color={colors.accent2} style={styles.chaptersLabel}>Chapters</Text>
           </TouchableOpacity>
-          <View style={styles.topRight}>
-            <SegmentedControl
-              segments={[{ key: 'web', label: 'WEB' }, { key: 'kjv', label: 'KJV' }, { key: 'bbe', label: 'BBE' }]}
-              value={translation}
-              onChange={(t) => setTranslation(t)}
-            />
-            <TouchableOpacity
-              onPress={() => setTypoOpen((o) => !o)}
-              style={[styles.aa, { backgroundColor: colors.surface, borderColor: colors.line }]}
-              accessibilityRole="button"
-              accessibilityLabel="Reading options"
-            >
-              <Text style={[styles.aaText, { color: colors.accent }]}>Aa</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            onPress={() => setTypoOpen((o) => !o)}
+            style={[styles.aa, { backgroundColor: colors.surface, borderColor: colors.line }]}
+            accessibilityRole="button"
+            accessibilityLabel="Reading options"
+          >
+            <Text style={[styles.aaText, { color: colors.accent }]}>Aa</Text>
+          </TouchableOpacity>
         </View>
+        <SegmentedControl
+          segments={[{ key: 'web', label: 'WEB' }, { key: 'kjv', label: 'KJV' }, { key: 'bbe', label: 'BBE' }]}
+          value={translation}
+          onChange={(t) => setTranslation(t)}
+          style={styles.transControl}
+        />
 
         {hasCtx && (
           <View style={[styles.banner, { backgroundColor: colors.surface2, borderColor: colors.lineAccent }]}>
@@ -178,14 +197,19 @@ export default function ChapterReader() {
 
         {!loading && !error && (
           <>
-            <VersePassage
-              verses={verses}
-              scale={scale}
-              showNums={showNums}
-              highlights={hlMap}
-              notedVerses={notedVerses}
-              onVersePress={onVersePress}
-            />
+            <View onLayout={(e) => setPassageTop(e.nativeEvent.layout.y)}>
+              <VersePassage
+                verses={verses}
+                scale={scale}
+                showNums={showNums}
+                highlights={hlMap}
+                notedVerses={notedVerses}
+                onVersePress={onVersePress}
+                focusVerse={focusVerse}
+                flashVerse={flashVerse}
+                onFocusVerseLayout={setFocusY}
+              />
+            </View>
             <View style={styles.hint}>
               <HandTap size={14} color="#B7A88C" />
               <Text style={{ color: '#B7A88C', fontFamily: fonts.sans, fontSize: 12 }}>Tap a verse to highlight or note it.</Text>
@@ -284,7 +308,7 @@ const styles = StyleSheet.create({
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   chaptersLink: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   chaptersLabel: { fontFamily: fonts.sansSemiBold, fontSize: 12 },
-  topRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  transControl: { marginTop: 14 },
   aa: { width: 34, height: 34, borderRadius: 17, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   aaText: { fontFamily: fonts.serifSemiBold, fontSize: 15 },
   banner: { marginTop: 16, flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderRadius: 16, paddingVertical: 13, paddingHorizontal: 16 },

@@ -4,7 +4,7 @@ import { CoupleProvider } from '../../providers/CoupleProvider';
 import { usePushRouting } from '../../hooks/usePushRouting';
 import { useGlassTabOptions } from '../../components/GlassTabBar';
 
-const ICON_SIZE = 24;
+const ICON_SIZE = 21;
 
 export default function TabLayout() {
   usePushRouting();

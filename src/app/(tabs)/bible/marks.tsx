@@ -35,8 +35,11 @@ export default function MarksScreen() {
   const hasNoteAt = (book: string, chapter: number, verse: number) =>
     notes.some((n) => n.book === book && n.chapter === chapter && n.verse === verse);
 
-  const openVerse = (book: string, chapter: number) =>
-    router.push(`/(tabs)/bible/${encodeURIComponent(book)}/${chapter}` as any);
+  const openVerse = (book: string, chapter: number, verse: number) =>
+    router.push({
+      pathname: '/(tabs)/bible/[book]/[chapter]',
+      params: { book, chapter: String(chapter), verse: String(verse) },
+    } as any);
 
   const isEmpty = loaded && highlights.length === 0 && notes.length === 0;
 
@@ -64,7 +67,7 @@ export default function MarksScreen() {
               return (
                 <TouchableOpacity
                   key={n.id}
-                  onPress={() => openVerse(n.book, n.chapter)}
+                  onPress={() => openVerse(n.book, n.chapter, n.verse)}
                   activeOpacity={0.8}
                   style={[styles.noteRow, { backgroundColor: colors.surface, borderColor: colors.line }]}
                 >
@@ -87,7 +90,7 @@ export default function MarksScreen() {
             {highlights.map((h) => (
               <TouchableOpacity
                 key={h.id}
-                onPress={() => openVerse(h.book, h.chapter)}
+                onPress={() => openVerse(h.book, h.chapter, h.verse)}
                 activeOpacity={0.8}
                 style={[styles.hlRow, { backgroundColor: colors.surface, borderColor: colors.line }]}
               >

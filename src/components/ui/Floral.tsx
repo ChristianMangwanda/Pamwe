@@ -18,6 +18,9 @@ export function Floral({ variant, style }: FloralProps) {
   const { colors, mode } = useTheme();
   return (
     <Image
+      // key={mode} remounts on theme change: iOS keeps rendering the PNG as a
+      // template image after tintColor is removed, which paints it systemBlue.
+      key={mode}
       source={sources[variant]}
       resizeMode="contain"
       style={[mode === 'dark' ? { tintColor: colors.accent2 } : null, style]}

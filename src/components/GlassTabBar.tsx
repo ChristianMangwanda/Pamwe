@@ -52,28 +52,31 @@ export function useGlassTabOptions(): BottomTabNavigationOptions {
     tabBarInactiveTintColor: colors.muted,
     tabBarStyle: {
       position: 'absolute',
-      left: 12,
-      right: 12,
-      // Float just above the home indicator; 6px margin on inset-less devices.
-      bottom: Math.max(insets.bottom - 14, 6),
-      height: 58,
-      borderRadius: 28,
+      // Device feedback (iPhone 17 Pro Max): the spec's 12px margins read as a
+      // near-full-width slab that clashes with the display's corner radius.
+      // Inset more and float clear of the home indicator.
+      left: 20,
+      right: 20,
+      bottom: Math.max(insets.bottom - 6, 10),
+      // Shrunk ~17% from the 58px spec after on-device feedback ("too big").
+      height: 48,
+      borderRadius: 24,
       backgroundColor: 'transparent',
       borderTopWidth: 0,
       elevation: 0,
-      paddingTop: 9,
-      paddingBottom: 7,
+      paddingTop: 7,
+      paddingBottom: 5,
       paddingHorizontal: 6,
     },
     tabBarBackground: () => <Glass style={StyleSheet.absoluteFill} />,
     tabBarButton: (props: BottomTabBarButtonProps) => <GlassTabButton {...props} />,
     tabBarLabelStyle: {
       fontFamily: fonts.sansSemiBold,
-      fontSize: 9.5,
-      letterSpacing: 0.19,
+      fontSize: 9,
+      letterSpacing: 0.18,
     },
     tabBarIconStyle: {
-      marginBottom: 4,
+      marginBottom: 3,
     },
   };
 }
