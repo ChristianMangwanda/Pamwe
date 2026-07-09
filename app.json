@@ -9,7 +9,11 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.christianmangwanda.pamwe"
+      "bundleIdentifier": "com.christianmangwanda.pamwe",
+      "usesAppleSignIn": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -61,11 +65,30 @@
         {
           "iosUrlScheme": "com.googleusercontent.apps.1085365502371-ui7im83f9ovn6p5el4p95ojt9f409625"
         }
-      ]
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "extraPods": [
+              { "name": "GoogleUtilities", "modular_headers": true },
+              { "name": "RecaptchaInterop", "modular_headers": true }
+            ]
+          }
+        }
+      ],
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "ab024cbc-d3f4-4754-a80e-338d9228f6f2"
+      }
+    },
+    "owner": "munhumutapachris"
   }
 }
