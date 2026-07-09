@@ -1,98 +1,55 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useEffect, useState, useCallback } from 'react';
+import { Redirect } from 'expo-router';
+import { useAuth } from '../providers/AuthProvider';
+import { getUserCouple } from '../lib/couples';
+import { getActiveCouPlan } from '../lib/plans';
+import { View, ActivityIndicator } from 'react-native';
+import { useTheme } from '../providers/ThemeProvider';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+type RouteState = 'loading' | 'auth' | 'unpaired' | 'waiting' | 'plan-select' | 'tabs';
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
+export default function Index() {
+  const { session, loading: authLoading } = useAuth();
+  const { colors } = useTheme();
+  const [route, setRoute] = useState<RouteState>('loading');
+
+  const resolveRoute = useCallback(async (userId: string) => {
+    try {
+      const couple = await getUserCouple(userId);
+      if (!couple) { setRoute('unpaired'); return; }
+      if (!couple.paired_at) { setRoute('waiting'); return; }
+
+      const plan = await getActiveCouPlan(couple.id);
+      if (!plan) { setRoute('plan-select'); return; }
+
+      setRoute('tabs');
+    } catch {
+      setRoute('unpaired');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!session?.user) {
+      setRoute('loading');
+      return;
+    }
+    setRoute('loading');
+    resolveRoute(session.user.id);
+  }, [session?.user?.id, resolveRoute]);
+
+  if (authLoading || (session && route === 'loading')) {
     return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
+      <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color={colors.accent} />
+      </View>
     );
   }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
-  return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
+
+  if (!session) return <Redirect href="/(auth)/welcome" />;
+  // No couple yet → start the onboarding funnel (value slides → name → pair).
+  if (route === 'unpaired') return <Redirect href="/(onboarding)/value-slides" />;
+  // Couple created but partner hasn't joined → the invite screen shows the code + waits.
+  if (route === 'waiting') return <Redirect href="/(onboarding)/invite" />;
+  if (route === 'plan-select') return <Redirect href="/(onboarding)/plan-select" />;
+  return <Redirect href="/(tabs)/(today)" />;
 }
-
-export default function HomeScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
-  },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
-  },
-  title: {
-    textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
-  },
-});

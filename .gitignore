@@ -41,3 +41,20 @@ example
 # generated native folders
 /ios
 /android
+
+# local env files (Supabase keys, Google client IDs, Sentry DSN)
+.env
+env.hosted.backup
+
+# personal files in the working dir, not part of the app
+SteriCycle/
+CLAUDE 2.md
+PLAN2.pdf
+calendar.pdf
+
+# build-time reference + planning artifacts (kept locally, not in the repo)
+design_handoff_pamwe/
+scripts/mcheyne_with_text.json
+implementation_plan.md
+phase6-completeness.md
+task.md
