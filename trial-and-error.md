@@ -90,6 +90,41 @@ A running log of issues hit during Pamwe development and how each was resolved. 
 
 ---
 
+## EAS Build (paid Apple Developer account, approved 2026-07-09)
+
+Switched from local `xcodebuild` to `eas build` after Apple Developer Program approval. `eas init` stamped `extra.eas.projectId` into `app.json` (auto-un-skips push-token registration in `notifications.ts`); `eas build -p ios --profile development` auto-created the APNs key and provisioning — no manual Apple portal work.
+
+### `eas build` fails at Install pods: Google Sign-In Swift pods can't link statically
+
+**Symptom:** First iOS EAS build errors in the **Install pods** phase (dashboard shows only "Unknown error"). The actual CocoaPods log:
+```
+[!] The following Swift pods cannot yet be integrated as static libraries:
+The Swift pod `AppCheckCore` depends upon `GoogleUtilities` and `RecaptchaInterop`,
+which do not define modules. ... set `use_modular_headers!` ... or `:modular_headers => true`.
+```
+`@react-native-google-signin/google-signin` → `GoogleSignIn` → `AppCheckCore` pulls in `GoogleUtilities`/`RecaptchaInterop`, which have no module maps. The google-signin config plugin (v16.1.2) only sets the iOS URL scheme — it does **not** touch the Podfile.
+
+**Why it didn't reproduce locally:** local `pod install` (Xcode 26 + precompiled Expo modules + warm CocoaPods cache) masks the static-lib error; it only bites EAS's clean image. Don't trust a green local `pod install` as proof — verify the fix another way.
+
+**Fix:** Add `expo-build-properties` with per-pod `modular_headers` (the per-dependency form the error recommends; safer than `useFrameworks: static`, which has its own non-modular-header issues with Google/Firebase — see [expo#39607](https://github.com/expo/expo/issues/39607)):
+```json
+["expo-build-properties", { "ios": { "extraPods": [
+  { "name": "GoogleUtilities", "modular_headers": true },
+  { "name": "RecaptchaInterop", "modular_headers": true }
+] } }]
+```
+This writes `apple.extraPods` into `ios/Podfile.properties.json`; the autolinking resolve (run from `ios/`) returns them as `extraDependencies`, and `autolinking_manager.rb` applies `:modular_headers => true`. Verify without a full build: `cd ios && node --no-warnings --eval "require('expo/bin/autolinking')" expo-modules-autolinking resolve --platform apple --json` and check `extraDependencies`. Committed in `35a7190`.
+
+**Reading a failed EAS build log headlessly** (the dashboard truncates to "Unknown error"): the log URL is behind Cloudflare + auth. Query GraphQL with the `sessionSecret` from `~/.expo/state.json` and a real `User-Agent` (else Cloudflare 1010): `POST https://api.expo.dev/graphql { builds { byId(buildId){ logFiles } } }`, header `expo-session: <secret>`. The `logFiles[0]` is a signed GCS URL, **Brotli**-encoded — `curl` is sandbox-blocked here, so fetch with Node `fetch` (auto-decompresses br) or `zlib.brotliDecompressSync`.
+
+### "Untrusted Developer" prompt on first launch (EAS development build)
+
+**Symptom:** App installs from the EAS QR/link, but tapping it shows *"Untrusted Developer — your device management settings do not allow using apps from developer 'Apple Development: …'."* with only a Cancel button.
+
+**Fix:** Expected for a development-signed build. **Settings → General → VPN & Device Management → (under DEVELOPER APP) tap the "Apple Development: christianmangwanda@gmail.com" profile → Trust → confirm.** One-time per device until the signing cert rotates. (Unlike the free-Apple-ID trust glitch above, this just works on the paid account.)
+
+---
+
 ## Xcode 26 / Swift 6 + Expo SDK 56 patches
 
 All patches below live in `node_modules/expo-modules-jsi/` and will be wiped by `npm install`. **Wire up `patch-package` before iterating further** (open todo).
