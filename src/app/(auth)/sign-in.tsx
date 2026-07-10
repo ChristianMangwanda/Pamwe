@@ -36,6 +36,7 @@ export default function SignInScreen() {
     const { error } = await supabase.auth.signInWithPassword({ email: devEmail, password: 'dev-password' });
     setLoading(false);
     if (error) Alert.alert('Dev sign-in failed', error.message);
+    else router.replace('/');
   };
 
   const handleGoogleSignIn = async () => {
@@ -50,6 +51,9 @@ export default function SignInScreen() {
       const { error } = await supabase.auth.signInWithIdToken({ provider: 'google', token: idToken });
       if (error) throw error;
       setLoading(false);
+      // Nothing watches auth state for navigation — route back through the
+      // gate explicitly (the deep-link handler does the same for magic links).
+      router.replace('/');
     } catch (e: any) {
       setLoading(false);
       if (e?.code === statusCodes.SIGN_IN_CANCELLED) return;
@@ -70,6 +74,7 @@ export default function SignInScreen() {
         const { error } = await supabase.auth.signInWithIdToken({ provider: 'apple', token: credential.identityToken });
         if (error) throw error;
         setLoading(false);
+        router.replace('/');
       } else {
         throw new Error('No identityToken received from Apple.');
       }
