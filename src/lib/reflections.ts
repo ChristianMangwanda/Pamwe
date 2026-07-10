@@ -21,7 +21,8 @@ const ENTRY_COLS = 'id, couple_plan_id, day_number, user_id, entry_type, text_co
 // exactly when we can see two entries for it (mine + partner's). Non-mutual days
 // surface only my own entry → dropped here.
 export async function getRevealedReflections(coupleId: string): Promise<ReflectionSummary[]> {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
   if (!user) return [];
   const meId = user.id;
 
@@ -98,7 +99,8 @@ export async function getRevealedReflections(coupleId: string): Promise<Reflecti
 
 // Full detail for one revealed day (re-fetched fresh for the detail screen).
 export async function getReflectionDetail(couplePlanId: string, dayNumber: number) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
   const meId = user?.id;
 
   const { data: cp } = await supabase.from('couple_plans').select('plan_id').eq('id', couplePlanId).single();

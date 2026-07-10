@@ -29,7 +29,8 @@ const uniq = (arr: string[]) => [...new Set(arr)];
 
 export async function getRecap(coupleId: string, timezone: string, period: RecapPeriod): Promise<Recap> {
   const cutoff = recapCutoffISO(period);
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
   const meId = user?.id;
 
   const { data: cps } = await supabase.from('couple_plans').select('id, plan_id').eq('couple_id', coupleId);

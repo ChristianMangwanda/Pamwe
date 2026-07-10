@@ -51,7 +51,8 @@ export async function getAllMarks(coupleId: string) {
 }
 
 export async function setHighlight(coupleId: string, book: string, chapter: number, verse: number, color: SwatchColor) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
   if (!user) throw new Error('Not authenticated');
   const { error } = await supabase
     .from('verse_highlights')
@@ -71,7 +72,8 @@ export async function clearHighlight(coupleId: string, book: string, chapter: nu
 }
 
 export async function saveNote(coupleId: string, book: string, chapter: number, verse: number, text: string) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
   if (!user) throw new Error('Not authenticated');
   const { error } = await supabase
     .from('verse_notes')

@@ -43,8 +43,8 @@ export type CustomPlanInput = {
 // bible-api.com. RLS scopes the plan to the couple (is_curated=false, couple_id,
 // created_by = auth.uid()).
 export async function createCustomPlan(coupleId: string, input: CustomPlanInput) {
-  const { data: userData } = await supabase.auth.getUser();
-  const userId = userData.user?.id;
+  const { data: { session } } = await supabase.auth.getSession();
+  const userId = session?.user?.id;
   if (!userId) throw new Error('Not signed in');
 
   const days = Math.max(1, Math.min(input.days, input.readings.length));

@@ -12,7 +12,8 @@ function voiceObjectPath(couplePlanId: string, dayNumber: number, userId: string
 }
 
 export async function getMyEntry(couplePlanId: string, dayNumber: number) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
   if (!user) return null;
 
   const { data, error } = await supabase
@@ -28,7 +29,8 @@ export async function getMyEntry(couplePlanId: string, dayNumber: number) {
 }
 
 export async function getPartnerEntry(couplePlanId: string, dayNumber: number) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
   if (!user) return null;
 
   const { data, error } = await supabase
@@ -48,7 +50,8 @@ export async function createOrUpdateDraft(
   dayNumber: number,
   textContent: string,
 ) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
   if (!user) throw new Error('Not authenticated');
 
   const existing = await getMyEntry(couplePlanId, dayNumber);
@@ -99,7 +102,8 @@ export async function submitEntry(entryId: string) {
 }
 
 export async function ensureVoiceDraft(couplePlanId: string, dayNumber: number) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
   if (!user) throw new Error('Not authenticated');
 
   const existing = await getMyEntry(couplePlanId, dayNumber);
@@ -138,7 +142,8 @@ export async function uploadVoiceRecording(
   dayNumber: number,
   localFileUri: string,
 ) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
   if (!user) throw new Error('Not authenticated');
 
   const objectPath = voiceObjectPath(couplePlanId, dayNumber, user.id);
@@ -184,7 +189,8 @@ export async function attachAudioToEntry(
 }
 
 export async function countMySubmittedEntries(couplePlanId: string) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
   if (!user) return 0;
 
   const { count, error } = await supabase
@@ -206,7 +212,8 @@ async function couplePlanIds(coupleId: string): Promise<string[]> {
 
 // "Days read" (You tab) — my submitted entries across all the couple's plans.
 export async function countMyTotalSubmitted(coupleId: string) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
   if (!user) return 0;
   const cpIds = await couplePlanIds(coupleId);
   if (cpIds.length === 0) return 0;

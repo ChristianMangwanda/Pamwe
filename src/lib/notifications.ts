@@ -54,7 +54,8 @@ export async function registerForPushNotifications(): Promise<string | null> {
 }
 
 export async function savePushToken(token: string) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
   if (!user) return;
 
   await supabase
@@ -67,7 +68,8 @@ export async function savePushToken(token: string) {
 // account switch leaves the OLD user's row holding this device's token and
 // their partner's pushes land on the wrong person's phone.
 export async function clearPushToken() {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
   if (!user) return;
 
   await supabase
@@ -109,7 +111,8 @@ export type NotificationPrefs = {
 };
 
 export async function getNotificationPrefs(): Promise<NotificationPrefs | null> {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
   if (!user) return null;
 
   const { data, error } = await supabase
@@ -123,7 +126,8 @@ export async function getNotificationPrefs(): Promise<NotificationPrefs | null> 
 }
 
 export async function updateNotificationPrefs(prefs: Partial<NotificationPrefs>) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
   if (!user) throw new Error('Not authenticated');
 
   const { error } = await supabase.from('users').update(prefs).eq('id', user.id);

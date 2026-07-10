@@ -42,7 +42,8 @@ export async function createPrayer(
   notifyPartner: boolean,
   category: PrayerCategory = 'other',
 ) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
   if (!user) throw new Error('Not authenticated');
 
   const { data, error } = await supabase
@@ -94,7 +95,8 @@ export async function getTodayMarks(timezone: string) {
 }
 
 export async function markPrayedFor(prayerId: string, timezone: string) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
   if (!user) throw new Error('Not authenticated');
 
   // One mark per user per prayer per day — a repeat tap is a no-op, not an error.

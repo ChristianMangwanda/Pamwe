@@ -9,7 +9,7 @@ jest.mock('base64-arraybuffer', () => ({
 }));
 jest.mock('../lib/supabase', () => ({
   supabase: {
-    auth: { getUser: jest.fn() },
+    auth: { getSession: jest.fn() },
     from: jest.fn(),
     storage: { from: jest.fn() },
   },
@@ -23,7 +23,12 @@ import {
 import { supabase } from '../lib/supabase';
 import { File } from 'expo-file-system';
 
-const mockGetUser = supabase.auth.getUser as jest.Mock;
+const mockGetSession = supabase.auth.getSession as jest.Mock;
+
+// entries.ts reads the signed-in user from the local session (getSession).
+function mockSignedInUser(user: { id: string } | null) {
+  mockGetSession.mockResolvedValue({ data: { session: user ? { user } : null } });
+}
 const mockFrom = supabase.from as jest.Mock;
 const mockStorageFrom = supabase.storage.from as jest.Mock;
 const MockedFile = File as unknown as jest.Mock;
@@ -51,7 +56,7 @@ beforeEach(() => {
 
 describe('ensureVoiceDraft', () => {
   it('inserts a new entry with entry_type=voice when none exists', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
+    mockSignedInUser({ id: 'user-1' });
 
     const lookupChain = chainMock({ data: null });
     const insertChain = chainMock({ data: { id: 'entry-1', entry_type: 'voice' } });
@@ -80,7 +85,7 @@ describe('ensureVoiceDraft', () => {
   });
 
   it('flips an existing text draft to voice', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
+    mockSignedInUser({ id: 'user-1' });
 
     const existing = {
       id: 'entry-1',
@@ -109,7 +114,7 @@ describe('ensureVoiceDraft', () => {
   });
 
   it('returns the existing entry untouched when already voice', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
+    mockSignedInUser({ id: 'user-1' });
 
     const existing = { id: 'entry-1', entry_type: 'voice', submitted_at: null };
     const lookupChain = chainMock({ data: existing });
@@ -123,7 +128,7 @@ describe('ensureVoiceDraft', () => {
   });
 
   it('returns submitted entries without modification', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
+    mockSignedInUser({ id: 'user-1' });
 
     const existing = {
       id: 'entry-1',
@@ -142,7 +147,7 @@ describe('ensureVoiceDraft', () => {
 
 describe('uploadVoiceRecording', () => {
   it('uploads to the canonical {couple_plan_id}/{day}/{user_id}.m4a path with audio/m4a', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
+    mockSignedInUser({ id: 'user-1' });
 
     const fakeBuffer = new ArrayBuffer(8);
     MockedFile.mockImplementation(() => ({
@@ -167,7 +172,7 @@ describe('uploadVoiceRecording', () => {
   });
 
   it('falls back to base64 read when File.arrayBuffer throws', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
+    mockSignedInUser({ id: 'user-1' });
 
     MockedFile.mockImplementation(() => ({
       arrayBuffer: () => Promise.reject(new Error('new API unavailable')),
@@ -198,7 +203,7 @@ describe('uploadVoiceRecording', () => {
   });
 
   it('throws on storage upload error', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
+    mockSignedInUser({ id: 'user-1' });
 
     MockedFile.mockImplementation(() => ({
       arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
