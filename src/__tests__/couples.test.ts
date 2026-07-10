@@ -4,14 +4,19 @@ import { supabase } from '../lib/supabase';
 jest.mock('../lib/supabase', () => ({
   supabase: {
     auth: {
-      getUser: jest.fn(),
+      getSession: jest.fn(),
     },
     from: jest.fn(),
   },
 }));
 
 const mockFrom = supabase.from as jest.Mock;
-const mockGetUser = supabase.auth.getUser as jest.Mock;
+const mockGetSession = supabase.auth.getSession as jest.Mock;
+
+// couples.ts reads the signed-in user from the local session (getSession).
+function mockSignedInUser(user: { id: string } | null) {
+  mockGetSession.mockResolvedValue({ data: { session: user ? { user } : null } });
+}
 
 function chainMock(overrides: Record<string, any> = {}) {
   const chain: any = {
@@ -33,13 +38,13 @@ beforeEach(() => {
 
 describe('createCouple', () => {
   it('throws if not authenticated', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: null } });
+    mockSignedInUser(null);
     await expect(createCouple()).rejects.toThrow('Not authenticated');
   });
 
   it('creates a couple with a 6-char invite code and 7-day expiry', async () => {
     const fakeUser = { id: 'user-1' };
-    mockGetUser.mockResolvedValue({ data: { user: fakeUser } });
+    mockSignedInUser(fakeUser);
 
     const coupleData = {
       id: 'couple-1',
@@ -80,7 +85,7 @@ describe('createCouple', () => {
 
   it('updates the user record with couple_id after creation', async () => {
     const fakeUser = { id: 'user-1' };
-    mockGetUser.mockResolvedValue({ data: { user: fakeUser } });
+    mockSignedInUser(fakeUser);
 
     const coupleData = { id: 'couple-1', invite_code: 'XYZ789' };
     const insertChain = chainMock({ data: coupleData });
@@ -100,7 +105,7 @@ describe('createCouple', () => {
   });
 
   it('throws on supabase insert error', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
+    mockSignedInUser({ id: 'user-1' });
     const insertChain = chainMock({ error: { message: 'DB error' } });
     mockFrom.mockReturnValue(insertChain);
 
@@ -108,7 +113,7 @@ describe('createCouple', () => {
   });
 
   it('captures the device IANA timezone in the insert payload', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
+    mockSignedInUser({ id: 'user-1' });
     const insertChain = chainMock({ data: { id: 'couple-1' } });
     const updateChain = chainMock({ data: null });
     mockFrom.mockImplementation((table: string) =>
@@ -128,12 +133,12 @@ describe('createCouple', () => {
 
 describe('joinCouple', () => {
   it('throws if not authenticated', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: null } });
+    mockSignedInUser(null);
     await expect(joinCouple('ABC123')).rejects.toThrow('Not authenticated');
   });
 
   it('throws on invalid/expired code', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-2' } } });
+    mockSignedInUser({ id: 'user-2' });
     const selectChain = chainMock({ data: null, error: { message: 'not found' } });
     mockFrom.mockReturnValue(selectChain);
 
@@ -141,7 +146,7 @@ describe('joinCouple', () => {
   });
 
   it('throws if trying to join own invite', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
+    mockSignedInUser({ id: 'user-1' });
     const selectChain = chainMock({ data: { id: 'couple-1', partner_a_id: 'user-1' } });
     mockFrom.mockReturnValue(selectChain);
 
@@ -149,7 +154,7 @@ describe('joinCouple', () => {
   });
 
   it('uppercases the invite code before lookup', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-2' } } });
+    mockSignedInUser({ id: 'user-2' });
     const selectChain = chainMock({ data: null, error: { message: 'not found' } });
     mockFrom.mockReturnValue(selectChain);
 
@@ -159,7 +164,7 @@ describe('joinCouple', () => {
   });
 
   it('sets partner_b_id and paired_at on successful join', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-2' } } });
+    mockSignedInUser({ id: 'user-2' });
 
     const couple = { id: 'couple-1', partner_a_id: 'user-1' };
     const selectChain = chainMock({ data: couple });
@@ -188,13 +193,13 @@ describe('joinCouple', () => {
 
 describe('getUserCouple', () => {
   it('returns null if not authenticated', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: null } });
+    mockSignedInUser(null);
     const result = await getUserCouple();
     expect(result).toBeNull();
   });
 
   it('returns null if user has no couple_id', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
+    mockSignedInUser({ id: 'user-1' });
     const selectChain = chainMock({ data: { couple_id: null } });
     mockFrom.mockReturnValue(selectChain);
 
@@ -203,7 +208,7 @@ describe('getUserCouple', () => {
   });
 
   it('returns the couple record when paired', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
+    mockSignedInUser({ id: 'user-1' });
 
     const couple = { id: 'couple-1', paired_at: '2026-05-25T00:00:00Z' };
     const userChain = chainMock({ data: { couple_id: 'couple-1' } });

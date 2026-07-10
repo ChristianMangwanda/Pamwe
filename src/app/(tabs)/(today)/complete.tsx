@@ -46,7 +46,7 @@ export default function CompleteScreen() {
         <Card style={styles.statsCard}>
           <Stat value={String(totalDays)} label={totalDays === 1 ? 'day' : 'days read'} colors={colors} />
           <View style={[styles.statDivider, { backgroundColor: colors.line }]} />
-          <Stat value={reflections === null ? '—' : String(reflections)} label={reflections === 1 ? 'reflection' : 'reflections'} colors={colors} />
+          <Stat value={reflections === null ? '·' : String(reflections)} label={reflections === 1 ? 'reflection' : 'reflections'} colors={colors} />
           <View style={[styles.statDivider, { backgroundColor: colors.line }]} />
           <Stat value={String(streak)} label="day streak" colors={colors} />
         </Card>

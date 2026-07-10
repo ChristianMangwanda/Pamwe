@@ -94,8 +94,8 @@ export default function JournalScreen() {
             Alert.alert(
               'Could not send',
               isNetworkError(err)
-                ? "You look offline. Your draft is saved — try again when you're connected."
-                : err.message ?? 'Failed to submit. Your draft is saved — try again.',
+                ? "You look offline. Your draft is saved. Try again when you're connected."
+                : err.message ?? 'Failed to submit. Your draft is saved, so try again.',
             );
           } finally {
             setSubmitting(false);
@@ -120,8 +120,8 @@ export default function JournalScreen() {
       Alert.alert(
         'Could not send recording',
         isNetworkError(err)
-          ? "You look offline. Your recording is still here — try again when you're connected."
-          : err?.message ?? 'Upload failed. Your recording is still here — try sending again.',
+          ? "You look offline. Your recording is still here. Try again when you're connected."
+          : err?.message ?? 'Upload failed. Your recording is still here, so try sending again.',
       );
     } finally {
       setUploadingVoice(false);
@@ -172,7 +172,7 @@ export default function JournalScreen() {
               <TextInput
                 style={[styles.textInput, { backgroundColor: colors.surface, borderColor: colors.line, color: colors.ink }]}
                 multiline
-                placeholder={`Write honestly — only ${partnerName} will see it, and only once you've both written…`}
+                placeholder={`Write honestly. Only ${partnerName} will see it, and only once you've both written…`}
                 placeholderTextColor={colors.muted}
                 value={text}
                 onChangeText={setText}

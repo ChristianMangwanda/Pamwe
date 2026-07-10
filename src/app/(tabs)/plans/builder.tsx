@@ -230,7 +230,7 @@ export default function BuilderScreen() {
                     <TextInput
                       value={askQuery}
                       onChangeText={setAskQuery}
-                      placeholder="e.g. We're anxious about a big move — what should we read?"
+                      placeholder="e.g. We're anxious about a big move. What should we read?"
                       placeholderTextColor={colors.muted}
                       multiline
                       style={[styles.askInput, { color: colors.ink }]}
@@ -298,7 +298,7 @@ export default function BuilderScreen() {
                 />
               </View>
               <View style={[styles.review, { backgroundColor: colors.surface2, borderColor: colors.lineAccent }]}>
-                <ReviewRow label="Source" value={sourceLabel || '—'} colors={colors} />
+                <ReviewRow label="Source" value={sourceLabel || '·'} colors={colors} />
                 <ReviewRow label="Length" value={`${days} days`} colors={colors} />
                 <ReviewRow label="Rhythm" value={RHYTHM_LABEL[rhythm]} colors={colors} />
                 <ReviewRow label="Reflect together" value={reflectTogether ? 'Yes' : 'No'} colors={colors} last />

@@ -8,7 +8,6 @@
     "scheme": "pamwe",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon",
       "bundleIdentifier": "com.christianmangwanda.pamwe",
       "usesAppleSignIn": true,
       "infoPlist": {

@@ -4,7 +4,7 @@
 
 UPDATE public.plans SET
   tagline = 'The whole story, together',
-  about = 'The classic plan that walks you through the Old Testament once and the New Testament and Psalms twice in a year — the whole redemptive story, shared.',
+  about = 'The classic plan that walks you through the Old Testament once and the New Testament and Psalms twice in a year: the whole redemptive story, shared.',
   explore = ARRAY[
     'The arc from Genesis to Revelation',
     'How every book points to Christ',
@@ -23,7 +23,7 @@ WHERE id = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
 
 UPDATE public.plans SET
   tagline = 'Meet Jesus, together',
-  about = 'Read the fourth gospel side by side and watch how Jesus meets ordinary people — and your marriage — with grace and truth.',
+  about = 'Read the fourth gospel side by side and watch how Jesus meets ordinary people, and your marriage, with grace and truth.',
   explore = ARRAY[
     'The seven signs of John',
     'Who Jesus says He is',
@@ -42,7 +42,7 @@ WHERE id = 'b1b2c3d4-e5f6-7890-abcd-ef1234567891';
 
 UPDATE public.plans SET
   tagline = 'Words for every weather',
-  about = 'Thirty psalms for the full range of a shared life — joy, fear, gratitude, grief — giving you honest words to bring to God as a couple.',
+  about = 'Thirty psalms for the full range of a shared life: joy, fear, gratitude, and grief. Honest words to bring to God as a couple.',
   explore = ARRAY[
     'Praying your real emotions',
     'Lament without losing faith',
@@ -61,7 +61,7 @@ WHERE id = 'c1b2c3d4-e5f6-7890-abcd-ef1234567892';
 
 UPDATE public.plans SET
   tagline = 'An unbreakable marriage',
-  about = 'A three-week walk through Ecclesiastes on what it means to face life woven together — with God as the third strand that holds when you can''t.',
+  about = 'A three-week walk through Ecclesiastes on what it means to face life woven together, with God as the third strand that holds when you can''t.',
   explore = ARRAY[
     'Why two are better than one',
     'Facing changing seasons as a team',

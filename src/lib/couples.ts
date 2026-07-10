@@ -10,7 +10,10 @@ function generateCode(): string {
 }
 
 export async function createCouple() {
-  const { data: { user } } = await supabase.auth.getUser();
+  // getSession() reads locally; getUser() is a network call that can hang
+  // during first-run onboarding (same for the sites below).
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
   if (!user) throw new Error('Not authenticated');
 
   const inviteCode = generateCode();
@@ -42,7 +45,8 @@ export async function createCouple() {
 }
 
 export async function joinCouple(inviteCode: string) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
   if (!user) throw new Error('Not authenticated');
 
   const { data: couple, error: findError } = await supabase
@@ -77,8 +81,8 @@ export async function joinCouple(inviteCode: string) {
 export async function getUserCouple(userId?: string) {
   let uid = userId;
   if (!uid) {
-    const { data: { user } } = await supabase.auth.getUser();
-    uid = user?.id;
+    const { data: { session } } = await supabase.auth.getSession();
+    uid = session?.user?.id;
   }
   if (!uid) return null;
 
@@ -109,8 +113,8 @@ export async function getPartnerProfile(couple: any, userId?: string) {
   if (!couple) return null;
   let uid = userId;
   if (!uid) {
-    const { data: { user } } = await supabase.auth.getUser();
-    uid = user?.id;
+    const { data: { session } } = await supabase.auth.getSession();
+    uid = session?.user?.id;
   }
   if (!uid) return null;
 

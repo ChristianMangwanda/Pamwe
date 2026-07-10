@@ -33,26 +33,26 @@ export default function PrivacyScreen() {
 
         <H>What Pamwe collects</H>
         <P>
-          Account — your email address and, if you sign in with Apple or Google, the name and
+          Account: your email address and, if you sign in with Apple or Google, the name and
           email those services share. Your display name and avatar initial.
         </P>
         <P>
-          Content you create — written reflections, voice reflections (audio recordings),
+          Content you create: written reflections, voice reflections (audio recordings),
           prayers and "I prayed" marks, verse highlights and notes, and any custom reading
           plans you build.
         </P>
         <P>
-          Progress — your reading plan, current day, streak, and the timezone captured once
+          Progress: your reading plan, current day, streak, and the timezone captured once
           when your couple was created (used to know when a day rolls over).
         </P>
         <P>
-          Device — if you allow notifications, a push token and your notification preferences.
+          Device: if you allow notifications, a push token and your notification preferences.
           We don't collect your location, contacts, or photos.
         </P>
 
         <H>Who can see your reflections</H>
         <P>
-          Only you and your partner — no one else, ever. A reflection stays sealed until both
+          Only you and your partner. No one else, ever. A reflection stays sealed until both
           of you have submitted for the same day; then it is revealed to both of you at once.
           This rule is enforced by the database itself (row-level security), not just by the
           app's screens. Voice recordings live in private storage governed by the same rule.
@@ -65,7 +65,7 @@ export default function PrivacyScreen() {
         </P>
         <P>
           Apple (and Google, if you use Google sign-in) handle sign-in; Apple and Expo deliver
-          push notifications. Notification content is minimal — e.g. that your partner has
+          push notifications. Notification content is minimal, e.g. that your partner has
           reflected, never what they wrote.
         </P>
         <P>
@@ -75,7 +75,7 @@ export default function PrivacyScreen() {
         </P>
         <P>
           Bible text is fetched from bible-api.com by chapter reference. The request contains
-          only the passage being read — nothing about you.
+          only the passage being read, nothing about you.
         </P>
         <P>
           If crash reporting is enabled, technical crash data goes to Sentry to help fix bugs.

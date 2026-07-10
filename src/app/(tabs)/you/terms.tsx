@@ -40,7 +40,7 @@ export default function TermsScreen() {
         <P>
           Everything you write, record, and mark in Pamwe is yours. You grant us only the
           limited license needed to store your content, back it up, and show it to you and
-          your partner under the app's reveal rules — nothing more. We claim no ownership and
+          your partner under the app's reveal rules, nothing more. We claim no ownership and
           will never publish, sell, or use your content to train AI models.
         </P>
 
@@ -54,7 +54,7 @@ export default function TermsScreen() {
         <H>Ask Pamwe (AI suggestions)</H>
         <P>
           The plan builder uses an AI service to suggest reading plans. Suggestions are
-          generated automatically and may be imperfect — review a plan before beginning it.
+          generated automatically and may be imperfect, so review a plan before beginning it.
           Scripture references in a generated plan should always be checked against the text
           itself.
         </P>
@@ -76,7 +76,7 @@ export default function TermsScreen() {
 
         <H>Your account</H>
         <P>
-          Keep your sign-in method secure — it's the key to a space two people share. You're
+          Keep your sign-in method secure. It's the key to a space two people share. You're
           responsible for activity under your account. You can delete your account at any time
           in Settings; deletion is permanent and unpairs your partner, who keeps their own
           content.
@@ -93,7 +93,7 @@ export default function TermsScreen() {
         <H>Limitation of liability</H>
         <P>
           To the fullest extent the law allows, Pamwe and its creator are not liable for
-          indirect, incidental, or consequential damages arising from your use of the app —
+          indirect, incidental, or consequential damages arising from your use of the app,
           including lost data beyond what reasonable backups can restore. Nothing in these
           terms limits liability where the law does not permit it.
         </P>

@@ -72,7 +72,7 @@ export default function InviteScreen() {
   const onShare = async () => {
     if (!code) return;
     haptics.tap();
-    await Share.share({ message: `Join me on Pamwe — enter this code to link with me: ${code}` });
+    await Share.share({ message: `Join me on Pamwe. Enter this code to link with me: ${code}` });
   };
 
   return (

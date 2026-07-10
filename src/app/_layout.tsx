@@ -106,10 +106,18 @@ function RootLayout() {
     try {
       if (access_token && refresh_token) {
         const { error } = await supabase.auth.setSession({ access_token, refresh_token });
-        if (!error) router.replace('/');
+        if (!error) {
+          // The "check your email" modal stays natively presented over a
+          // replaced stack — dismiss it before navigating.
+          if (router.canDismiss()) router.dismissAll();
+          router.replace('/');
+        }
       } else if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code);
-        if (!error) router.replace('/');
+        if (!error) {
+          if (router.canDismiss()) router.dismissAll();
+          router.replace('/');
+        }
       }
     } catch {
       // Malformed/expired link — leave the user where they are.

@@ -87,7 +87,7 @@ export async function getRecap(coupleId: string, timezone: string, period: Recap
       : `${days} ${days === 1 ? 'day' : 'days'} in the Word, together.`;
 
   const learned = days >= 5
-    ? `You're building a real rhythm — ${days} days of showing up for each other. Keep going.`
+    ? `You're building a real rhythm: ${days} days of showing up for each other. Keep going.`
     : days > 0
       ? 'Small steps still count. Every day in the Word plants something between you.'
       : 'A quiet season is still a season. When you return to the Word, it will be here.';

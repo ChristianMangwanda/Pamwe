@@ -37,8 +37,9 @@ export default function NameScreen() {
       const intent = await AsyncStorage.getItem(ONB_INTENT_KEY);
       router.replace(intent === 'join' ? '/(onboarding)/join' : '/(onboarding)/pair-choice');
     } catch (e: any) {
-      setSaving(false);
       Alert.alert('Could not save', e.message);
+    } finally {
+      setSaving(false);
     }
   };
 

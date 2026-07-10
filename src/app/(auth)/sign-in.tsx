@@ -87,7 +87,7 @@ export default function SignInScreen() {
           <SectionEyebrow style={styles.eyebrow}>Welcome</SectionEyebrow>
           <Text variant="h1" style={styles.title}>Sign in</Text>
           <Text italic color={colors.ink2} style={styles.subtitle}>
-            Sign in separately from your partner — you'll pair in the next step.
+            Sign in separately from your partner. You'll pair in the next step.
           </Text>
 
           <View style={styles.form}>

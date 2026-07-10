@@ -51,7 +51,7 @@ export default function ConnectedScreen() {
         </View>
 
         <Text style={[styles.title, { color: colors.ink }]}>You're linked.</Text>
-        <Text italic color={colors.ink2} style={styles.line}>{me} & {partner} — walking together from today.</Text>
+        <Text italic color={colors.ink2} style={styles.line}>{me} & {partner}, walking together from today.</Text>
       </View>
 
       <SafeAreaView edges={['bottom']} style={styles.footer}>

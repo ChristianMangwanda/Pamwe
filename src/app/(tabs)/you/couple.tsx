@@ -80,7 +80,7 @@ export default function CoupleScreen() {
         </View>
         <Text style={[styles.privacy, { color: colors.ink2 }]}>
           Reflections are visible only to you and {partnerName}. A reflection stays sealed until you've both
-          written for that day — we never surface it early, to anyone.
+          written for that day. We never surface it early, to anyone.
         </Text>
       </ScrollView>
     </SafeAreaView>

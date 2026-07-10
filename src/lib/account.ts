@@ -14,18 +14,26 @@ export async function deleteMyAccount() {
 
 // Sets the display name the partner sees, plus the derived avatar initial.
 export async function updateDisplayName(name: string) {
-  const { data: { user } } = await supabase.auth.getUser();
+  // getSession() is a local read — getUser() is a network round-trip that can
+  // hang right after a fresh magic-link sign-in.
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
   if (!user) throw new Error('Not authenticated');
   const trimmed = name.trim();
+  // .select().single() makes a zero-row update (missing users row) fail loudly
+  // instead of advancing without saving.
   const { error } = await supabase
     .from('users')
     .update({ display_name: trimmed, avatar_initial: (trimmed[0] || 'U').toUpperCase() })
-    .eq('id', user.id);
+    .eq('id', user.id)
+    .select('id')
+    .single();
   if (error) throw error;
 }
 
 export async function getMyProfile() {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
   if (!user) return null;
   const { data } = await supabase
     .from('users')

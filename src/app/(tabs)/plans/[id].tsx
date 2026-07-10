@@ -185,11 +185,11 @@ export default function PlanDetailScreen() {
                 <Text style={[styles.metaLabel, { color: colors.muted }]}>Days</Text>
               </View>
               <View style={[styles.metaColWide, { borderRightColor: colors.line2, borderRightWidth: 1 }]}>
-                <Text style={[styles.metaMid, { color: colors.accent }]}>{plan.book_label ?? '—'}</Text>
+                <Text style={[styles.metaMid, { color: colors.accent }]}>{plan.book_label ?? '·'}</Text>
                 <Text style={[styles.metaLabel, { color: colors.muted }]}>Scripture</Text>
               </View>
               <View style={styles.metaCol}>
-                <Text style={[styles.metaMid, { color: colors.accent }]}>{plan.minutes_label ?? '—'}</Text>
+                <Text style={[styles.metaMid, { color: colors.accent }]}>{plan.minutes_label ?? '·'}</Text>
                 <Text style={[styles.metaLabel, { color: colors.muted }]}>A day</Text>
               </View>
             </View>

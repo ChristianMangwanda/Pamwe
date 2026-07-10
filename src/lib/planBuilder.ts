@@ -25,7 +25,7 @@ export function generateSchedule(startBook: string, startChapter: number, days: 
 
 const GENERIC_PROMPTS = [
   "What stood out to you in today's reading?",
-  'Where did you see God at work — in the passage, or in each other?',
+  'Where did you see God at work: in the passage, or in each other?',
   'What is one thing you want to carry into your day together?',
 ];
 
