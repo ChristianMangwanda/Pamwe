@@ -18,6 +18,7 @@ import { useAuth } from '../../../providers/AuthProvider';
 import { useCouple } from '../../../providers/CoupleProvider';
 import { supabase } from '../../../lib/supabase';
 import { getPrayers, getAnsweredPrayers, getTodayMarks, markPrayedFor, markAnswered, deletePrayer } from '../../../lib/prayers';
+import { clearReminder } from '../../../lib/prayerReminders';
 import { haptics } from '../../../lib/haptics';
 
 type Mark = { prayer_id: string; user_id: string };
@@ -120,7 +121,7 @@ export default function PrayersScreen() {
   const handleMarkAnswered = (prayer: Prayer) => {
     setDetail(null);
     const submit = async (note?: string) => {
-      try { await markAnswered(prayer.id, note); load(); }
+      try { await markAnswered(prayer.id, note); clearReminder(prayer.id); load(); }
       catch (err: any) { Alert.alert('Error', err?.message ?? 'Could not mark as answered'); }
     };
     if (Platform.OS === 'ios') {
@@ -145,6 +146,7 @@ export default function PrayersScreen() {
         text: 'Delete', style: 'destructive',
         onPress: async () => {
           setActive((prev) => prev.filter((p) => p.id !== prayer.id));
+          clearReminder(prayer.id);
           try { await deletePrayer(prayer.id); await load(); }
           catch (err: any) { await load(); Alert.alert('Error', err?.message ?? 'Could not delete'); }
         },

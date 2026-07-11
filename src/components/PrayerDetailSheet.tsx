@@ -1,5 +1,6 @@
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { HandsPraying, SealCheck, PencilSimple, Trash } from 'phosphor-react-native';
+import { useEffect, useState } from 'react';
+import { View, StyleSheet, TouchableOpacity, Switch, Alert } from 'react-native';
+import { HandsPraying, SealCheck, PencilSimple, Trash, BellRinging } from 'phosphor-react-native';
 import { BottomSheet } from './ui/BottomSheet';
 import { Text } from './ui/Text';
 import { CategoryChip } from './ui/CategoryChip';
@@ -7,6 +8,13 @@ import { Prayer, relativeTime } from './PrayerCard';
 import { fonts } from '../constants/typography';
 import { useTheme } from '../providers/ThemeProvider';
 import { haptics } from '../lib/haptics';
+import { getReminder, setReminder, clearReminder } from '../lib/prayerReminders';
+
+const REMINDER_PRESETS: { label: string; hour: number; minute: number }[] = [
+  { label: '8:00 AM', hour: 8, minute: 0 },
+  { label: '12:00 PM', hour: 12, minute: 0 },
+  { label: '9:00 PM', hour: 21, minute: 0 },
+];
 
 interface Props {
   prayer: Prayer | null;
@@ -24,7 +32,46 @@ export function PrayerDetailSheet({
   prayer, isMine, partnerName, prayedByMe, prayedByPartner, onClose, onMarkAnswered, onEdit, onDelete,
 }: Props) {
   const { colors } = useTheme();
+
+  // Per-prayer local reminder state. Loaded when the sheet opens on an active
+  // prayer; a preset time schedules a daily on-device notification.
+  const [reminder, setReminderState] = useState<{ hour: number; minute: number } | null>(null);
+  const [savingReminder, setSavingReminder] = useState(false);
+  useEffect(() => {
+    if (!prayer || prayer.status === 'answered') { setReminderState(null); return; }
+    let alive = true;
+    getReminder(prayer.id).then((r) => { if (alive) setReminderState(r); }).catch(() => {});
+    return () => { alive = false; };
+  }, [prayer?.id, prayer?.status]);
+
   if (!prayer) return null;
+  const prayerId = prayer.id;
+  const prayerText = prayer.text;
+
+  const toggleReminder = async (on: boolean) => {
+    if (savingReminder) return;
+    setSavingReminder(true);
+    haptics.tap();
+    try {
+      if (!on) {
+        await clearReminder(prayerId);
+        setReminderState(null);
+      } else {
+        const preset = REMINDER_PRESETS[0];
+        const ok = await setReminder(prayerId, prayerText, preset.hour, preset.minute);
+        if (ok) setReminderState({ hour: preset.hour, minute: preset.minute });
+        else Alert.alert('Notifications are off', 'Turn on notifications for Pamwe to set a reminder.');
+      }
+    } finally {
+      setSavingReminder(false);
+    }
+  };
+
+  const pickReminderTime = async (hour: number, minute: number) => {
+    haptics.tap();
+    const ok = await setReminder(prayerId, prayerText, hour, minute);
+    if (ok) setReminderState({ hour, minute });
+  };
 
   const answered = prayer.status === 'answered';
   const initial = (isMine ? 'You' : partnerName)[0]?.toUpperCase() ?? '?';
@@ -91,6 +138,38 @@ export function PrayerDetailSheet({
               </View>
             )}
           </View>
+
+          <View style={[styles.reminderCard, { borderTopColor: colors.line2 }]}>
+            <View style={styles.reminderRow}>
+              <BellRinging size={17} color={colors.accent2} weight="regular" />
+              <View style={styles.flex}>
+                <Text style={[styles.reminderTitle, { color: colors.ink }]}>Remind me to pray</Text>
+                <Text style={[styles.reminderSub, { color: colors.muted }]}>A daily nudge on this phone.</Text>
+              </View>
+              <Switch
+                value={!!reminder}
+                onValueChange={toggleReminder}
+                disabled={savingReminder}
+                accessibilityLabel="Daily prayer reminder"
+                trackColor={{ false: colors.line, true: colors.accent2 }}
+                thumbColor={reminder ? colors.accent : colors.surface}
+              />
+            </View>
+            {reminder && (
+              <View style={styles.presetRow}>
+                {REMINDER_PRESETS.map((p) => {
+                  const on = reminder.hour === p.hour && reminder.minute === p.minute;
+                  return (
+                    <TouchableOpacity key={p.label} onPress={() => pickReminderTime(p.hour, p.minute)} activeOpacity={0.8}
+                      accessibilityRole="button" accessibilityState={{ selected: on }}
+                      style={[styles.preset, { borderColor: on ? colors.accent : colors.line, backgroundColor: on ? colors.accent : 'transparent' }]}>
+                      <Text variant="chip" color={on ? colors.bg : colors.ink2}>{p.label}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
+          </View>
         </>
       )}
     </BottomSheet>
@@ -114,4 +193,11 @@ const styles = StyleSheet.create({
   ownRow: { flexDirection: 'row', gap: 10 },
   ownBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderWidth: 1.5, borderRadius: 14, paddingVertical: 14 },
   ownBtnText: { fontSize: 11, letterSpacing: 0.6 },
+  flex: { flex: 1 },
+  reminderCard: { marginTop: 20, paddingTop: 16, borderTopWidth: 1 },
+  reminderRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  reminderTitle: { fontFamily: fonts.serifMedium, fontSize: 15 },
+  reminderSub: { fontFamily: fonts.sans, fontSize: 11, marginTop: 2 },
+  presetRow: { flexDirection: 'row', gap: 8, marginTop: 14 },
+  preset: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
 });
