@@ -33,18 +33,15 @@ export default function PlanDetailScreen() {
 
   useEffect(() => {
     let alive = true;
-    (async () => {
-      try {
-        const [p, d] = await Promise.all([getPlan(id), getPlanDayList(id)]);
-        if (!alive) return;
-        setPlan(p);
-        setDays(d);
-      } catch {
-        if (alive) setPlan(null);
-      } finally {
-        if (alive) setLoading(false);
-      }
-    })();
+    // Independent fetches: the header renders as soon as the plan row lands
+    // instead of gating the whole screen on the 365-row schedule query.
+    getPlan(id)
+      .then((p) => { if (alive) setPlan(p); })
+      .catch(() => { if (alive) setPlan(null); })
+      .finally(() => { if (alive) setLoading(false); });
+    getPlanDayList(id)
+      .then((d) => { if (alive) setDays(d); })
+      .catch(() => { /* schedule section simply stays hidden */ });
     return () => { alive = false; };
   }, [id]);
 
@@ -151,8 +148,12 @@ export default function PlanDetailScreen() {
     );
   }
 
-  const windowDays = days.slice(0, WINDOW);
-  const moreDays = days.length - windowDays.length;
+  // Center the schedule window on the current day so long plans (M'Cheyne
+  // day 100+) show where the couple actually is, with a little lead-in.
+  const windowStart = Math.max(0, Math.min(dayNow - 6, days.length - WINDOW));
+  const windowDays = days.slice(windowStart, windowStart + WINDOW);
+  const earlierDays = windowStart;
+  const moreDays = days.length - windowStart - windowDays.length;
   const explore: string[] = plan.explore ?? [];
   const gain: string[] = plan.gain ?? [];
 
@@ -201,6 +202,9 @@ export default function PlanDetailScreen() {
               <>
                 <Text variant="eyebrow" color={colors.muted} style={styles.section}>Reading schedule</Text>
                 <View style={[styles.schedule, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+                  {earlierDays > 0 && (
+                    <Text style={[styles.moreDays, { color: colors.muted }]}>{earlierDays} earlier days</Text>
+                  )}
                   {windowDays.map((d) => {
                     const done = isActive && d.day_number < dayNow;
                     const current = d.day_number === dayNow;
@@ -267,7 +271,8 @@ export default function PlanDetailScreen() {
           </View>
         </ScrollView>
 
-        <View style={[styles.footer, { backgroundColor: colors.bg, paddingBottom: insets.bottom + 14 }]}>
+        <View style={[styles.footer, { backgroundColor: colors.bg, paddingBottom: Math.max(insets.bottom - 2, 14) + 72 }]}>
+          {/* Bottom padding clears the floating tab bar (60 tall + offset) so the CTA never sits under it. */}
           <Button title={isActive ? 'Continue reading' : 'Begin together'} onPress={onPrimary} loading={busy} />
           {isActive && (
             <TouchableOpacity onPress={onMarkComplete} disabled={busy} style={styles.markComplete} hitSlop={8}>

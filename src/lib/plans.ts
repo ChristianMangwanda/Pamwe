@@ -10,9 +10,16 @@ export async function getPlans() {
   return data;
 }
 
+// Session-lifetime caches: plan content is immutable once seeded/created, so
+// revisits render instantly instead of paying free-tier latency every focus.
+let curatedCache: any[] | null = null;
+const planCache = new Map<string, any>();
+const planDaysCache = new Map<string, any[]>();
+
 // Curated plans for the browse grid — shortest/most approachable first, the
 // 365-day M'Cheyne last. Custom (couple-built) plans are excluded.
 export async function getCuratedPlans() {
+  if (curatedCache) return curatedCache;
   const { data, error } = await supabase
     .from('plans')
     .select('*')
@@ -21,7 +28,8 @@ export async function getCuratedPlans() {
     .order('title', { ascending: true });
 
   if (error) throw error;
-  return data ?? [];
+  curatedCache = data ?? [];
+  return curatedCache;
 }
 
 // A couple's own custom plans (the "Your plans" section). Empty until the
@@ -53,6 +61,8 @@ export async function getCompletedCouplePlans(coupleId: string) {
 }
 
 export async function getPlan(planId: string) {
+  const cached = planCache.get(planId);
+  if (cached) return cached;
   const { data, error } = await supabase
     .from('plans')
     .select('*')
@@ -60,12 +70,15 @@ export async function getPlan(planId: string) {
     .single();
 
   if (error) throw error;
+  planCache.set(planId, data);
   return data;
 }
 
 // The day-by-day schedule for a plan's detail page. Text is intentionally
 // omitted — the reading schedule only needs the reference/title per day.
 export async function getPlanDayList(planId: string) {
+  const cached = planDaysCache.get(planId);
+  if (cached) return cached;
   const { data, error } = await supabase
     .from('plan_days')
     .select('day_number, passage_reference, passage_title, pull_quote_ref')
@@ -73,7 +86,9 @@ export async function getPlanDayList(planId: string) {
     .order('day_number', { ascending: true });
 
   if (error) throw error;
-  return data ?? [];
+  const days = data ?? [];
+  planDaysCache.set(planId, days);
+  return days;
 }
 
 // Explicit "Mark plan complete" from the plan detail screen. The DB trigger also

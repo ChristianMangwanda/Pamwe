@@ -1,5 +1,6 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { MagnifyingGlass, ArrowRight, CaretRight, Plus, Flower, CheckCircle } from 'phosphor-react-native';
 import { Screen } from '../../../components/ui/Screen';
@@ -11,6 +12,8 @@ import { useCouple } from '../../../providers/CoupleProvider';
 import { getCuratedPlans, getCouplePlans, getCompletedCouplePlans } from '../../../lib/plans';
 import { haptics } from '../../../lib/haptics';
 
+const PLANS_CACHE_KEY = 'pamwe:plansBrowse';
+
 export default function PlansScreen() {
   const router = useRouter();
   const { colors } = useTheme();
@@ -20,6 +23,18 @@ export default function PlansScreen() {
   const [completed, setCompleted] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Stale-while-revalidate: render the last-seen browse grid instantly on a
+  // cold launch while the network load below refreshes it.
+  useEffect(() => {
+    AsyncStorage.getItem(PLANS_CACHE_KEY)
+      .then((v) => {
+        if (!v) return;
+        setCurated((prev) => (prev.length ? prev : JSON.parse(v)));
+        setLoading(false);
+      })
+      .catch(() => {});
+  }, []);
 
   const load = useCallback(async () => {
     try {
@@ -31,6 +46,7 @@ export default function PlansScreen() {
       setCurated(c);
       setMyPlans(mine);
       setCompleted(done);
+      AsyncStorage.setItem(PLANS_CACHE_KEY, JSON.stringify(c)).catch(() => {});
     } catch {
       // Leave lists as-is; pull-to-refresh can retry.
     } finally {
