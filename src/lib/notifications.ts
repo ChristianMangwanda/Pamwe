@@ -169,6 +169,21 @@ export async function getNotificationPermissionStatus(): Promise<string> {
   return status;
 }
 
+// Nudge my partner to read today. The edge function enforces a one-per-hour
+// cooldown per sender and sends the push. Returns a result the UI can voice.
+export type NudgeResult = { ok: boolean; cooldown?: boolean; message?: string };
+
+export async function nudgePartner(): Promise<NudgeResult> {
+  try {
+    const { data, error } = await supabase.functions.invoke('notify-nudge', { body: {} });
+    if (error) return { ok: false, message: 'Could not send a nudge right now.' };
+    if (data?.cooldown) return { ok: false, cooldown: true, message: data?.message };
+    return { ok: !!data?.ok };
+  } catch {
+    return { ok: false, message: 'Could not send a nudge right now.' };
+  }
+}
+
 export async function scheduleMorningNotification(hour: number, minute: number) {
   await Notifications.cancelAllScheduledNotificationsAsync();
 

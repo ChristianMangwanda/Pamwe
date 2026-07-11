@@ -400,6 +400,11 @@ verify_jwt = false
 [functions.delete-account]
 verify_jwt = true
 
+# User-invoked: a couple member nudges their partner to read. JWT identifies
+# the sender; the function enforces a one-per-hour cooldown.
+[functions.notify-nudge]
+verify_jwt = true
+
 [analytics]
 enabled = true
 port = 54327

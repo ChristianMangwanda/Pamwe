@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { GearSix } from 'phosphor-react-native';
@@ -18,6 +18,7 @@ import { useAuth } from '../../../providers/AuthProvider';
 import { profileInitial } from '../../../lib/couples';
 import { parseReference } from '../../../lib/bible';
 import { daysBehind, todayInTimezone } from '../../../lib/catchup';
+import { nudgePartner } from '../../../lib/notifications';
 import { haptics } from '../../../lib/haptics';
 
 export default function HomeScreen() {
@@ -27,6 +28,8 @@ export default function HomeScreen() {
   const { couple, partner, couplePlan, refresh: refreshCouple } = useCouple();
   const { loading, planDay, myEntry, partnerEntry, dayNumber, refresh } = useTodayEntry();
   const [refreshing, setRefreshing] = useState(false);
+  const [nudging, setNudging] = useState(false);
+  const [nudged, setNudged] = useState(false);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -120,6 +123,19 @@ export default function HomeScreen() {
 
   const onCta = () => { haptics.tap(); cta.go(); };
 
+  // Offer a nudge only while I've read and I'm waiting on my partner.
+  const canNudge = mySubmitted && !partnerSubmitted;
+  const onNudge = async () => {
+    if (nudging || nudged) return;
+    haptics.medium();
+    setNudging(true);
+    const res = await nudgePartner();
+    setNudging(false);
+    if (res.ok) { setNudged(true); haptics.success(); }
+    else if (res.cooldown) { setNudged(true); Alert.alert('Already sent', res.message ?? 'You just sent a nudge.'); }
+    else Alert.alert('Could not send', res.message ?? 'Please try again.');
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top']}>
       <ScrollView
@@ -186,6 +202,14 @@ export default function HomeScreen() {
 
         <View style={styles.ctaWrap}>
           <Button title={cta.label} onPress={onCta} />
+          {canNudge && (
+            <TouchableOpacity onPress={onNudge} disabled={nudging || nudged} activeOpacity={0.7}
+              style={styles.nudge} accessibilityRole="button" accessibilityLabel={`Nudge ${partnerName}`}>
+              <Text variant="chip" color={nudged ? colors.muted : colors.accent2} style={styles.nudgeText}>
+                {nudged ? `${partnerName} has been nudged` : nudging ? 'Sending…' : `Nudge ${partnerName} gently`}
+              </Text>
+            </TouchableOpacity>
+          )}
           <Text style={[styles.readingRef, { color: colors.ink2 }]}>
             Today's reading · <Text style={{ color: colors.accent }}>{planDay.passage_reference}</Text>
           </Text>
@@ -247,5 +271,7 @@ const styles = StyleSheet.create({
   streakWrap: { marginTop: 18, alignItems: 'center', gap: 8 },
   streakCount: { fontFamily: fonts.sansSemiBold, fontSize: 10, letterSpacing: 1.8, textTransform: 'uppercase' },
   ctaWrap: { marginTop: 22 },
+  nudge: { alignItems: 'center', marginTop: 14 },
+  nudgeText: { fontSize: 11, letterSpacing: 0.8 },
   readingRef: { fontFamily: fonts.sans, fontSize: 12, textAlign: 'center', marginTop: 10 },
 });
