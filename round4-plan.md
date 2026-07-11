@@ -82,15 +82,26 @@ their church community. No chat tab, no message bubbles, no "AI" labels, no memo
 
 ## Morning checklist (needs Christian)
 
-1. Apply new migrations to hosted (jcyhhxgomhopkoqesbkb) via MCP: say
-   "apply the round 4 migrations to hosted".
-2. Deploy ask-pamwe v7 + notify-nudge: say "deploy the edge functions to hosted".
-3. "Resolve the three Sentry issues" (b7 crashes, still open).
-4. b9: bump + archive + "upload build 9 to TestFlight".
-5. Taste review: floating flower placement, plan palettes, tree streak visual,
-   copywriting diffs.
-6. On-device: transcription mic flow, nudge push banner, widget (if built).
-7. Optionally "push" (main is ~18 commits ahead of GitHub).
+1. Apply the 3 new migrations to hosted (jcyhhxgomhopkoqesbkb) via MCP — say
+   "apply the round 4 migrations to hosted": `20260711000001_ask_pamwe_usage`,
+   `20260711000002_entry_responses`, `20260711000003_partner_nudges`. All are
+   applied + verified on local; entry_responses RLS was 4-way tested.
+2. Deploy the edge functions — say "deploy the round 4 edge functions to hosted":
+   ask-pamwe (help mode + off_topic gate + hardened no-interpretation prompt +
+   rate limit; hosted is at v6, this deploy becomes v7) and the new **notify-nudge**
+   (verify_jwt=true). ask-pamwe's rate limit
+   needs the ask_pamwe_usage migration applied first (step 1); it fails open if not.
+3. "Resolve the three Sentry issues" (b7 crashes, still open from last session).
+4. b9 release: bump CURRENT_PROJECT_VERSION → archive → verify bundle →
+   "upload build 9 to TestFlight".
+5. Taste review (all easy to retune): floral FAB placement + Ask Pamwe sheet tone,
+   per-plan palettes (lib/planArtwork), tree streak visual + thresholds
+   (ui/StreakTree), the partial copy pass.
+6. On-device once b9 lands: the floral Ask Pamwe FAB + sheet, reflection responses on
+   a real reveal, prayer reminder firing, catch-up banner, nudge (push still needs EAS
+   push enabled), offline reading on airplane mode, the 6 translations.
+7. Decide on the two deferred native features (#15 transcription, #16 widget).
+8. Optionally "push" — local main is now well ahead of GitHub.
 
 ## Progress log
 
@@ -112,5 +123,36 @@ Overnight run 2026-07-11 (all committed to main, tsc clean + full Jest green aft
 Migrations added locally (need hosted apply): ask_pamwe_usage, entry_responses,
 partner_nudges. Edge functions changed (need deploy): ask-pamwe v7, notify-nudge.
 
-Remaining: #9 search, #10 offline caches, #11 translations, #12 palettes,
-#13 tree streak, #14 copy pass, #15 transcription (native), #16 widget (native).
+- ✅ Shared-layer search (46287ee): lib/search.ts + bible/search route over notes,
+  highlights, revealed reflections.
+- ✅ Offline-first reading (20f184f): persistent AsyncStorage cache for chapters
+  (LRU 40) + today's plan day, with offline fallback.
+- ✅ More translations (d2b9311): ASV/YLT/Darby added; reader translation picker sheet.
+- ✅ Per-plan palettes (2f3ff4a): StripedBanner tint + lib/planArtwork. TASTE REVIEW.
+- ✅ Tree-growth streak (7f6930d): ui/StreakTree SVG on Today + 6 tests. TASTE REVIEW.
+- ✅ Copy pass (a0f4ab1): PARTIAL — warmed the flat "Error" alert titles only. The
+  whole-app "sounds like AI" sweep is DEFERRED for Christian's review (most copy is
+  design-authored and good; a broad speculative rewrite risks making it worse).
+
+### DEFERRED — native, need a dev-client rebuild + on-device validation
+
+Both were the explicitly timeboxed-last items. They require native modules / Xcode
+project changes that cannot be validated autonomously overnight, and landing them
+unvalidated would risk the currently-green, shippable build (CLAUDE.md rule 6). Not
+started, to keep the tree clean. Implementation notes for when Christian is on-device:
+
+- **#15 Voice transcription.** Needs an on-device recognizer (expo-speech-recognition
+  or @react-native-voice/voice) → npm install + pod install + dev-client rebuild.
+  Plan: add nullable `entries.transcript`; transcribe in VoiceRecorder after a
+  recording finishes; write transcript alongside the audio upload in
+  lib/entries.ts; then feed it into the Reflect snippet (lib/reflections.ts, replaces
+  "A voice reflection") and into lib/search.ts. Deliberately NOT adding the column
+  yet — a column nothing writes is dead schema. Do the native install first.
+- **#16 Home-screen widget.** WidgetKit target = new Xcode target + App Group for
+  data sharing + Swift. Cannot be built or validated without the Mac + device. Plan:
+  add an App Group entitlement, write today's pull quote + two status flags to the
+  shared container on each Today load, and a small WidgetKit view. Highest build
+  risk; do it as its own focused session with an archive check after.
+
+**Round 4 status: 12 of 14 non-native features shipped and committed; both native
+features deferred with notes. tsc clean, 84/84 Jest green.**

@@ -4,6 +4,34 @@
 
 ---
 
+## ⭐⭐ ROUND 4 FEATURE BUILDOUT (2026-07-11, overnight): 12 features shipped to main
+
+After round 3 (b8) verified, Christian asked to build the whole green-list + 10 new
+feature ideas + the Ask Pamwe rework, daily-improvement cadence. Overnight run
+(plan + log: [`round4-plan.md`](round4-plan.md)), all committed to main, tsc clean +
+84/84 Jest after each, nothing pushed to GitHub yet:
+
+- **Ask Pamwe, quietly present** (7c7c481): reworked from builder-only to a quiet
+  helper. Server v7 (uncommitted-deployed) adds a "help" mode + an off_topic gate + a
+  hardened prompt that POINTS, never interprets Scripture, + a per-user rate limit.
+  Floral FAB on every non-ritual tab, inline card on Plans, ephemeral answer sheet.
+- **Respond to a partner's reflection** (45ba4d6): hearts/amens/replies/saved-lines on
+  reveal + reflect history. New entry_responses table, RLS 4-way tested.
+- **Faithfulness timeline** (085b001) · **per-prayer reminders** (81ee2fd) ·
+  **catch-up nudge on Today** (34e11be) · **nudge your partner** (49191ad) ·
+  **shared-layer search** (46287ee) · **offline-first reading** (20f184f) ·
+  **6 translations + picker** (d2b9311) · **per-plan palettes** (2f3ff4a) ·
+  **tree-growth streak** (7f6930d) · **partial copy pass** (a0f4ab1).
+- **Deferred (native, need device):** voice transcription and the home-screen widget,
+  with implementation notes in round4-plan.md.
+
+**Morning checklist is in round4-plan.md**: apply 3 migrations to hosted, deploy
+ask-pamwe v7 + notify-nudge, resolve the 3 b7 Sentry issues, cut b9, taste-review the
+visual features. Migrations + functions are LOCAL-verified only; hosted apply + deploy
+need Christian's word (same permission gate as before).
+
+---
+
 ## ⭐ Where we are now (2026-07-10): LIVE ON TESTFLIGHT, couples beta running
 
 **Apple Developer approved; App Store Connect record created; builds ship from the terminal** (xcodebuild archive → exportArchive upload; see trial-and-error.md "TestFlight beta round"). **Christian + Ammy are internal testers, paired as a real couple** (couple `955b0f3d…`) on the hosted project `jcyhhxgomhopkoqesbkb`. Sentry crash reporting live (DSN in `.env.production`/eas.json). `ANTHROPIC_API_KEY` set on hosted 2026-07-10 (old exposed key revoked) — Ask Pamwe live pending in-app verification.
