@@ -1,8 +1,12 @@
 # Build 10 — "Complete the loops" round (2026-07-11)
 
-**STATUS: SHIPPED.** Uploaded to TestFlight 2026-07-11 ~10:55 PT after a stale
-Xcode Apple-ID session blocked the first attempt (fixed by re-signing in via
-Xcode Settings → Accounts; consider an ASC API key to make uploads immune).
+**STATUS: SHIPPED as build 11** (uploaded 2026-07-11 ~11:15 PT). Build 10's
+binary was rejected by Apple processing: NSPhotoLibraryUsageDescription missing
+(the image stack references photo APIs; the accidental prebuild had stripped the
+string). Added to Info.plist AND app.json ios.infoPlist so prebuilds can't strip
+it again; build number 10 is burned at Apple. Earlier, a stale Xcode Apple-ID
+session blocked the first upload (fixed by re-signing in via Xcode Settings →
+Accounts; consider an ASC API key to make uploads immune).
 Push is complete end to end: entitlement in the binary, EAS projectId in
 app.json, APNs key on Expo (portal ID K45Q3988W2, EAS-generated; the manually
 created TDA69K9QWF key is unused and the team is at Apple's 2-key max).
