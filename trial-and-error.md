@@ -260,3 +260,49 @@ Server-side avoids the race where one client increments and the other doesn't se
 | Removing `Sendable` from `JavaScriptType` protocol | Compiled, but downstream callers in ExpoModulesCore expected the Sendable-mangled signatures. dyld error. |
 | Patching `weak let → weak var` alone | Compiled past the original error but tripped the next Sendable strictness check. Needed `@unchecked` too. |
 | `-Trust` in Settings UI when on a Wi-Fi that blocks `ppq.apple.com` | Trust button visually clicked but never actually trusted. Switch networks. |
+
+---
+
+## TestFlight beta round (2026-07-10, builds 1–7)
+
+### Terminal-only archive + upload pipeline (no Xcode GUI, no EAS)
+
+**What works:** `xcodebuild -workspace ios/Pamwe.xcworkspace -scheme Pamwe -configuration Release -destination "generic/platform=iOS" -archivePath <path> -allowProvisioningUpdates DEVELOPMENT_TEAM=5LX4YFCXPK archive`, then `xcodebuild -exportArchive -archivePath <path> -exportOptionsPlist ExportOptions.plist -allowProvisioningUpdates` with plist keys `method=app-store-connect, destination=upload, signingStyle=automatic, teamID=5LX4YFCXPK`. Uploads with Xcode's saved Apple ID session, no 2FA prompt in practice.
+
+**Gotchas hit:**
+- `Info.plist` hardcoded `CFBundleVersion` as `1`; bumping `CURRENT_PROJECT_VERSION` in the pbxproj did nothing until Info.plist was changed to `$(CURRENT_PROJECT_VERSION)`. Bump builds ONLY via `CURRENT_PROJECT_VERSION` (2 spots in pbxproj) now.
+- Release bundling reads `.env.production` (checked in, hosted values) over `.env` (local LAN). Verify every archive: `grep -ac jcyhhxgomhopkoqesbkb main.jsbundle` = 1 and zero LAN-IP hits.
+- The App Store icon must have NO alpha channel; flatten with a CoreGraphics swift one-liner (scratchpad flatten.swift pattern) before dropping into `AppIcon.appiconset`.
+
+### OAuth sign-in succeeded server-side but the app stayed on the sign-in screen
+
+**Symptom:** Apple/Google sign-in "does nothing"; no error. auth.users showed the users created + signed in.
+**Root cause:** No sign-in handler navigated after success; only the magic-link deep-link handler called `router.replace('/')`. Nothing observes auth state for navigation (the gate only routes when mounted/focused).
+**Fix:** `router.replace('/')` after every successful sign-in in [src/app/(auth)/sign-in.tsx](src/app/(auth)/sign-in.tsx); locked in by `src/__tests__/sign-in.test.tsx` (7 scenarios).
+**Trip-wire:** any new sign-in path must end by routing through the gate.
+
+### Google "Passed nonce and nonce in id_token should either both exist or not"
+
+**Root cause:** The Google iOS SDK embeds a nonce in the ID token; `@react-native-google-signin` v16 has no API to read/pass it (SignInParams only has `loginHint`).
+**Fix:** Supabase dashboard → Auth → Providers → Google → enable **Skip nonce checks**. Client IDs list must contain web + iOS client IDs (audience = web ID). Apple provider: bundle id `com.christianmangwanda.pamwe` in Client IDs fixes "Unacceptable audience".
+
+### CoupleProvider staleness poisoned every tab after in-session pairing
+
+**Symptom:** Prayers tab spun forever; a created prayer "never appeared" (it WAS in the DB and RLS-readable); Reflections looked empty; symptoms "randomly" cleared on relaunch (crash-relaunch cycles reset the provider).
+**Root cause:** CoupleProvider fetched the couple once per session keyed on `session`; pairing/enrolling mid-session never refreshed it, so `useCouple()` returned null in the tabs.
+**Fix:** provider subscribes to `couples` + `couple_plans` realtime (filtered by couple id) and invite/join/plan-select call `refresh()` at each transition. Prayers list also cleared its spinner (guard used to return before `setLoading(false)`).
+**Trip-wire:** any screen guard `if (!couple?.id) return;` inside a load fn must clear its loading state first.
+
+### getUser() vs getSession()
+
+`supabase.auth.getUser()` is a network round-trip (can hang after fresh sign-in; hammered /user at ~7 req/s across the app). `getSession()` is a local read. ALL of src/lib now uses getSession(); keep it that way unless a server-verified identity is strictly needed.
+
+### Ask Pamwe "inaccurate AI" was the hardcoded fallback
+
+**Symptom:** asked about Joshua, got John/Psalms recs.
+**Root cause:** `ANTHROPIC_API_KEY` was never set on hosted after the cutover, so `src/lib/askPamwe.ts` silently served its canned fallback list.
+**Fix:** secret set via dashboard 2026-07-10 (old exposed key revoked). If recs ever look canned again, check the secret + edge-function logs FIRST.
+
+### Sentry: "1 user" = 1 dashboard seat, not app users
+
+Free tier is fine for the couple beta. DSN lives in `.env.production` + eas.json (`EXPO_PUBLIC_SENTRY_DSN`); `_layout.tsx` gates `Sentry.init` + `Sentry.wrap` on it, so dev builds stay quiet. No wizard needed; source-map/dSYM upload deliberately deferred.

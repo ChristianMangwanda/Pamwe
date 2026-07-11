@@ -1,5 +1,7 @@
 # Pamwe — App Store Launch Checklist
 
+> **STATUS UPDATE 2026-07-10 (end of day):** TestFlight is LIVE — builds 1–7 shipped, Christian + Ammy testing as internal testers. Now DONE from the lists below: A1 app icon (floral P; splash/android marks still template), A2 key rotated + hosted secret set, A4 auth providers configured (Google needs Skip-nonce ON — done), A5 Sentry wired (DSN in .env.production), C1 app record created, D1 internal TestFlight, D2 in progress (couples beta running; feedback loop = Notion "Pamwe Ramblings"). P0 #5 (reveal skipped for first submitter) STILL OPEN. A6 (push banner end-to-end) still to verify on device. Remaining big rocks: section C store package (privacy URL, screenshots, review strategy), section E scale hardening, green-list features (progress.md top banner).
+
 **Created:** 2026-07-10 · Status verified against the live hosted project (`jcyhhxgomhopkoqesbkb`) and git history.
 Companion docs: [progress.md](progress.md) (build history), [debug-tour-2026-07-09.md](debug-tour-2026-07-09.md) (issue numbers referenced below as #N).
 

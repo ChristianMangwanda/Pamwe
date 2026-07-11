@@ -1,10 +1,32 @@
 # Pamwe Build Progress Summary
 
-**Last Updated:** July 9, 2026
+**Last Updated:** July 10, 2026
 
 ---
 
-## ⭐ Where we are now (2026-07-09)
+## ⭐ Where we are now (2026-07-10): LIVE ON TESTFLIGHT, couples beta running
+
+**Apple Developer approved; App Store Connect record created; builds ship from the terminal** (xcodebuild archive → exportArchive upload; see trial-and-error.md "TestFlight beta round"). **Christian + Ammy are internal testers, paired as a real couple** (couple `955b0f3d…`) on the hosted project `jcyhhxgomhopkoqesbkb`. Sentry crash reporting live (DSN in `.env.production`/eas.json). `ANTHROPIC_API_KEY` set on hosted 2026-07-10 (old exposed key revoked) — Ask Pamwe live pending in-app verification.
+
+**Builds 1–7 (all 2026-07-10):**
+1. **b1** — first upload: real app icon (floral P), `.env.production` (hosted Supabase baked into Release builds).
+2. **b2** — magic-link modal auto-dismiss; name-screen hang fixed (getSession + finally + loud zero-row update); onboarding libs on getSession; ALL em dashes removed from developer-authored copy (app + hosted DB + edge functions; scripture untouched); `CFBundleVersion` → `$(CURRENT_PROJECT_VERSION)`.
+3. **b3** — OAuth navigation fix: every sign-in success routes through the gate (Apple sign-in worked server-side but the UI never left the screen). New `sign-in.test.tsx` (7 scenarios). Dashboard side: Google/Apple providers enabled; Google needs **Skip nonce checks** ON (library can't pass the nonce).
+4. **b4** — all remaining `getUser()` → `getSession()` across src/lib (was hammering /user ~7 req/s).
+5. **b5** — **CoupleProvider staleness fix** (the root cause of the first beta's dead ends): realtime on couples/couple_plans + refresh() at invite/join/plan-select transitions; prayers spinner fix; join requires 6-char codes.
+6. **b6** — Sentry enabled (crashes now self-report; recaps crash still undiagnosed, awaiting first report).
+7. **b7** — Round 2 perf/UI: session caches + AsyncStorage stale-while-revalidate for the Plans grid; plan detail renders header before the 365-row schedule; schedule window centers on current day (fixes debug-tour #35); plan-detail CTA clears the tab bar; tab bar reproportioned (28px insets, 60px tall, radius 30) per Christian's screenshots.
+
+**Feedback loop:** Christian logs beta findings in the Notion page **"Pamwe Ramblings"** (readable via the Notion MCP connector); triage → fix in batches → one build per round. Round-1/2 items all shipped; remaining triage:
+- **Verify on b7:** Ask Pamwe live answers; prayers realtime between both phones; tab bar feel; production push banner (checklist A6).
+- **Watch Sentry** for the recaps crash + general crash reports.
+- **Green list (Christian to rank):** nudge/poke partner push; more Bible translations (bible-api has ASV/YLT/Darby+); plan artwork (design call — striped banners are the current design); tree-growth streak (post-launch); whole-app copywriting pass ("sounds like AI"); Ask Pamwe discoverability in the Plans tab.
+- **Standing rules:** NO em dashes in any user-facing copy (memory + ask-pamwe prompt enforce it); build numbers bump via `CURRENT_PROJECT_VERSION` only.
+- **Wide-launch items still open:** Supabase Pro upgrade + custom SMTP; Ask Pamwe rate limit; App Store Connect metadata/screenshots/privacy URLs; App Review demo-account strategy (see launch-checklist.md).
+
+---
+
+## Previous status (2026-07-09, pre-TestFlight)
 
 **The design-handoff rebuild is CODE-COMPLETE — all 12 phases (0–11).** The app is the full 6-tab experience: Today · Bible · Plans · Prayers · Reflect · You, with light/dark theming, verse highlights/notes, a Plans catalog + custom-plan **builder with a live Claude-powered "Ask Pamwe"**, a Reflections history, and a You tab with recaps. `npx tsc --noEmit` clean; **59/59 Jest pass** across 7 suites. Feature work is done.
 

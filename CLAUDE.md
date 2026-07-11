@@ -55,6 +55,19 @@ supabase status                        # local URLs/keys · Studio http://127.0.
 # jcyhhxgomhopkoqesbkb via MCP.
 ```
 
+```bash
+# TestFlight release (terminal pipeline; Apple Dev approved, ASC record exists).
+# 1. Bump CURRENT_PROJECT_VERSION in ios/Pamwe.xcodeproj/project.pbxproj (2 spots;
+#    Info.plist reads $(CURRENT_PROJECT_VERSION) — never hardcode there).
+# 2. Archive (Release bundles .env.production = hosted Supabase + Sentry DSN):
+cd ios && xcodebuild -workspace Pamwe.xcworkspace -scheme Pamwe -configuration Release \
+  -destination "generic/platform=iOS" -archivePath /tmp/Pamwe.xcarchive \
+  -allowProvisioningUpdates DEVELOPMENT_TEAM=5LX4YFCXPK archive
+# 3. Verify: grep -ac jcyhhxgomhopkoqesbkb <archive>/Products/Applications/Pamwe.app/main.jsbundle → 1
+# 4. Upload (ExportOptions.plist: method=app-store-connect, destination=upload, signingStyle=automatic):
+xcodebuild -exportArchive -archivePath /tmp/Pamwe.xcarchive -exportOptionsPlist ExportOptions.plist -allowProvisioningUpdates
+```
+
 `LANG=en_US.UTF-8` and `LC_ALL=en_US.UTF-8` are set in `~/.bash_profile` — needed for CocoaPods on Homebrew Ruby 4. Don't remove.
 
 ---
@@ -133,6 +146,18 @@ UI screens go through `src/lib/*.ts` (couples, entries, plans, notifications) wh
 ### Timezone is captured once at couple creation, immutable in v1
 
 [src/lib/couples.ts](src/lib/couples.ts) writes `Intl.DateTimeFormat().resolvedOptions().timeZone` into `couples.timezone` when partner A generates the invite code. **No editable timezone setting in v1.** The Weekend-8 streak Edge Function uses this. If long-distance couples become a real case, revisit.
+
+### No em dashes in user-facing copy — ever
+
+Christian's rule (2026-07-10): zero em dashes in any developer-authored user-facing text (UI strings, alerts, notification bodies, plan metadata, prompts, AI output — the ask-pamwe system prompt forbids them). Use commas, colons, or periods. Null-value placeholder glyph is `·`. Scripture text is the one exception (quoted source material). Code comments are exempt.
+
+### Auth: getSession(), not getUser(); every sign-in success must route through the gate
+
+All of src/lib reads identity via `supabase.auth.getSession()` (local) — `getUser()` is a network call that hangs after fresh sign-ins. Any new sign-in path must end with `router.replace('/')` (see `sign-in.test.tsx`). CoupleProvider stays live via realtime + explicit `refresh()` at onboarding transitions — screens must clear their loading state when `couple` is null.
+
+### Beta feedback loop
+
+Christian logs findings in the Notion page **"Pamwe Ramblings"** (Notion MCP connector). Triage into rounds, fix in batches, one TestFlight build per round. Current triage state lives in progress.md's top banner.
 
 ### Don't modify the M'Cheyne plan or pull quotes silently
 
