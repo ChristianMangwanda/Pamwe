@@ -144,7 +144,7 @@ export default function RevealScreen() {
                 partnerName={partnerName}
                 initial={responsesByEntry[partnerEntry.id] ?? []}
                 revision={responsesRev}
-                entryText={partnerEntry.entry_type === 'text' ? partnerEntry.text_content : null}
+                entryText={partnerEntry.entry_type === 'text' ? partnerEntry.text_content : partnerEntry.transcript}
               />
             )}
           </EntryCard>
@@ -175,7 +175,14 @@ function EntryCard({ initial, solid, label, entry, accent, children }: {
         <Text style={[styles.cardLabel, { color: colors.ink2 }]}>{label}</Text>
       </View>
       {entry.entry_type === 'voice' && entry.audio_url ? (
-        <AudioPlayer audioPath={entry.audio_url} durationSeconds={entry.audio_duration_seconds ?? 0} accent={accent} />
+        <>
+          <AudioPlayer audioPath={entry.audio_url} durationSeconds={entry.audio_duration_seconds ?? 0} accent={accent} />
+          {!!entry.transcript && (
+            <Text style={{ fontFamily: fonts.serifItalic, fontSize: 14, lineHeight: 21.5, color: colors.ink2, marginTop: 10 }}>
+              “{entry.transcript}”
+            </Text>
+          )}
+        </>
       ) : (
         <Text style={{ fontFamily: fonts.serif, fontSize: 16, lineHeight: 25.6, color: colors.ink, marginTop: 11 }}>{entry.text_content}</Text>
       )}

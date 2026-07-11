@@ -14,6 +14,7 @@ import { useTheme } from '../../../providers/ThemeProvider';
 import { useCouple } from '../../../providers/CoupleProvider';
 import { useTodayEntry } from '../../../hooks/useTodayEntry';
 import { haptics } from '../../../lib/haptics';
+import { transcribeRecording } from '../../../lib/transcription';
 import {
   createOrUpdateDraft,
   submitEntry,
@@ -111,8 +112,13 @@ export default function JournalScreen() {
       setUploadingVoice(true);
       haptics.medium();
       const draft = await ensureVoiceDraft(couplePlan.id, dayNumber);
-      const objectPath = await uploadVoiceRecording(couplePlan.id, dayNumber, result.uri);
-      await attachAudioToEntry(draft.id, objectPath, result.durationSeconds);
+      // Transcription runs on-device in parallel with the upload; it is
+      // best-effort (null on any failure) and never blocks the entry.
+      const [objectPath, transcript] = await Promise.all([
+        uploadVoiceRecording(couplePlan.id, dayNumber, result.uri),
+        transcribeRecording(result.uri),
+      ]);
+      await attachAudioToEntry(draft.id, objectPath, result.durationSeconds, transcript);
       await submitEntry(draft.id);
       await refresh();
       router.replace('/(tabs)/(today)/waiting');

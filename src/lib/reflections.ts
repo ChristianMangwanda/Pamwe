@@ -14,7 +14,7 @@ export type ReflectionSummary = {
   revealedAt: string;
 };
 
-const ENTRY_COLS = 'id, couple_plan_id, day_number, user_id, entry_type, text_content, audio_url, audio_duration_seconds, submitted_at';
+const ENTRY_COLS = 'id, couple_plan_id, day_number, user_id, entry_type, text_content, transcript, audio_url, audio_duration_seconds, submitted_at';
 
 // A reflection appears in the history only once BOTH partners have submitted for that
 // day. RLS already hides a partner's entry until mutual submit, so a day is "revealed"
@@ -73,7 +73,12 @@ export async function getRevealedReflections(coupleId: string): Promise<Reflecti
     const pd = planId ? planDay.get(`${planId}_${g.day}`) : null;
     const reference = pd?.passage_reference ?? `Day ${g.day}`;
     const textEntry = g.mine.entry_type === 'text' ? g.mine : g.partner.entry_type === 'text' ? g.partner : null;
-    const snippet = textEntry?.text_content?.trim() || 'A voice reflection';
+    // Voice-only days fall back to the on-device transcript when there is one.
+    const snippet =
+      textEntry?.text_content?.trim() ||
+      g.mine.transcript?.trim() ||
+      g.partner.transcript?.trim() ||
+      'A voice reflection';
     const revealedAt = [g.mine.submitted_at, g.partner.submitted_at].sort().reverse()[0];
     return {
       id: `${g.cpId}_${g.day}`,

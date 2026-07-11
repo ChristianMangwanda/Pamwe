@@ -171,6 +171,7 @@ export async function attachAudioToEntry(
   entryId: string,
   audioUrl: string,
   durationSeconds: number,
+  transcript?: string | null,
 ) {
   const { data, error } = await supabase
     .from('entries')
@@ -178,6 +179,8 @@ export async function attachAudioToEntry(
       audio_url: audioUrl,
       audio_duration_seconds: durationSeconds,
       entry_type: 'voice',
+      // Best-effort on-device transcript; null when recognition wasn't possible.
+      transcript: transcript ?? null,
       updated_at: new Date().toISOString(),
     })
     .eq('id', entryId)

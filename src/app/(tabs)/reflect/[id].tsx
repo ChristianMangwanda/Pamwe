@@ -123,7 +123,7 @@ export default function ReflectionDetailScreen() {
           {data?.partner && (
             <ReflectionResponses entry={data.partner} couplePlanId={couplePlanId} dayNumber={dayNumber}
               canRespond partnerName={partnerName} initial={responsesByEntry[data.partner.id] ?? []} revision={responsesRev}
-              entryText={data.partner.entry_type === 'text' ? data.partner.text_content : null} />
+              entryText={data.partner.entry_type === 'text' ? data.partner.text_content : data.partner.transcript} />
           )}
         </ReflectionCard>
       </ScrollView>
@@ -146,7 +146,12 @@ function ReflectionCard({ label, voiceLabel, initial, entry, accent, filled, col
       </View>
       {entry ? (
         isVoice ? (
-          <AudioPlayer audioPath={entry.audio_url} durationSeconds={entry.audio_duration_seconds ?? 0} accent={accent} />
+          <>
+            <AudioPlayer audioPath={entry.audio_url} durationSeconds={entry.audio_duration_seconds ?? 0} accent={accent} />
+            {!!entry.transcript && (
+              <Text style={[styles.transcript, { color: colors.ink2 }]}>“{entry.transcript}”</Text>
+            )}
+          </>
         ) : (
           <Text style={[styles.reflText, { color: colors.ink }]}>{entry.text_content}</Text>
         )
@@ -177,4 +182,5 @@ const styles = StyleSheet.create({
   avatarInitial: { fontFamily: fonts.serif, fontSize: 12 },
   reflWho: { fontFamily: fonts.sansMedium, fontSize: 11, letterSpacing: 0.6, textTransform: 'uppercase' },
   reflText: { fontFamily: fonts.serif, fontSize: 15, lineHeight: 23, marginTop: 11 },
+  transcript: { fontFamily: fonts.serifItalic, fontSize: 14, lineHeight: 21.5, marginTop: 10 },
 });

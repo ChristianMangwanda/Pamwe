@@ -70,13 +70,26 @@
         {
           "ios": {
             "extraPods": [
-              { "name": "GoogleUtilities", "modular_headers": true },
-              { "name": "RecaptchaInterop", "modular_headers": true }
+              {
+                "name": "GoogleUtilities",
+                "modular_headers": true
+              },
+              {
+                "name": "RecaptchaInterop",
+                "modular_headers": true
+              }
             ]
           }
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-speech-recognition",
+        {
+          "speechRecognitionPermission": "Pamwe transcribes your voice reflections on this phone so they stay readable and searchable.",
+          "microphonePermission": "Pamwe needs microphone access to record your voice reflections."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
