@@ -1,6 +1,25 @@
 # Pamwe Build Progress Summary
 
-**Last Updated:** July 10, 2026
+**Last Updated:** July 11, 2026
+
+---
+
+## ⭐⭐⭐ ROUND 5 "COMPLETE THE LOOPS" (2026-07-11): b10 SHIPPED to TestFlight
+
+Same-day follow-up to round 4 after Christian tested b9 ("everything looks okay"
+except the FAB blending in). Plan + full log: [`build10-plan.md`](build10-plan.md).
+All committed + pushed (GitHub current), 96/96 Jest, hosted fully migrated,
+**b10 uploaded ~10:55 PT**. In it: the Ask Pamwe bubble redesign (real material +
+halo + guaranteed clearance), realtime reflection responses (+ fixed the b9
+stale-initial display bug), "Keep a line" + the Their Words keepsake screen,
+"From your story" resurfacing on Reflect, streak milestones (7/30/100) + the
+restored plan-completion celebration, **on-device voice transcription**
+(expo-speech-recognition; transcripts feed snippets/search/keep-a-line), and
+**real push complete end to end** (eas projectId + entitlements + APNs key on
+Expo; all four notify functions can finally deliver banners). b10 on-device test
+list + the accidental-prebuild lesson are in build10-plan.md. Remaining loose
+ends: b10 on-device pass with Ammy, "resolve the three Sentry issues" (still
+open since b7), widget (own session), finish the copy pass another day.
 
 ---
 

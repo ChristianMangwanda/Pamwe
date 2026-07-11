@@ -1,5 +1,12 @@
 # Build 10 — "Complete the loops" round (2026-07-11)
 
+**STATUS: SHIPPED.** Uploaded to TestFlight 2026-07-11 ~10:55 PT after a stale
+Xcode Apple-ID session blocked the first attempt (fixed by re-signing in via
+Xcode Settings → Accounts; consider an ASC API key to make uploads immune).
+Push is complete end to end: entitlement in the binary, EAS projectId in
+app.json, APNs key on Expo (portal ID K45Q3988W2, EAS-generated; the manually
+created TDA69K9QWF key is unused and the team is at Apple's 2-key max).
+
 Christian's directive: knock out items 1-6 from the morning review plus the Ask Pamwe
 bubble fix, all in one build. Copywriting pass explicitly deferred to another day.
 Widget stays parked for its own session. Take the time to build the right thing.
@@ -79,4 +86,39 @@ lights up partner-submitted, new-prayer, nudge, and freeze banners at once.
 3. Still outstanding from b7: "resolve the three Sentry issues".
 
 ## Progress log
-(updated as we go)
+
+- ✅ A. Bubble redesign (a8cd5a4): surface material + border + halo, FAB_CLEARANCE
+  scroll padding everywhere it floats, hidden on plans subroutes with footer CTAs.
+  Skipped shrink-on-scroll deliberately (would thread scroll listeners through
+  every screen; revisit only if it still feels present on device).
+- ✅ B. Realtime responses (b51904b): entry_responses in the realtime publication,
+  live subscriptions on reveal + reflect detail. Also fixed the b9 stale-initial
+  bug (pre-existing responses never displayed).
+- ✅ C. Their words (0f86c53): "Keep a line" sentence picker on revealed text
+  reflections; kept lines render distinctly both directions; new reflect/words
+  keepsake screen off the Reflect bookmark icon.
+- ✅ D. From your story (7bfb1cc): month-ago (fallback week-ago) reflection
+  resurfaced at the top of Reflect; pure client, clock-injected tests.
+- ✅ E. Milestones + celebration (02f7ab8): 7/30/100 streak moments on Today
+  (once each, AsyncStorage high-water mark); manual "Mark plan complete" now
+  earns the same complete.tsx celebration via params (also fixed the final-day
+  path losing the plan after refresh).
+- ✅ F. Push: Christian ran eas init (projectId ab024cbc in app.json) and the
+  entitlements carry aps-environment + SIWA; expo-notifications plugin config
+  verified; no code changes needed. OPEN: confirm the APNs key was uploaded via
+  eas credentials, then banner-test both directions on b10.
+- ✅ G. Voice transcription (006ad9b): expo-speech-recognition 56.0.1 installed
+  (pods OK), on-device file transcription in parallel with upload, transcript
+  column local + hosted, snippets/search/keep-a-line/transcript display all wired.
+  ⚠️ An accidental `expo prebuild` ran during setup; audited: entitlements, team,
+  CURRENT_PROJECT_VERSION, ExportOptions all intact; Info.plist CFBundleVersion
+  was reset to literal 1 and restored to $(CURRENT_PROJECT_VERSION). Lesson: never
+  prebuild in this repo; plain `pod install` autolinks new Expo modules.
+- ✅ H. Hosted batch applied (entry_responses_realtime, entries_transcript) +
+  advisor sweep: fixed a real finding (anon could execute can_respond_to_entry
+  through the default PUBLIC grant; revoked on hosted + local + migration file).
+  Pushed through 1264965. b10 bumped; archive/upload in flight.
+- 96/96 Jest, tsc clean throughout. On-device test list for b10: bubble feel,
+  live hearts/replies between two phones, keep-a-line + Their words, story card,
+  milestone moment (streak crosses 7), manual plan completion celebration,
+  voice transcription quality, push banners (pending APNs key), nudge delivery.
