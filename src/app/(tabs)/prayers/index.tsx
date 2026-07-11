@@ -1,7 +1,8 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   View, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform, RefreshControl, ActivityIndicator,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { PlusCircle, HandsPraying, SealCheck } from 'phosphor-react-native';
@@ -33,28 +34,57 @@ export default function PrayersScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [detail, setDetail] = useState<Prayer | null>(null);
+  // The "Nothing on your hearts yet" empty state only shows after a fetch
+  // actually succeeded — a failed first load must not claim the list is empty.
+  const [everLoaded, setEverLoaded] = useState(false);
 
   const partnerName = partner?.display_name ?? 'Your partner';
   const partnerId = couple?.partner_a_id === user?.id ? couple?.partner_b_id : couple?.partner_a_id;
+
+  // Stale-while-revalidate: paint the last-seen lists instantly on a cold
+  // launch while `load` refreshes them. Keyed by couple so an account switch
+  // never shows another couple's prayers.
+  useEffect(() => {
+    if (!couple?.id) return;
+    AsyncStorage.getItem(`pamwe:prayers:${couple.id}`)
+      .then((v) => {
+        if (!v) return;
+        const cached = JSON.parse(v);
+        setActive((prev) => (prev.length ? prev : cached.active ?? []));
+        setAnswered((prev) => (prev.length ? prev : cached.answered ?? []));
+        // The cache is only ever written from a successful fetch, so it can
+        // honestly stand in for one (a cached-empty couple sees the empty
+        // state instantly instead of a blank flash).
+        setEverLoaded(true);
+        setLoading(false);
+      })
+      .catch(() => {});
+  }, [couple?.id]);
 
   const load = useCallback(async () => {
     // Clear the spinner even with no couple yet — returning early here left
     // `loading` true forever (the eternal-spinner bug from the first beta).
     if (!couple?.id) { setLoading(false); return; }
-    try {
-      const [a, ans, todayMarks] = await Promise.all([
-        getPrayers(couple.id, 'active'),
-        getAnsweredPrayers(couple.id),
-        getTodayMarks(couple.timezone),
-      ]);
-      setActive(a as Prayer[]);
-      setAnswered(ans as Prayer[]);
-      setMarks(todayMarks as Mark[]);
-    } catch {
-      // Keep the last good state; realtime/focus retries.
-    } finally {
-      setLoading(false);
+    // Three independent fetches: with the old all-or-nothing Promise.all, one
+    // transient failure threw away the other two results and blanked the list.
+    const [a, ans, todayMarks] = await Promise.allSettled([
+      getPrayers(couple.id, 'active'),
+      getAnsweredPrayers(couple.id),
+      getTodayMarks(couple.timezone),
+    ]);
+    if (a.status === 'fulfilled') {
+      setActive(a.value as Prayer[]);
+      setEverLoaded(true);
     }
+    if (ans.status === 'fulfilled') setAnswered(ans.value as Prayer[]);
+    if (todayMarks.status === 'fulfilled') setMarks(todayMarks.value as Mark[]);
+    if (a.status === 'fulfilled' && ans.status === 'fulfilled') {
+      AsyncStorage.setItem(
+        `pamwe:prayers:${couple.id}`,
+        JSON.stringify({ active: a.value, answered: ans.value }),
+      ).catch(() => {});
+    }
+    setLoading(false);
   }, [couple?.id, couple?.timezone]);
 
   useFocusEffect(
@@ -122,7 +152,7 @@ export default function PrayersScreen() {
     ]);
   };
 
-  const allEmpty = !loading && active.length === 0 && answered.length === 0;
+  const allEmpty = !loading && everLoaded && active.length === 0 && answered.length === 0;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top']}>
@@ -210,7 +240,7 @@ export default function PrayersScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 118 },
+  scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 32 },
   subtitle: { fontSize: 14, marginTop: 6 },
   addBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, borderRadius: 14, paddingVertical: 15, marginTop: 16 },
   addText: { letterSpacing: 0.9 },

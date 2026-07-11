@@ -2,17 +2,17 @@ import { Tabs } from 'expo-router';
 import { SunHorizon, BookOpen, Books, HandsPraying, Feather, UserCircle } from 'phosphor-react-native';
 import { CoupleProvider } from '../../providers/CoupleProvider';
 import { usePushRouting } from '../../hooks/usePushRouting';
-import { useGlassTabOptions } from '../../components/GlassTabBar';
+import { useDockedTabOptions } from '../../components/DockedTabBar';
 
 const ICON_SIZE = 21;
 
 export default function TabLayout() {
   usePushRouting();
-  const glassTabOptions = useGlassTabOptions();
+  const dockedTabOptions = useDockedTabOptions();
 
   return (
     <CoupleProvider>
-      <Tabs screenOptions={glassTabOptions}>
+      <Tabs screenOptions={dockedTabOptions}>
         <Tabs.Screen
           name="(today)"
           options={{

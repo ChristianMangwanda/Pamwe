@@ -53,15 +53,25 @@ export async function registerForPushNotifications(): Promise<string | null> {
   }
 }
 
+// Skip the PATCH when this device already saved the same token for the same
+// user. getExpoPushTokenAsync re-registers with APNs, which re-fires the
+// rotation listener with an unchanged token; without this guard every launch
+// spiraled into an infinite PATCH /users loop (build 7 slowness + crash).
+let lastSavedTokenKey: string | null = null;
+
 export async function savePushToken(token: string) {
   const { data: { session } } = await supabase.auth.getSession();
   const user = session?.user;
   if (!user) return;
 
-  await supabase
+  const key = `${user.id}:${token}`;
+  if (key === lastSavedTokenKey) return;
+
+  const { error } = await supabase
     .from('users')
     .update({ expo_push_token: token })
     .eq('id', user.id);
+  if (!error) lastSavedTokenKey = key;
 }
 
 // On sign-out: this device no longer speaks for that user. Without this, an
@@ -76,15 +86,34 @@ export async function clearPushToken() {
     .from('users')
     .update({ expo_push_token: null })
     .eq('id', user.id);
+  lastSavedTokenKey = null;
 }
 
 // iOS can rotate the underlying APNs token; re-derive and persist the Expo
-// token when that happens so pushes keep flowing.
+// token when that happens so pushes keep flowing. The listener only reacts to
+// a genuinely NEW native token: re-deriving calls getExpoPushTokenAsync, which
+// re-registers with APNs and echoes the same token back to this listener.
+let lastNativeToken: string | null = null;
+let rotationInFlight = false;
+
 export function watchPushTokenRotation() {
-  return Notifications.addPushTokenListener(() => {
-    registerForPushNotifications().then((token) => {
-      if (token) savePushToken(token);
-    });
+  return Notifications.addPushTokenListener((devicePushToken) => {
+    const native =
+      typeof devicePushToken.data === 'string'
+        ? devicePushToken.data
+        : JSON.stringify(devicePushToken.data);
+    if (native === lastNativeToken) return;
+    lastNativeToken = native;
+
+    if (rotationInFlight) return;
+    rotationInFlight = true;
+    registerForPushNotifications()
+      .then((token) => {
+        if (token) return savePushToken(token);
+      })
+      .finally(() => {
+        rotationInFlight = false;
+      });
   });
 }
 

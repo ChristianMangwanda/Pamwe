@@ -14,9 +14,9 @@ interface ScreenProps extends Pick<ScrollViewProps, 'refreshControl' | 'keyboard
   animated?: boolean;
 }
 
-// Tab-screen wrapper: bg, safe-area top, 26px gutter, and enough bottom padding
-// to scroll clear of the floating glass tab bar. Design: content starts 8px below
-// the status bar; scroll area bottom padding 118.
+// Tab-screen wrapper: bg, safe-area top, 26px gutter. Content starts 8px below
+// the status bar. The tab bar is docked (build 8), so content lays out above it;
+// bottom padding is just scroll-end air.
 export function Screen({ children, scroll = true, animated = true, ...scrollProps }: ScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
@@ -28,14 +28,14 @@ export function Screen({ children, scroll = true, animated = true, ...scrollProp
   const body = scroll ? (
     <ScrollView
       style={styles.flex}
-      contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: 118 }}
+      contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: 32 }}
       showsVerticalScrollIndicator={false}
       {...scrollProps}
     >
       {content}
     </ScrollView>
   ) : (
-    <View style={[styles.flex, { paddingTop: insets.top + 8, paddingBottom: 118 }]}>{content}</View>
+    <View style={[styles.flex, { paddingTop: insets.top + 8, paddingBottom: 32 }]}>{content}</View>
   );
 
   if (!animated) {

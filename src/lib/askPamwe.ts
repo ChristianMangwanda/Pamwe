@@ -44,13 +44,21 @@ function normalize(rec: any): PlanRecommendation | null {
   };
 }
 
+// A hung request is not an error, so it never reached the fallback: the
+// builder spun forever (build 7 "forever loading"). Abort hard at 15s; a
+// normal answer lands in 7-13s and the fallback covers the rest.
+const INVOKE_TIMEOUT_MS = 15_000;
+
 // Ask Pamwe: invoke the edge function, validate the recommendations, and fall back
 // to gentle hardcoded starting points on any failure (missing key, network, refusal,
-// or all-invalid readings) so the builder always has something to offer.
+// timeout, or all-invalid readings) so the builder always has something to offer.
 export async function askPamwe(query: string): Promise<PlanRecommendation[]> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), INVOKE_TIMEOUT_MS);
   try {
     const { data, error } = await supabase.functions.invoke('ask-pamwe', {
       body: { query },
+      signal: controller.signal,
     });
     if (error) throw error;
     const recs = Array.isArray(data?.recommendations) ? data.recommendations : [];
@@ -59,6 +67,8 @@ export async function askPamwe(query: string): Promise<PlanRecommendation[]> {
     return normalized.slice(0, 3);
   } catch {
     return fallbackRecs();
+  } finally {
+    clearTimeout(timer);
   }
 }
 

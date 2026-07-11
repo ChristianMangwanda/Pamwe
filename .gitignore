@@ -38,8 +38,10 @@ yarn-error.*
 
 example
 
-# generated native folders
-/ios
+# generated native folders (ExportOptions.plist is the one keeper: the
+# TestFlight upload step needs it and it holds no secrets)
+/ios/*
+!/ios/ExportOptions.plist
 /android
 
 # local env files (Supabase keys, Google client IDs, Sentry DSN)

@@ -26,29 +26,26 @@ export async function getRevealedReflections(coupleId: string): Promise<Reflecti
   if (!user) return [];
   const meId = user.id;
 
-  const { data: cps, error: cpErr } = await supabase
-    .from('couple_plans')
-    .select('id, plan_id')
-    .eq('couple_id', coupleId);
-  if (cpErr) throw cpErr;
-  if (!cps || cps.length === 0) return [];
-
-  const cpMap = new Map(cps.map((c) => [c.id, c.plan_id as string]));
-  const cpIds = cps.map((c) => c.id);
-
+  // One round trip for the lead-in: entries joined to their couple_plans row.
+  // This used to be two sequential queries just to conclude "no reflections
+  // yet", which made the empty state as slow as a full load.
   const { data: entries, error: eErr } = await supabase
     .from('entries')
-    .select(ENTRY_COLS)
-    .in('couple_plan_id', cpIds)
+    .select(`${ENTRY_COLS}, couple_plan:couple_plans!inner(plan_id, couple_id)`)
+    .eq('couple_plan.couple_id', coupleId)
     .not('submitted_at', 'is', null);
   if (eErr) throw eErr;
+  if (!entries || entries.length === 0) return [];
 
   // Group by (couple_plan_id, day_number), keeping only mutual pairs.
-  const groups = new Map<string, { cpId: string; day: number; mine?: any; partner?: any }>();
-  for (const e of entries ?? []) {
+  const groups = new Map<string, { cpId: string; planId: string | null; day: number; mine?: any; partner?: any }>();
+  for (const e of entries) {
     const key = `${e.couple_plan_id}_${e.day_number}`;
     let g = groups.get(key);
-    if (!g) { g = { cpId: e.couple_plan_id, day: e.day_number }; groups.set(key, g); }
+    if (!g) {
+      g = { cpId: e.couple_plan_id, planId: (e as any).couple_plan?.plan_id ?? null, day: e.day_number };
+      groups.set(key, g);
+    }
     if (e.user_id === meId) g.mine = e; else g.partner = e;
   }
   const pairs = [...groups.values()].filter((g) => g.mine && g.partner);
@@ -57,9 +54,8 @@ export async function getRevealedReflections(coupleId: string): Promise<Reflecti
   // Batch-fetch plan_days per plan for the references/titles.
   const byPlan = new Map<string, Set<number>>();
   for (const g of pairs) {
-    const planId = cpMap.get(g.cpId);
-    if (!planId) continue;
-    (byPlan.get(planId) ?? byPlan.set(planId, new Set()).get(planId)!).add(g.day);
+    if (!g.planId) continue;
+    (byPlan.get(g.planId) ?? byPlan.set(g.planId, new Set()).get(g.planId)!).add(g.day);
   }
   const planDay = new Map<string, any>(); // `${planId}_${day}`
   const planTitle = new Map<string, string>();
@@ -73,7 +69,7 @@ export async function getRevealedReflections(coupleId: string): Promise<Reflecti
   }
 
   const items: ReflectionSummary[] = pairs.map((g) => {
-    const planId = cpMap.get(g.cpId) ?? null;
+    const planId = g.planId;
     const pd = planId ? planDay.get(`${planId}_${g.day}`) : null;
     const reference = pd?.passage_reference ?? `Day ${g.day}`;
     const textEntry = g.mine.entry_type === 'text' ? g.mine : g.partner.entry_type === 'text' ? g.partner : null;

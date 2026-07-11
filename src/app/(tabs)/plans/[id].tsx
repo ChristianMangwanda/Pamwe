@@ -13,7 +13,7 @@ import { GUTTER } from '../../../theme/tokens';
 import { overlayIn } from '../../../lib/motion';
 import { useTheme } from '../../../providers/ThemeProvider';
 import { useCouple } from '../../../providers/CoupleProvider';
-import { getPlan, getPlanDayList, enrollInPlan, switchPlan, completePlan } from '../../../lib/plans';
+import { getPlan, getPlanCached, getPlanDayList, enrollInPlan, switchPlan, completePlan } from '../../../lib/plans';
 import { parseReference } from '../../../lib/bible';
 import { haptics } from '../../../lib/haptics';
 
@@ -31,22 +31,30 @@ export default function PlanDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
 
+  const isActive = !!couplePlan && couplePlan.plan_id === id;
+  const dayNow = isActive ? (couplePlan.current_day ?? 1) : 1;
+  // Schedule window starts a little before the couple's current day; only this
+  // window is fetched (M'Cheyne would otherwise ship 365 rows for 40 rendered).
+  const windowFrom = Math.max(1, dayNow - 5);
+
   useEffect(() => {
     let alive = true;
-    // Independent fetches: the header renders as soon as the plan row lands
-    // instead of gating the whole screen on the 365-row schedule query.
+    // Header paints instantly from the last-seen cached row on cold launch;
+    // getPlan revalidates. The schedule query runs independently.
+    getPlanCached(id).then((p) => {
+      if (!alive || !p) return;
+      setPlan((prev: any) => prev ?? p);
+      setLoading(false);
+    });
     getPlan(id)
       .then((p) => { if (alive) setPlan(p); })
-      .catch(() => { if (alive) setPlan(null); })
+      .catch(() => { if (alive) setPlan((prev: any) => prev ?? null); })
       .finally(() => { if (alive) setLoading(false); });
-    getPlanDayList(id)
+    getPlanDayList(id, windowFrom, WINDOW)
       .then((d) => { if (alive) setDays(d); })
       .catch(() => { /* schedule section simply stays hidden */ });
     return () => { alive = false; };
-  }, [id]);
-
-  const isActive = !!couplePlan && couplePlan.plan_id === id;
-  const dayNow = isActive ? (couplePlan.current_day ?? 1) : 1;
+  }, [id, windowFrom]);
 
   const openReading = useCallback((ref: string, dayNumber: number) => {
     const parsed = parseReference(ref);
@@ -148,12 +156,12 @@ export default function PlanDetailScreen() {
     );
   }
 
-  // Center the schedule window on the current day so long plans (M'Cheyne
-  // day 100+) show where the couple actually is, with a little lead-in.
-  const windowStart = Math.max(0, Math.min(dayNow - 6, days.length - WINDOW));
-  const windowDays = days.slice(windowStart, windowStart + WINDOW);
-  const earlierDays = windowStart;
-  const moreDays = days.length - windowStart - windowDays.length;
+  // `days` is already the fetched window; the earlier/more counts come from
+  // the plan's total, not from fetched rows.
+  const windowDays = days;
+  const totalDays = plan.duration_days ?? (windowFrom - 1 + days.length);
+  const earlierDays = windowFrom - 1;
+  const moreDays = Math.max(0, totalDays - earlierDays - windowDays.length);
   const explore: string[] = plan.explore ?? [];
   const gain: string[] = plan.gain ?? [];
 
@@ -271,8 +279,8 @@ export default function PlanDetailScreen() {
           </View>
         </ScrollView>
 
-        <View style={[styles.footer, { backgroundColor: colors.bg, paddingBottom: Math.max(insets.bottom - 2, 14) + 72 }]}>
-          {/* Bottom padding clears the floating tab bar (60 tall + offset) so the CTA never sits under it. */}
+        <View style={[styles.footer, { backgroundColor: colors.bg, paddingBottom: 14 }]}>
+          {/* Tab bar is docked below the content area, so the CTA only needs its own breathing room. */}
           <Button title={isActive ? 'Continue reading' : 'Begin together'} onPress={onPrimary} loading={busy} />
           {isActive && (
             <TouchableOpacity onPress={onMarkComplete} disabled={busy} style={styles.markComplete} hitSlop={8}>

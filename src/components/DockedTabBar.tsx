@@ -6,15 +6,14 @@ import type {
 } from 'expo-router/build/react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-import { Glass } from './ui/Glass';
 import { fonts } from '../constants/typography';
 import { haptics } from '../lib/haptics';
 import { useTheme } from '../providers/ThemeProvider';
 
-// Design spec (Pamwe App.dc.html L1168–1179): floating bar, margin 0 12px 6px,
-// glass bg + 1px glass border, radius 28, icon 24, label 600 9.5px IS ls .02em,
-// active accent (ph-fill) / inactive muted (ph), press scale(.88) over 140ms.
-function GlassTabButton({ children, onPress, onLongPress, style, ...rest }: BottomTabBarButtonProps) {
+// Build 8 (beta round 3): the floating glass oval is gone. Standard docked,
+// edge-to-edge, persistent bottom bar. The press scale + tap haptic stay:
+// the motion language is kept even though the glass bar is not.
+function DockedTabButton({ children, onPress, onLongPress, style, ...rest }: BottomTabBarButtonProps) {
   const scale = useSharedValue(1);
   const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
@@ -42,7 +41,7 @@ function GlassTabButton({ children, onPress, onLongPress, style, ...rest }: Bott
   );
 }
 
-export function useGlassTabOptions(): BottomTabNavigationOptions {
+export function useDockedTabOptions(): BottomTabNavigationOptions {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
 
@@ -51,31 +50,23 @@ export function useGlassTabOptions(): BottomTabNavigationOptions {
     tabBarActiveTintColor: colors.accent,
     tabBarInactiveTintColor: colors.muted,
     tabBarStyle: {
-      position: 'absolute',
-      // Beta feedback (2026-07-10 couples test): the 48px bar read as squat
-      // and edge-to-edge. Narrower + taller: more side inset, more height,
-      // more air between icon and label.
-      left: 28,
-      right: 28,
-      bottom: Math.max(insets.bottom - 2, 14),
-      height: 60,
-      borderRadius: 30,
-      backgroundColor: 'transparent',
-      borderTopWidth: 0,
-      elevation: 0,
-      paddingTop: 9,
-      paddingBottom: 7,
+      backgroundColor: colors.surface,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: colors.line2,
+      height: 54 + insets.bottom,
+      paddingTop: 8,
+      paddingBottom: Math.max(insets.bottom - 2, 8),
       paddingHorizontal: 8,
+      elevation: 0,
     },
-    tabBarBackground: () => <Glass style={StyleSheet.absoluteFill} />,
-    tabBarButton: (props: BottomTabBarButtonProps) => <GlassTabButton {...props} />,
+    tabBarButton: (props: BottomTabBarButtonProps) => <DockedTabButton {...props} />,
     tabBarLabelStyle: {
       fontFamily: fonts.sansSemiBold,
-      fontSize: 9.5,
+      fontSize: 10,
       letterSpacing: 0.18,
     },
     tabBarIconStyle: {
-      marginBottom: 4,
+      marginBottom: 2,
     },
   };
 }

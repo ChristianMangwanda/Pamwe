@@ -115,11 +115,13 @@ export async function markPrayedFor(prayerId: string, timezone: string) {
 }
 
 // "Prayers" (You tab) — all prayer points for the couple, active + answered.
+// Throws on failure: a swallowed error here rendered a lying "0 prayers" stat.
 export async function countPrayers(coupleId: string) {
-  const { count } = await supabase
+  const { count, error } = await supabase
     .from('prayers')
     .select('id', { count: 'exact', head: true })
     .eq('couple_id', coupleId);
+  if (error) throw error;
   return count ?? 0;
 }
 

@@ -60,6 +60,7 @@ export default function BuilderScreen() {
   const [selectedBook, setSelectedBook] = useState<string | null>(null);
   const [askQuery, setAskQuery] = useState('');
   const [asking, setAsking] = useState(false);
+  const [activeTopic, setActiveTopic] = useState<string | null>(null);
   const [recs, setRecs] = useState<PlanRecommendation[]>([]);
   const [selectedRec, setSelectedRec] = useState<PlanRecommendation | null>(null);
   const [name, setName] = useState('');
@@ -213,12 +214,21 @@ export default function BuilderScreen() {
               {mode === 'topics' && (
                 <>
                   <View style={styles.chips}>
-                    {TOPICS.map((t) => (
-                      <TouchableOpacity key={t.label} activeOpacity={0.8} onPress={() => runAsk(t.query)}
-                        style={[styles.chip, { backgroundColor: colors.surface2, borderColor: colors.lineAccent }]}>
-                        <Text variant="chip" color={colors.accent2}>{t.label}</Text>
-                      </TouchableOpacity>
-                    ))}
+                    {TOPICS.map((t) => {
+                      const sel = activeTopic === t.label;
+                      return (
+                        <TouchableOpacity key={t.label} activeOpacity={0.8} disabled={asking}
+                          onPress={() => { setActiveTopic(t.label); runAsk(t.query); }}
+                          accessibilityRole="button" accessibilityLabel={t.label} accessibilityState={{ selected: sel }}
+                          style={[styles.chip, {
+                            backgroundColor: sel ? colors.accent : colors.surface2,
+                            borderColor: sel ? colors.accent : colors.lineAccent,
+                            opacity: asking && !sel ? 0.5 : 1,
+                          }]}>
+                          <Text variant="chip" color={sel ? colors.bg : colors.accent2}>{t.label}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
                   </View>
                   <RecResults asking={asking} recs={recs} selected={selectedRec} onChoose={chooseRec} colors={colors} />
                 </>
@@ -307,7 +317,7 @@ export default function BuilderScreen() {
           )}
         </ScrollView>
 
-        <View style={[styles.footer, { paddingBottom: insets.bottom + 14 }]}>
+        <View style={[styles.footer, { paddingBottom: 14 }]}>
           {step < 3 ? (
             <Button title={step === 0 ? 'Continue' : 'Next'} onPress={next} disabled={step === 0 && !hasPick} />
           ) : (

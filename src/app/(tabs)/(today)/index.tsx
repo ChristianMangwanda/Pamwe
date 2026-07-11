@@ -16,6 +16,7 @@ import { useCouple } from '../../../providers/CoupleProvider';
 import { useTodayEntry } from '../../../hooks/useTodayEntry';
 import { useAuth } from '../../../providers/AuthProvider';
 import { profileInitial } from '../../../lib/couples';
+import { parseReference } from '../../../lib/bible';
 import { haptics } from '../../../lib/haptics';
 
 export default function HomeScreen() {
@@ -82,11 +83,33 @@ export default function HomeScreen() {
   const verse = planDay.pull_quote ?? planDay.passage_reference;
   const verseRef = planDay.pull_quote_ref ?? planDay.passage_reference;
 
+  // "Read Day N" opens the Bible reader with plan context (banner + Reflect
+  // button into the journal), same as plan-detail rows. Beta feedback: the
+  // standalone reading page read as a slow mystery screen. reading.tsx stays
+  // as the fallback for references the parser can't place.
+  const openReading = () => {
+    const parsed = parseReference(planDay.passage_reference ?? '');
+    if (!parsed) {
+      router.push('/(tabs)/(today)/reading');
+      return;
+    }
+    router.push({
+      pathname: '/(tabs)/bible/[book]/[chapter]',
+      params: {
+        book: parsed.book.name,
+        chapter: String(parsed.chapter ?? 1),
+        couplePlanId: couplePlan.id,
+        day: String(dayNumber),
+        planTitle,
+      },
+    });
+  };
+
   const cta = bothSubmitted
     ? { label: 'Reveal together', go: () => router.push('/(tabs)/(today)/reveal') }
     : mySubmitted
     ? { label: `Waiting for ${partnerName}`, go: () => router.push('/(tabs)/(today)/waiting') }
-    : { label: `Read Day ${dayNumber}`, go: () => router.push('/(tabs)/(today)/reading') };
+    : { label: `Read Day ${dayNumber}`, go: openReading };
 
   const onCta = () => { haptics.tap(); cta.go(); };
 
@@ -174,7 +197,7 @@ const styles = StyleSheet.create({
   centerTitle: { textAlign: 'center' },
   centerText: { fontSize: 15, marginTop: 12, textAlign: 'center', lineHeight: 22 },
   centerCta: { marginTop: 28, alignSelf: 'stretch' },
-  scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 118 },
+  scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 32 },
   floral: { position: 'absolute', top: -6, left: -16, width: 116, height: 116, opacity: 0.82 },
   gearRow: { flexDirection: 'row', justifyContent: 'flex-end', zIndex: 2 },
   header: { alignItems: 'center', marginTop: 4 },

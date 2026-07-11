@@ -13,12 +13,14 @@ export const fadeUp = new Keyframe({
   .duration(350)
   .reduceMotion(ReduceMotion.System);
 
-/** Full-screen overlay entrance: translateY 24 + scale .985 → identity + fade, 340ms. */
+/** Full-screen overlay entrance: translateY 24 + scale .985 → identity + fade.
+ *  Prototype was 340ms; trimmed in build 8 — beta feedback read it as load
+ *  time on plan detail and the builder. */
 export const overlayIn = new Keyframe({
   0: { opacity: 0, transform: [{ translateY: 24 }, { scale: 0.985 }] },
   100: { opacity: 1, transform: [{ translateY: 0 }, { scale: 1 }], easing: settle },
 })
-  .duration(340)
+  .duration(200)
   .reduceMotion(ReduceMotion.System);
 
 /** Bottom sheet entrance: slides up from the bottom edge, 300ms. */

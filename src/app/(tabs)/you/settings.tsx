@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import {
-  View, StyleSheet, ScrollView, Switch, TouchableOpacity, Linking, Alert, ActivityIndicator,
+  View, StyleSheet, ScrollView, Switch, TouchableOpacity, Linking, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -26,23 +26,19 @@ export default function SettingsScreen() {
 
   const [prefs, setPrefs] = useState<NotificationPrefs | null>(null);
   const [permission, setPermission] = useState<string>('granted');
-  const [loading, setLoading] = useState(true);
 
+  // The shell paints immediately; prefs and permission fill in as they land.
+  // Every row already tolerates a null prefs (`prefs?.`), so there is nothing
+  // to gate on — the old full-screen spinner made Settings feel slow to open.
   useFocusEffect(
     useCallback(() => {
       let active = true;
-      (async () => {
-        try {
-          const [p, status] = await Promise.all([getNotificationPrefs(), getNotificationPermissionStatus()]);
-          if (!active) return;
-          setPrefs(p);
-          setPermission(status);
-        } catch {
-          // leave defaults
-        } finally {
-          if (active) setLoading(false);
-        }
-      })();
+      getNotificationPrefs()
+        .then((p) => { if (active) setPrefs(p); })
+        .catch(() => { /* leave defaults */ });
+      getNotificationPermissionStatus()
+        .then((status) => { if (active) setPermission(status); })
+        .catch(() => { /* leave defaults */ });
       return () => { active = false; };
     }, []),
   );
@@ -77,14 +73,6 @@ export default function SettingsScreen() {
       },
     ]);
   };
-
-  if (loading) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
-        <View style={styles.center}><ActivityIndicator color={colors.accent} /></View>
-      </SafeAreaView>
-    );
-  }
 
   const notificationsOff = permission === 'denied';
 
@@ -172,7 +160,6 @@ function ActionRow({ label, onPress, destructive, colors }: { label: string; onP
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 40 },
   title: { marginTop: 14 },
   sectionLabel: { marginTop: 20, marginBottom: 10, marginLeft: 4 },

@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from './supabase';
 
 export async function getPlans() {
@@ -60,6 +61,22 @@ export async function getCompletedCouplePlans(coupleId: string) {
   return data ?? [];
 }
 
+const planStorageKey = (planId: string) => `pamwe:plan:${planId}`;
+
+// Last-seen plan row for stale-while-revalidate: plan content is immutable
+// once seeded/created, so the detail header can paint from disk on a cold
+// launch while getPlan refreshes it.
+export async function getPlanCached(planId: string): Promise<any | null> {
+  const inSession = planCache.get(planId);
+  if (inSession) return inSession;
+  try {
+    const v = await AsyncStorage.getItem(planStorageKey(planId));
+    return v ? JSON.parse(v) : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function getPlan(planId: string) {
   const cached = planCache.get(planId);
   if (cached) return cached;
@@ -71,23 +88,28 @@ export async function getPlan(planId: string) {
 
   if (error) throw error;
   planCache.set(planId, data);
+  AsyncStorage.setItem(planStorageKey(planId), JSON.stringify(data)).catch(() => {});
   return data;
 }
 
-// The day-by-day schedule for a plan's detail page. Text is intentionally
-// omitted — the reading schedule only needs the reference/title per day.
-export async function getPlanDayList(planId: string) {
-  const cached = planDaysCache.get(planId);
+// A window of the day-by-day schedule for a plan's detail page. Text is
+// intentionally omitted, and only the rendered window is fetched — M'Cheyne
+// has 365 rows but the screen shows 40.
+export async function getPlanDayList(planId: string, fromDay = 1, limit = 40) {
+  const cacheKey = `${planId}:${fromDay}:${limit}`;
+  const cached = planDaysCache.get(cacheKey);
   if (cached) return cached;
   const { data, error } = await supabase
     .from('plan_days')
     .select('day_number, passage_reference, passage_title, pull_quote_ref')
     .eq('plan_id', planId)
-    .order('day_number', { ascending: true });
+    .gte('day_number', fromDay)
+    .order('day_number', { ascending: true })
+    .limit(limit);
 
   if (error) throw error;
   const days = data ?? [];
-  planDaysCache.set(planId, days);
+  planDaysCache.set(cacheKey, days);
   return days;
 }
 

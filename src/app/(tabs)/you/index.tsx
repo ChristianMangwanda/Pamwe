@@ -1,5 +1,6 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Bell, BookBookmark, ChartLineUp, Heart, ShieldCheck, Scroll, Sun, MoonStars, CaretRight } from 'phosphor-react-native';
@@ -23,18 +24,37 @@ export default function YouScreen() {
 
   const [stats, setStats] = useState({ days: 0, reflections: 0, prayers: 0 });
 
+  // Last-good stats from disk so a cold launch never opens on lying zeros
+  // while the counts are still in flight.
+  useEffect(() => {
+    if (!couple?.id) return;
+    AsyncStorage.getItem(`pamwe:youStats:${couple.id}`)
+      .then((v) => {
+        if (!v) return;
+        const cached = JSON.parse(v);
+        setStats((prev) => (prev.days || prev.reflections || prev.prayers ? prev : cached));
+      })
+      .catch(() => {});
+  }, [couple?.id]);
+
   const load = useCallback(async () => {
     if (!couple?.id) return;
-    try {
-      const [days, reflections, prayers] = await Promise.all([
-        countMyTotalSubmitted(couple.id),
-        countCoupleReflections(couple.id),
-        countPrayers(couple.id),
-      ]);
-      setStats({ days, reflections, prayers });
-    } catch {
-      // leave last good state
-    }
+    // Independent counts: one failed query keeps its last-good number instead
+    // of dragging the other two down with it.
+    const [days, reflections, prayers] = await Promise.allSettled([
+      countMyTotalSubmitted(couple.id),
+      countCoupleReflections(couple.id),
+      countPrayers(couple.id),
+    ]);
+    setStats((prev) => {
+      const next = {
+        days: days.status === 'fulfilled' ? days.value : prev.days,
+        reflections: reflections.status === 'fulfilled' ? reflections.value : prev.reflections,
+        prayers: prayers.status === 'fulfilled' ? prayers.value : prev.prayers,
+      };
+      AsyncStorage.setItem(`pamwe:youStats:${couple.id}`, JSON.stringify(next)).catch(() => {});
+      return next;
+    });
   }, [couple?.id]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
@@ -140,7 +160,7 @@ function Row({ icon: Icon, label, onPress, colors, last }: { icon: any; label: s
 const styles = StyleSheet.create({
   container: { flex: 1 },
   flex: { flex: 1, minWidth: 0 },
-  scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 118 },
+  scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 32 },
   floral: { position: 'absolute', top: -10, right: -18, width: 96, height: 96, opacity: 0.55, transform: [{ scaleX: -1 }] },
   profile: { marginTop: 18, flexDirection: 'row', alignItems: 'center', gap: 16 },
   bigAvatar: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center' },

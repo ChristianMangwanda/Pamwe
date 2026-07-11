@@ -27,8 +27,13 @@ export function CoupleProvider({ children }: { children: React.ReactNode }) {
   const [couplePlan, setCouplePlan] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Keyed on the user id, NOT the session object: token refresh on foreground
+  // mints a new session object for the same user, and keying on it made every
+  // app resume refetch couple state and blank the Today screen.
+  const userId = session?.user?.id ?? null;
+
   const refresh = useCallback(async () => {
-    if (!session) {
+    if (!userId) {
       setCouple(null);
       setPartner(null);
       setCouplePlan(null);
@@ -37,9 +42,9 @@ export function CoupleProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      const c = await getUserCouple(session.user.id);
+      const c = await getUserCouple(userId);
       setCouple(c);
-      setPartner(c ? await getPartnerProfile(c, session.user.id) : null);
+      setPartner(c ? await getPartnerProfile(c, userId) : null);
 
       if (c?.id) {
         const plan = await getActiveCouPlan(c.id);
@@ -50,7 +55,7 @@ export function CoupleProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [session]);
+  }, [userId]);
 
   useEffect(() => {
     refresh();

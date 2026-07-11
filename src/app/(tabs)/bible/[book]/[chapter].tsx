@@ -303,7 +303,7 @@ export default function ChapterReader() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 118 },
+  scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 32 },
   link: { fontFamily: fonts.sansSemiBold, fontSize: 13 },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   chaptersLink: { flexDirection: 'row', alignItems: 'center', gap: 6 },

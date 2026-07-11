@@ -1,5 +1,6 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Feather, CaretRight } from 'phosphor-react-native';
@@ -29,10 +30,26 @@ export default function ReflectScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<string>('all');
 
+  // Stale-while-revalidate: the last-seen history (or its emptiness) paints
+  // instantly on cold launch while `load` refreshes it below.
+  useEffect(() => {
+    if (!couple?.id) return;
+    AsyncStorage.getItem(`pamwe:reflections:${couple.id}`)
+      .then((v) => {
+        if (!v) return;
+        const cached = JSON.parse(v) as ReflectionSummary[];
+        setItems((prev) => (prev.length ? prev : cached));
+        setLoading(false);
+      })
+      .catch(() => {});
+  }, [couple?.id]);
+
   const load = useCallback(async () => {
     if (!couple?.id) { setLoading(false); return; }
     try {
-      setItems(await getRevealedReflections(couple.id));
+      const fresh = await getRevealedReflections(couple.id);
+      setItems(fresh);
+      AsyncStorage.setItem(`pamwe:reflections:${couple.id}`, JSON.stringify(fresh)).catch(() => {});
     } catch {
       // keep last good state
     } finally {
@@ -148,7 +165,7 @@ function Avatar({ initial, colors, overlap }: { initial: string; colors: any; ov
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 118 },
+  scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 32 },
   floral: { position: 'absolute', top: -10, right: -18, width: 96, height: 96, opacity: 0.6, transform: [{ scaleX: -1 }] },
   subtitle: { fontSize: 14, marginTop: 6 },
   center: { paddingTop: 60, alignItems: 'center' },

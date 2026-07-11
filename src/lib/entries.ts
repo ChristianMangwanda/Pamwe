@@ -205,8 +205,11 @@ export async function countMySubmittedEntries(couplePlanId: string) {
 }
 
 // The couple's couple_plan ids — the scope for the couple-wide counts below.
+// The counts throw on failure instead of returning a lying zero: the You tab
+// keeps its last-good numbers when a query blips.
 async function couplePlanIds(coupleId: string): Promise<string[]> {
-  const { data } = await supabase.from('couple_plans').select('id').eq('couple_id', coupleId);
+  const { data, error } = await supabase.from('couple_plans').select('id').eq('couple_id', coupleId);
+  if (error) throw error;
   return (data ?? []).map((c) => c.id);
 }
 
@@ -217,12 +220,13 @@ export async function countMyTotalSubmitted(coupleId: string) {
   if (!user) return 0;
   const cpIds = await couplePlanIds(coupleId);
   if (cpIds.length === 0) return 0;
-  const { count } = await supabase
+  const { count, error } = await supabase
     .from('entries')
     .select('id', { count: 'exact', head: true })
     .in('couple_plan_id', cpIds)
     .eq('user_id', user.id)
     .not('submitted_at', 'is', null);
+  if (error) throw error;
   return count ?? 0;
 }
 
@@ -231,11 +235,12 @@ export async function countMyTotalSubmitted(coupleId: string) {
 export async function countCoupleReflections(coupleId: string) {
   const cpIds = await couplePlanIds(coupleId);
   if (cpIds.length === 0) return 0;
-  const { count } = await supabase
+  const { count, error } = await supabase
     .from('entries')
     .select('id', { count: 'exact', head: true })
     .in('couple_plan_id', cpIds)
     .not('submitted_at', 'is', null);
+  if (error) throw error;
   return count ?? 0;
 }
 

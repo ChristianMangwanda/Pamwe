@@ -2,7 +2,8 @@
 //
 // User-invoked (verify_jwt = true), unlike the webhook functions. The app calls it
 // via supabase.functions.invoke('ask-pamwe', { body: { query } }); the caller's JWT
-// authenticates the request. Returns 2-3 structured plan recommendations.
+// authenticates the request. Returns 2 structured plan recommendations (trimmed
+// from 2-3 in build 8: output tokens are the latency, and readings dominate them).
 //
 // Secret required: ANTHROPIC_API_KEY (set via `supabase secrets set` on hosted, or a
 // gitignored supabase/functions/.env for local `supabase functions serve`).
@@ -65,7 +66,7 @@ const SCHEMA = {
 
 const SYSTEM = `You are Ask Pamwe, a gentle guide inside Pamwe, a devotional app where a Christian couple reads Scripture together, reflects individually, then reveals their reflections to each other.
 
-A couple describes a season, feeling, question, or theme. Recommend 2-3 short Bible reading plans that fit, drawing on your knowledge of Scripture and its themes.
+A couple describes a season, feeling, question, or theme. Recommend exactly 2 short Bible reading plans that fit, drawing on your knowledge of Scripture and its themes. Prefer 7 or 14 day plans unless the request clearly calls for a longer walk.
 
 Rules for every recommendation:
 - title: warm and specific (e.g. "Anchored in Anxious Seasons", "Learning to Forgive Together").
@@ -100,7 +101,9 @@ Deno.serve(async (req) => {
   try {
     const message = await anthropic.messages.create({
       model: MODEL,
-      max_tokens: 4096,
+      // 2 recs with 30-day readings worst-case ≈ 1,100 output tokens; 2048
+      // leaves headroom while capping runaway (slow) responses.
+      max_tokens: 2048,
       thinking: { type: "disabled" },
       system: SYSTEM,
       output_config: {
