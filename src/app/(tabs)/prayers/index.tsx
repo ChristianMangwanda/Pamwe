@@ -122,7 +122,7 @@ export default function PrayersScreen() {
     setDetail(null);
     const submit = async (note?: string) => {
       try { await markAnswered(prayer.id, note); clearReminder(prayer.id); load(); }
-      catch (err: any) { Alert.alert('Error', err?.message ?? 'Could not mark as answered'); }
+      catch (err: any) { Alert.alert('Could not update the prayer', err?.message ?? 'Please try again in a moment.'); }
     };
     if (Platform.OS === 'ios') {
       Alert.prompt('Mark as answered', 'Add a note about how it was answered (optional).',
@@ -148,7 +148,7 @@ export default function PrayersScreen() {
           setActive((prev) => prev.filter((p) => p.id !== prayer.id));
           clearReminder(prayer.id);
           try { await deletePrayer(prayer.id); await load(); }
-          catch (err: any) { await load(); Alert.alert('Error', err?.message ?? 'Could not delete'); }
+          catch (err: any) { await load(); Alert.alert('Could not remove it', err?.message ?? 'Please try again in a moment.'); }
         },
       },
     ]);
