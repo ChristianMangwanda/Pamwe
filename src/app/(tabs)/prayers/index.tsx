@@ -5,7 +5,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { PlusCircle, HandsPraying, SealCheck } from 'phosphor-react-native';
+import { PlusCircle, HandsPraying, SealCheck, CaretRight } from 'phosphor-react-native';
 import { Text } from '../../../components/ui/Text';
 import { Floral } from '../../../components/ui/Floral';
 import { CategoryChip } from '../../../components/ui/CategoryChip';
@@ -201,10 +201,13 @@ export default function PrayersScreen() {
 
             {answered.length > 0 && (
               <>
-                <View style={styles.answeredHeader}>
+                <TouchableOpacity style={styles.answeredHeader} activeOpacity={0.7}
+                  onPress={() => { haptics.tap(); router.push('/(tabs)/prayers/timeline'); }}
+                  accessibilityRole="button" accessibilityLabel="Open the faithfulness timeline">
                   <SealCheck size={16} color={colors.accent2} weight="fill" />
                   <Text variant="eyebrow" color={colors.muted}>Answered · {answered.length}</Text>
-                </View>
+                  <CaretRight size={13} color={colors.muted} weight="bold" style={styles.answeredCaret} />
+                </TouchableOpacity>
                 {answered.map((p) => (
                   <TouchableOpacity key={p.id} activeOpacity={0.85} onPress={() => setDetail(p)}
                     style={[styles.answeredCard, { backgroundColor: colors.surface2, borderColor: colors.lineAccent }]}>
@@ -250,6 +253,7 @@ const styles = StyleSheet.create({
   emptyTitle: { marginTop: 16, textAlign: 'center' },
   emptyText: { fontSize: 15, marginTop: 10, textAlign: 'center', lineHeight: 24 },
   answeredHeader: { flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 22, marginBottom: 12 },
+  answeredCaret: { marginLeft: 2 },
   answeredCard: { borderWidth: 1, borderRadius: 16, paddingHorizontal: 18, paddingVertical: 14, marginBottom: 10 },
   answeredRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   answeredWho: { fontFamily: fonts.sansMedium, fontSize: 11 },
