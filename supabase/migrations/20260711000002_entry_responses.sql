@@ -50,7 +50,9 @@ returns boolean language sql security definer set search_path = public, pg_temp 
   );
 $$;
 
-revoke execute on function public.can_respond_to_entry(uuid) from anon;
+-- Strip PUBLIC as well as anon: functions get EXECUTE for PUBLIC on creation,
+-- so revoking anon alone leaves it callable through the PUBLIC grant.
+revoke execute on function public.can_respond_to_entry(uuid) from public, anon;
 grant execute on function public.can_respond_to_entry(uuid) to authenticated;
 
 -- Read: any response on a revealed day in my couple (mine to them, theirs to
