@@ -3,7 +3,7 @@ import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Refr
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { Feather, CaretRight } from 'phosphor-react-native';
+import { Feather, CaretRight, BookmarkSimple } from 'phosphor-react-native';
 import { Text } from '../../../components/ui/Text';
 import { Floral } from '../../../components/ui/Floral';
 import { fonts } from '../../../constants/typography';
@@ -85,7 +85,13 @@ export default function ReflectScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
       >
         <Floral variant="corner" style={styles.floral} />
-        <Text variant="h1">Reflections</Text>
+        <View style={styles.titleRow}>
+          <Text variant="h1">Reflections</Text>
+          <TouchableOpacity onPress={() => { haptics.tap(); router.push('/(tabs)/reflect/words'); }} hitSlop={12}
+            accessibilityRole="button" accessibilityLabel="Their words">
+            <BookmarkSimple size={20} color={colors.ink2} weight="regular" />
+          </TouchableOpacity>
+        </View>
         <Text variant="journal" italic color={colors.ink2} style={styles.subtitle}>What you've come across, together.</Text>
 
         {loading ? (
@@ -167,6 +173,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 96 },
   floral: { position: 'absolute', top: -10, right: -18, width: 96, height: 96, opacity: 0.6, transform: [{ scaleX: -1 }] },
+  titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   subtitle: { fontSize: 14, marginTop: 6 },
   center: { paddingTop: 60, alignItems: 'center' },
   empty: { alignItems: 'center', paddingTop: 44, paddingHorizontal: 24 },

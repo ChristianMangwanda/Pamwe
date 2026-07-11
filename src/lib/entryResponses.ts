@@ -105,3 +105,58 @@ export async function deleteResponse(id: string) {
   const { error } = await supabase.from('entry_responses').delete().eq('id', id);
   if (error) throw error;
 }
+
+export type KeptLine = {
+  id: string;
+  body: string;
+  keeperId: string; // who kept the line (the response author)
+  speakerId: string; // whose words they are (the entry author)
+  couplePlanId: string;
+  dayNumber: number;
+  reference: string | null;
+  createdAt: string;
+};
+
+// Every line either of you kept from the other's reflections ("what stuck with
+// me"), newest first, for the Their Words keepsake view. One query joined to
+// couple_plans (couple scope) and entries (whose words), then a batched
+// plan_days lookup for the day references, same pattern as reflections.
+export async function getKeptLines(coupleId: string): Promise<KeptLine[]> {
+  const { data, error } = await supabase
+    .from('entry_responses')
+    .select('id, body, author_id, couple_plan_id, day_number, created_at, couple_plan:couple_plans!inner(plan_id, couple_id), entry:entries!inner(user_id)')
+    .eq('kind', 'quote')
+    .eq('couple_plan.couple_id', coupleId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  const rows = (data ?? []) as any[];
+
+  const byPlan = new Map<string, Set<number>>();
+  for (const r of rows) {
+    const planId = r.couple_plan?.plan_id;
+    if (!planId) continue;
+    (byPlan.get(planId) ?? byPlan.set(planId, new Set()).get(planId)!).add(r.day_number);
+  }
+  const refMap = new Map<string, string>();
+  for (const [planId, days] of byPlan) {
+    const { data: pds } = await supabase
+      .from('plan_days')
+      .select('day_number, passage_reference')
+      .eq('plan_id', planId)
+      .in('day_number', [...days]);
+    for (const pd of pds ?? []) refMap.set(`${planId}_${pd.day_number}`, pd.passage_reference);
+  }
+
+  return rows
+    .filter((r) => r.body)
+    .map((r) => ({
+      id: r.id,
+      body: r.body,
+      keeperId: r.author_id,
+      speakerId: r.entry?.user_id ?? '',
+      couplePlanId: r.couple_plan_id,
+      dayNumber: r.day_number,
+      reference: refMap.get(`${r.couple_plan?.plan_id}_${r.day_number}`) ?? null,
+      createdAt: r.created_at,
+    }));
+}

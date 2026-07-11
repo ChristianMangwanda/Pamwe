@@ -139,6 +139,7 @@ export default function RevealScreen() {
                 partnerName={partnerName}
                 initial={responsesByEntry[partnerEntry.id] ?? []}
                 revision={responsesRev}
+                entryText={partnerEntry.entry_type === 'text' ? partnerEntry.text_content : null}
               />
             )}
           </EntryCard>

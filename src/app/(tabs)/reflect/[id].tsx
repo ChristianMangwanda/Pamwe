@@ -122,7 +122,8 @@ export default function ReflectionDetailScreen() {
         <ReflectionCard label={`${partnerName} wrote`} voiceLabel={`${partnerName} recorded`} initial={partnerInitial} entry={data?.partner} accent="partner" filled colors={colors}>
           {data?.partner && (
             <ReflectionResponses entry={data.partner} couplePlanId={couplePlanId} dayNumber={dayNumber}
-              canRespond partnerName={partnerName} initial={responsesByEntry[data.partner.id] ?? []} revision={responsesRev} />
+              canRespond partnerName={partnerName} initial={responsesByEntry[data.partner.id] ?? []} revision={responsesRev}
+              entryText={data.partner.entry_type === 'text' ? data.partner.text_content : null} />
           )}
         </ReflectionCard>
       </ScrollView>
