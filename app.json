@@ -11,7 +11,8 @@
       "bundleIdentifier": "com.christianmangwanda.pamwe",
       "usesAppleSignIn": true,
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSPhotoLibraryUsageDescription": "Pamwe does not access your photos. A component the app includes references this permission, so Apple requires this notice."
       }
     },
     "android": {
