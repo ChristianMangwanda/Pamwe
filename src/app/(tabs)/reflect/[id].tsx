@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, ReactNode } from 'react';
 import { View, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -6,6 +6,7 @@ import { Text } from '../../../components/ui/Text';
 import { BackLink } from '../../../components/ui/BackLink';
 import { Floral } from '../../../components/ui/Floral';
 import { AudioPlayer } from '../../../components/AudioPlayer';
+import { ReflectionResponses } from '../../../components/ReflectionResponses';
 import { fonts } from '../../../constants/typography';
 import { GUTTER } from '../../../theme/tokens';
 import { useTheme } from '../../../providers/ThemeProvider';
@@ -13,6 +14,7 @@ import { useAuth } from '../../../providers/AuthProvider';
 import { useCouple } from '../../../providers/CoupleProvider';
 import { profileInitial } from '../../../lib/couples';
 import { getReflectionDetail } from '../../../lib/reflections';
+import { getResponsesForDay, EntryResponse } from '../../../lib/entryResponses';
 import { fetchPassage } from '../../../lib/bible';
 
 export default function ReflectionDetailScreen() {
@@ -28,6 +30,7 @@ export default function ReflectionDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [passage, setPassage] = useState<string | null>(null);
   const [passageErr, setPassageErr] = useState(false);
+  const [responsesByEntry, setResponsesByEntry] = useState<Record<string, EntryResponse[]>>({});
 
   useEffect(() => {
     let alive = true;
@@ -41,6 +44,9 @@ export default function ReflectionDetailScreen() {
         if (alive) setLoading(false);
       }
     })();
+    getResponsesForDay(couplePlanId, dayNumber)
+      .then((r) => { if (alive) setResponsesByEntry(r); })
+      .catch(() => {});
     return () => { alive = false; };
   }, [couplePlanId, dayNumber]);
 
@@ -96,15 +102,26 @@ export default function ReflectionDetailScreen() {
         </View>
 
         <Text variant="eyebrow" color={colors.muted} style={styles.section}>What you each wrote</Text>
-        <ReflectionCard label="You wrote" voiceLabel="You recorded" initial={myInitial} entry={data?.mine} accent="primary" filled={false} colors={colors} />
-        <ReflectionCard label={`${partnerName} wrote`} voiceLabel={`${partnerName} recorded`} initial={partnerInitial} entry={data?.partner} accent="partner" filled colors={colors} />
+        <ReflectionCard label="You wrote" voiceLabel="You recorded" initial={myInitial} entry={data?.mine} accent="primary" filled={false} colors={colors}>
+          {data?.mine && (
+            <ReflectionResponses entry={data.mine} couplePlanId={couplePlanId} dayNumber={dayNumber}
+              canRespond={false} partnerName={partnerName} initial={responsesByEntry[data.mine.id] ?? []} />
+          )}
+        </ReflectionCard>
+        <ReflectionCard label={`${partnerName} wrote`} voiceLabel={`${partnerName} recorded`} initial={partnerInitial} entry={data?.partner} accent="partner" filled colors={colors}>
+          {data?.partner && (
+            <ReflectionResponses entry={data.partner} couplePlanId={couplePlanId} dayNumber={dayNumber}
+              canRespond partnerName={partnerName} initial={responsesByEntry[data.partner.id] ?? []} />
+          )}
+        </ReflectionCard>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function ReflectionCard({ label, voiceLabel, initial, entry, accent, filled, colors }: {
+function ReflectionCard({ label, voiceLabel, initial, entry, accent, filled, colors, children }: {
   label: string; voiceLabel: string; initial: string; entry: any; accent: 'primary' | 'partner'; filled: boolean; colors: any;
+  children?: ReactNode;
 }) {
   const isVoice = entry?.entry_type === 'voice' && entry?.audio_url;
   return (
@@ -124,6 +141,7 @@ function ReflectionCard({ label, voiceLabel, initial, entry, accent, filled, col
       ) : (
         <Text style={[styles.reflText, { color: colors.muted }]}>No reflection.</Text>
       )}
+      {children}
     </View>
   );
 }

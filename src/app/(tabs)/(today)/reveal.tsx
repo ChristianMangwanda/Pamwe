@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState, ReactNode } from 'react';
 import { View, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -9,6 +9,7 @@ import { Button } from '../../../components/ui/Button';
 import { SectionEyebrow } from '../../../components/ui/SectionEyebrow';
 import { Floral } from '../../../components/ui/Floral';
 import { AudioPlayer } from '../../../components/AudioPlayer';
+import { ReflectionResponses } from '../../../components/ReflectionResponses';
 import { unseal } from '../../../lib/motion';
 import { haptics } from '../../../lib/haptics';
 import { fonts } from '../../../constants/typography';
@@ -18,6 +19,7 @@ import { useTodayEntry } from '../../../hooks/useTodayEntry';
 import { useCouple } from '../../../providers/CoupleProvider';
 import { useAuth } from '../../../providers/AuthProvider';
 import { profileInitial } from '../../../lib/couples';
+import { getResponsesForDay, EntryResponse } from '../../../lib/entryResponses';
 
 export default function RevealScreen() {
   const router = useRouter();
@@ -36,6 +38,15 @@ export default function RevealScreen() {
   useEffect(() => {
     if (revealed) haptics.success();
   }, [revealed]);
+
+  // Responses layer: what each of us left on the other's reflection.
+  const [responsesByEntry, setResponsesByEntry] = useState<Record<string, EntryResponse[]>>({});
+  useEffect(() => {
+    if (!revealed || !couplePlan?.id) return;
+    getResponsesForDay(couplePlan.id, dayNumber)
+      .then(setResponsesByEntry)
+      .catch(() => {});
+  }, [revealed, couplePlan?.id, dayNumber]);
 
   const onAmen = async () => {
     haptics.tap();
@@ -84,7 +95,18 @@ export default function RevealScreen() {
             label={myEntry.entry_type === 'voice' ? 'You recorded' : 'You wrote'}
             entry={myEntry}
             accent="primary"
-          />
+          >
+            {couplePlan?.id && (
+              <ReflectionResponses
+                entry={myEntry}
+                couplePlanId={couplePlan.id}
+                dayNumber={dayNumber}
+                canRespond={false}
+                partnerName={partnerName}
+                initial={responsesByEntry[myEntry.id] ?? []}
+              />
+            )}
+          </EntryCard>
         </Animated.View>
 
         <Animated.View entering={unseal(1)}>
@@ -94,7 +116,18 @@ export default function RevealScreen() {
             label={partnerEntry.entry_type === 'voice' ? `${partnerName} recorded` : `${partnerName} wrote`}
             entry={partnerEntry}
             accent="partner"
-          />
+          >
+            {couplePlan?.id && (
+              <ReflectionResponses
+                entry={partnerEntry}
+                couplePlanId={couplePlan.id}
+                dayNumber={dayNumber}
+                canRespond
+                partnerName={partnerName}
+                initial={responsesByEntry[partnerEntry.id] ?? []}
+              />
+            )}
+          </EntryCard>
         </Animated.View>
       </ScrollView>
 
@@ -108,8 +141,9 @@ export default function RevealScreen() {
   );
 }
 
-function EntryCard({ initial, solid, label, entry, accent }: {
+function EntryCard({ initial, solid, label, entry, accent, children }: {
   initial: string; solid: boolean; label: string; entry: any; accent: 'primary' | 'partner';
+  children?: ReactNode;
 }) {
   const { colors } = useTheme();
   return (
@@ -125,6 +159,7 @@ function EntryCard({ initial, solid, label, entry, accent }: {
       ) : (
         <Text style={{ fontFamily: fonts.serif, fontSize: 16, lineHeight: 25.6, color: colors.ink, marginTop: 11 }}>{entry.text_content}</Text>
       )}
+      {children}
     </View>
   );
 }
