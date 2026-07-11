@@ -95,7 +95,11 @@ their church community. No chat tab, no message bubbles, no "AI" labels, no memo
    on a real reveal, prayer reminder firing, catch-up banner, nudge (push banner still
    needs EAS push enabled; cooldown + call already work), offline reading on airplane
    mode, the 6 translations.
-7. ⏳ Decide on the two deferred native features (#15 transcription, #16 widget).
+7. ✅→⏳ Deferred natives: **#15 transcription SHIPPED in round 5 (b11, 2026-07-11;
+   see build10-plan.md)**. #16 widget still parked for its own session; the
+   implementation notes below remain current, plus one new constraint: never
+   `expo prebuild` (see trial-and-error.md), so the widget target must come via a
+   config-plugin-free manual Xcode target or a very careful plugin approach.
 
 ## Progress log
 

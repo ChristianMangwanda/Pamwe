@@ -16,7 +16,8 @@ Mobile app for couples to read the Bible together using the M'Cheyne Reading Pla
 
 **Tracking docs:**
 - [`progress.md`](progress.md) — phase-by-phase status, where we are and what's next
-- [`trial-and-error.md`](trial-and-error.md) — issues hit during development and how each was solved. **Check this first** when you hit a bug class you might've seen before (RLS recursion, Xcode/Swift compat, free-Apple-ID quirks).
+- [`trial-and-error.md`](trial-and-error.md) — issues hit during development and how each was solved. **Check this first** when you hit a bug class you might've seen before (RLS recursion, Xcode/Swift compat, release-pipeline snags, `expo prebuild` damage).
+- [`build8-plan.md`](build8-plan.md) / [`round4-plan.md`](round4-plan.md) / [`build10-plan.md`](build10-plan.md) — per-round plans + implementation records for beta rounds 3-5
 - [`AGENTS.md`](AGENTS.md) — one line: read `https://docs.expo.dev/versions/v56.0.0/` before writing Expo code
 
 ---
@@ -66,6 +67,14 @@ cd ios && xcodebuild -workspace Pamwe.xcworkspace -scheme Pamwe -configuration R
 # 3. Verify: grep -ac jcyhhxgomhopkoqesbkb <archive>/Products/Applications/Pamwe.app/main.jsbundle → 1
 # 4. Upload (ExportOptions.plist: method=app-store-connect, destination=upload, signingStyle=automatic):
 xcodebuild -exportArchive -archivePath /tmp/Pamwe.xcarchive -exportOptionsPlist ExportOptions.plist -allowProvisioningUpdates
+# Pipeline gotchas (details in trial-and-error.md):
+#   • "Failed to Use Accounts" on export = stale Xcode Apple-ID session; re-sign in
+#     via Xcode Settings → Accounts and retry.
+#   • Apple processing rejects binaries missing purpose strings for APIs that mere
+#     DEPENDENCIES reference (e.g. NSPhotoLibraryUsageDescription for SDWebImage);
+#     a rejected build number is burned, bump and re-archive.
+#   • NEVER run `expo prebuild` (see hard rule below). New Expo modules autolink
+#     with just `npm install` + `pod install`.
 ```
 
 `LANG=en_US.UTF-8` and `LC_ALL=en_US.UTF-8` are set in `~/.bash_profile` — needed for CocoaPods on Homebrew Ruby 4. Don't remove.
@@ -82,14 +91,16 @@ src/app/
 ├── _layout.tsx                    # root providers (Theme, Auth, Couple, deep-link, push) + GestureHandlerRootView
 ├── (auth)/                        # welcome, sign-in, magic-link
 ├── (onboarding)/                  # value-slides, name, pair-choice, invite, join, waiting, connected, plan-select
-└── (tabs)/                        # 6-tab glass shell: Today · Bible · Plans · Prayers · Reflect · You
-    ├── (today)/                   # home → reading → journal → waiting → reveal → complete
-    ├── bible/                     # index → [book] → [book]/[chapter] reader; marks, note
-    ├── plans/                     # index → [id] detail; builder (Ask Pamwe)
-    ├── prayers/                   # index (swipe cards + detail sheet) → add (compose/edit)
-    ├── reflect/                   # index (revealed history) → [id] detail
+└── (tabs)/                        # 6-tab DOCKED bar (DockedTabBar; the b7 glass oval is gone): Today · Bible · Plans · Prayers · Reflect · You
+    ├── (today)/                   # home (tree streak, milestones, catch-up, nudge) → reading → journal → waiting → reveal → complete
+    ├── bible/                     # index → [book] → [book]/[chapter] reader (6 translations); marks, note
+    ├── plans/                     # index (Ask Pamwe card) → [id] detail; builder (Ask Pamwe)
+    ├── prayers/                   # index (swipe cards + detail sheet w/ reminders) → add → timeline (answered)
+    ├── reflect/                   # index (history + From-your-story card) → [id] detail (responses) → words (Their Words)
     └── you/                       # index (stats + dark toggle) → settings, recaps, couple, privacy, terms, delete-account
 ```
+
+A floral **Ask Pamwe bubble** ([src/components/PamweFab.tsx](src/components/PamweFab.tsx)) floats on every non-ritual tab (never Today or the reading/journal/reveal flow) and opens [AskPamweSheet](src/components/AskPamweSheet.tsx). Screens it floats on pad their scroll end by `FAB_CLEARANCE`.
 
 The design-handoff rebuild (2026-07) replaced the 2-tab app with this 6-tab shell. **Theming:** every screen reads colors from `useTheme()` ([src/providers/ThemeProvider.tsx](src/providers/ThemeProvider.tsx)) over the light+dark palettes in [src/theme/tokens.ts](src/theme/tokens.ts); the user toggles light/dark in the You tab. Legacy [src/constants/colors.ts](src/constants/colors.ts) is a **frozen light-only palette** kept for a few pre-auth/onboarding files only — **never import it in new code; use `useTheme()`.**
 
@@ -100,7 +111,7 @@ Auth gate in [src/app/index.tsx](src/app/index.tsx) sequences:
 4. Session, paired, no plan → `(onboarding)/plan-select`
 5. Session, paired, has plan → `(tabs)`
 
-### Supabase data model (8 tables, all RLS-enabled)
+### Supabase data model (12 tables, all RLS-enabled)
 
 | Table | Purpose |
 |---|---|
@@ -109,9 +120,11 @@ Auth gate in [src/app/index.tsx](src/app/index.tsx) sequences:
 | `plans` | Reading plans. Curated (M'Cheyne 365, John 21, Psalms 30, Cord 21) + couple-built custom plans (`is_curated=false`, `couple_id`, `created_by`). Browse metadata cols: `tagline/about/explore/gain/minutes_label/rhythm_label/book_label`. |
 | `plan_days` | Rows per plan-day: passage ref, text (**nullable** — custom plans store NULL and live-fetch), pull quote, reflection prompt. |
 | `couple_plans` | A couple's enrollment in a plan (current_day, start_date, status). |
-| `entries` | Per-user per-day reflection. Type text or voice. `submitted_at` is the locked-reveal trigger. |
+| `entries` | Per-user per-day reflection. Type text or voice. `submitted_at` is the locked-reveal trigger. `transcript` (nullable) holds the on-device voice transcript. |
+| `entry_responses` | Hearts/amens/replies/kept-lines a partner leaves on a revealed reflection (`kind`: heart/amen/reply/quote). RLS mirrors locked-reveal via `can_respond_to_entry()`; in the realtime publication. |
 | `prayers` / `prayer_marks` | Shared prayer requests with "I prayed today" marks. `prayers.category` (family/health/work/guidance/thanks/other); author-only update/delete. |
 | `verse_highlights` / `verse_notes` | Per-couple shared study layer over the Bible reader (one highlight + one note per verse per couple; `user_id` = authorship). |
+| `ask_pamwe_usage` / `partner_nudges` | Service-role-only bookkeeping (RLS on, zero policies): Ask Pamwe rate limiting (20/day + cooldown via `bump_ask_pamwe_usage` RPC) and nudge cooldowns (1/hour). |
 
 ### Locked-reveal RLS
 
@@ -128,8 +141,9 @@ The core mechanic. Partner entries are invisible until both partners have submit
 - `notify-partner` deployed (verify_jwt=false because it's a DB webhook target)
 - Trigger `notify_partner_on_submit_trigger` on `entries` AFTER INSERT OR UPDATE OF submitted_at, calls the function via `net.http_post`. Only fires when submitted_at transitions NULL → set.
 - `entries` is in the `supabase_realtime` publication so the waiting screen subscription fires.
-- Other webhook functions: `notify-new-prayer`, `notify-freeze`, `delete-account` (verify_jwt=true — demote-don't-delete routine).
-- **`ask-pamwe`** — the plan builder's AI ("Ask Pamwe"). **verify_jwt=true** (user-invoked, not a webhook). Anthropic SDK (`npm:@anthropic-ai/sdk`), structured output, model from env `ANTHROPIC_MODEL` (default `claude-haiku-4-5`). Secret **`ANTHROPIC_API_KEY`**: locally in gitignored `supabase/functions/.env` (`supabase functions serve ask-pamwe --env-file …`); hosted via `supabase secrets set`. The app calls it through `src/lib/askPamwe.ts`, which falls back to hardcoded recs if the key/function is absent.
+- Other webhook functions: `notify-new-prayer`, `notify-freeze`, `delete-account` (verify_jwt=true — demote-don't-delete routine). **Push banners actually deliver since b10/b11** (APNs key on Expo).
+- **`notify-nudge`** — user-invoked (verify_jwt=true): "nudge my partner" from Today; pushes to the partner, one per sender per hour (cooldown logged in `partner_nudges`).
+- **`ask-pamwe`** (v7) — **"Pamwe points, never preaches"** (Christian's product line: no Scripture interpretation, ever; interpretation questions deflect gently). Two schema-constrained modes: `plans` (2 reading-plan recs, the builder) and `help` (short pointing answer + up to 3 references, the in-app sheet). Every schema carries a required `off_topic` flag; the server swaps flagged output for one fixed gentle line. Per-user rate limit 20/day + 10s cooldown, fail-open. **verify_jwt=true.** Anthropic SDK (`npm:@anthropic-ai/sdk`), model from env `ANTHROPIC_MODEL` (default `claude-haiku-4-5`). Secret **`ANTHROPIC_API_KEY`**: locally in gitignored `supabase/functions/.env`; hosted via `supabase secrets set`. Clients: `src/lib/askPamwe.ts` (`askPamwe` falls back to hardcoded recs; `askPamweHelp` returns a typed answer/off_topic/error).
 
 ---
 
@@ -163,9 +177,13 @@ Christian logs findings in the Notion page **"Pamwe Ramblings"** (Notion MCP con
 
 `supabase/seed.sql` has all 365 days of WEB Bible text + reflection prompts. If you find yourself "fixing" a verse or quote, stop — they came from the consultant (M'Cheyne 1842) and the source text.
 
-### iOS entitlements are intentionally minimal in dev
+### NEVER run `expo prebuild` — the ios/ project is hand-maintained
 
-[ios/Pamwe/Pamwe.entitlements](ios/Pamwe/Pamwe.entitlements) is empty `<dict></dict>`. Push and Sign In with Apple are stripped to allow signing with a free Apple ID. **Apple Developer Program enrollment submitted 2026-07-09 (awaiting approval)** — re-enable both on approval; the post-approval checklist is in [progress.md](progress.md) (top "Apple Developer — post-approval checklist").
+`ios/` is gitignored (except `ExportOptions.plist`) but hand-maintained: entitlements, `$(CURRENT_PROJECT_VERSION)` wiring, purpose strings. A stray prebuild on 2026-07-11 reset Info.plist's `CFBundleVersion` to a literal `1` and stripped `NSPhotoLibraryUsageDescription`, which burned build 10 at Apple processing. New Expo modules need only `npm install` + `pod install` (autolinking). Purpose strings are mirrored in `app.json > ios.infoPlist` as a backstop.
+
+### Push + Sign In with Apple are LIVE (since 2026-07-11)
+
+[ios/Pamwe/Pamwe.entitlements](ios/Pamwe/Pamwe.entitlements) carries `aps-environment` + `com.apple.developer.applesignin`. EAS projectId `ab024cbc-…` in app.json (owner `munhumutapachris`); APNs key on Expo's servers (EAS-generated, portal ID K45Q3988W2; the Apple team is at its 2-key max, the manually created TDA69K9QWF key is unused). All notify-* functions deliver real banners. `savePushToken` carries the b8 anti-PATCH-storm guard: never remove it.
 
 ---
 
@@ -210,9 +228,16 @@ The voice recorder, audio upload, and partner-push flow only behave correctly on
 | Plans + custom-plan builder | [src/lib/plans.ts](src/lib/plans.ts), [src/lib/planBuilder.ts](src/lib/planBuilder.ts) |
 | Ask Pamwe AI client | [src/lib/askPamwe.ts](src/lib/askPamwe.ts) |
 | Bible fetch/parse + verse marks | [src/lib/bible.ts](src/lib/bible.ts), [src/lib/verseMarks.ts](src/lib/verseMarks.ts) |
-| Reflections history + recaps | [src/lib/reflections.ts](src/lib/reflections.ts), [src/lib/recaps.ts](src/lib/recaps.ts) |
-| Prayers (category, edit/delete) | [src/lib/prayers.ts](src/lib/prayers.ts) |
-| Push notifications | [src/lib/notifications.ts](src/lib/notifications.ts) |
+| Reflections history + recaps + on-this-day | [src/lib/reflections.ts](src/lib/reflections.ts), [src/lib/recaps.ts](src/lib/recaps.ts) |
+| Reflection responses + kept lines | [src/lib/entryResponses.ts](src/lib/entryResponses.ts), [src/components/ReflectionResponses.tsx](src/components/ReflectionResponses.tsx) |
+| Prayers (category, edit/delete) + reminders | [src/lib/prayers.ts](src/lib/prayers.ts), [src/lib/prayerReminders.ts](src/lib/prayerReminders.ts) |
+| Push notifications + nudge | [src/lib/notifications.ts](src/lib/notifications.ts) |
+| Voice transcription (on-device) | [src/lib/transcription.ts](src/lib/transcription.ts) |
+| Shared-layer search | [src/lib/search.ts](src/lib/search.ts) |
+| Catch-up / grace days | [src/lib/catchup.ts](src/lib/catchup.ts) |
+| Streak milestones | [src/lib/milestones.ts](src/lib/milestones.ts), [src/components/MilestoneCard.tsx](src/components/MilestoneCard.tsx) |
+| Ask Pamwe bubble + sheet | [src/components/PamweFab.tsx](src/components/PamweFab.tsx), [src/components/AskPamweSheet.tsx](src/components/AskPamweSheet.tsx) |
+| Docked tab bar | [src/components/DockedTabBar.tsx](src/components/DockedTabBar.tsx) |
 | Motion + haptics | [src/lib/motion.ts](src/lib/motion.ts), [src/lib/haptics.ts](src/lib/haptics.ts) |
 | Voice recorder component | [src/components/VoiceRecorder.tsx](src/components/VoiceRecorder.tsx) |
 | Design tokens | [src/theme/tokens.ts](src/theme/tokens.ts) (light+dark; via `useTheme()`), [src/constants/typography.ts](src/constants/typography.ts). Legacy [src/constants/colors.ts](src/constants/colors.ts) is frozen — don't use in new code. |

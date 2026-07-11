@@ -306,3 +306,32 @@ Server-side avoids the race where one client increments and the other doesn't se
 ### Sentry: "1 user" = 1 dashboard seat, not app users
 
 Free tier is fine for the couple beta. DSN lives in `.env.production` + eas.json (`EXPO_PUBLIC_SENTRY_DSN`); `_layout.tsx` gates `Sentry.init` + `Sentry.wrap` on it, so dev builds stay quiet. No wizard needed; source-map/dSYM upload deliberately deferred.
+
+## Rounds 4-5 (2026-07-11, builds 9-11)
+
+### `expo prebuild` silently vandalizes the hand-maintained ios/ project
+
+**Symptom:** build 10 was rejected by Apple's TestFlight processing (error 90683, missing `NSPhotoLibraryUsageDescription`), and Info.plist's `CFBundleVersion` had become a literal `1`.
+**Root cause:** a reflexive `npx expo prebuild --platform ios` while installing expo-speech-recognition. Prebuild regenerates Info.plist from app.json, which stripped the purpose string (SDWebImage/ExpoImage reference photo APIs, so Apple demands the string even though Pamwe never touches photos) and replaced the `$(CURRENT_PROJECT_VERSION)` reference with a hardcoded value.
+**Fix:** restored `CFBundleVersion` via PlistBuddy; added `NSPhotoLibraryUsageDescription` to BOTH Info.plist and `app.json > ios.infoPlist` (the backstop that survives any future prebuild). Build number 10 is burned at Apple; shipped as 11.
+**Rule:** never prebuild in this repo. New Expo modules autolink with `npm install` + `pod install` alone.
+
+### Terminal upload dies with "Failed to Use Accounts"
+
+**Symptom:** `xcodebuild -exportArchive` upload fails: `DVTDeveloperAccountManager: Failed to load credentials... missing Xcode-Username`, hours after the same pipeline worked.
+**Root cause:** Xcode's saved Apple-ID session expires periodically.
+**Fix:** Xcode → Settings → Accounts → select the Apple ID and sign in again; re-run the export unchanged. Longer-term option: an App Store Connect API key (`-authenticationKeyPath/-authenticationKeyID/-authenticationKeyIssuerID`) makes uploads session-proof.
+
+### Revoking `anon` on a function is not enough — PUBLIC holds a default grant
+
+**Symptom:** hosted security advisor flagged the new `can_respond_to_entry()` SECURITY DEFINER helper as executable by `anon` even though the migration revoked anon and granted only authenticated.
+**Root cause:** Postgres grants EXECUTE to PUBLIC on function creation; anon inherits through PUBLIC unless PUBLIC itself is revoked.
+**Fix + rule:** every new function migration revokes `from public, anon` explicitly. Run `get_advisors` after any hosted DDL.
+
+### eas credentials is interactive-only; a pty can still read its state
+
+Needed to verify the APNs key upload without clicking through menus. `eas credentials` has no list flag, and piping input fails (prompt lib treats EOF as cancel). Working recipe: run it under `script -q /tmp/out.txt` (allocates a pty) with timed keystrokes (`{ sleep 8; printf '\n'; sleep 6; printf 'n\n'; sleep 35; } |`), then kill and read the captured summary. Safe for READING the credentials summary; never blind-drive selections that mutate.
+
+### Apple push key facts worth remembering
+
+Teams max out at 2 APNs keys, and a key's .p8 downloads exactly once at creation. Expo holds Pamwe's active key (EAS-generated, portal ID K45Q3988W2); the manually created TDA69K9QWF key was never uploaded anywhere and can be revoked if a slot is ever needed.
