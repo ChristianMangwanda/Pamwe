@@ -17,6 +17,7 @@ import { useTodayEntry } from '../../../hooks/useTodayEntry';
 import { useAuth } from '../../../providers/AuthProvider';
 import { profileInitial } from '../../../lib/couples';
 import { parseReference } from '../../../lib/bible';
+import { daysBehind, todayInTimezone } from '../../../lib/catchup';
 import { haptics } from '../../../lib/haptics';
 
 export default function HomeScreen() {
@@ -76,6 +77,12 @@ export default function HomeScreen() {
 
   const streakCount = couple?.streak_count ?? 0;
   const progress = totalDays > 0 ? (dayNumber - 1) / totalDays : 0;
+
+  // Gentle catch-up: how many days behind the couple's own start-date pace they
+  // are. Server owns advancement; this only decides whether to nudge.
+  const behind = couplePlan?.start_date
+    ? daysBehind(couplePlan.start_date, dayNumber, todayInTimezone(couple?.timezone ?? 'UTC'), totalDays)
+    : 0;
 
   const now = new Date();
   const dateLabel = `${now.toLocaleDateString('en-US', { weekday: 'long' })} · ${now.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`;
@@ -147,6 +154,16 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        {behind > 0 && !bothSubmitted && (
+          <View style={[styles.catchup, { backgroundColor: colors.surface2, borderColor: colors.lineAccent }]}>
+            <Text style={[styles.catchupText, { color: colors.ink }]}>
+              {behind === 1
+                ? "You're a day behind. No rush, just pick it up together when you can."
+                : `You're ${behind} days behind. Read today's together tonight and you'll be back in step.`}
+            </Text>
+          </View>
+        )}
+
         <View style={[styles.verseCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
           <Text style={[styles.quoteGlyph, { color: colors.accent }]}>“</Text>
           <Text style={[styles.verse, { color: colors.ink }]}>{verse}</Text>
@@ -206,6 +223,8 @@ const styles = StyleSheet.create({
   planTitle: { fontSize: 14, marginTop: 3 },
   progressWrap: { marginTop: 18 },
   progressRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 },
+  catchup: { marginTop: 16, borderWidth: 1, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 13 },
+  catchupText: { fontFamily: fonts.serif, fontSize: 14, lineHeight: 21, textAlign: 'center' },
   verseCard: {
     marginTop: 22,
     borderWidth: 1,
