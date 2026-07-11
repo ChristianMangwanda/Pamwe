@@ -14,6 +14,7 @@ import { overlayIn } from '../../../lib/motion';
 import { useTheme } from '../../../providers/ThemeProvider';
 import { useCouple } from '../../../providers/CoupleProvider';
 import { getPlan, getPlanCached, getPlanDayList, enrollInPlan, switchPlan, completePlan } from '../../../lib/plans';
+import { bannerTintForPlan } from '../../../lib/planArtwork';
 import { parseReference } from '../../../lib/bible';
 import { haptics } from '../../../lib/haptics';
 
@@ -169,7 +170,7 @@ export default function PlanDetailScreen() {
     <View style={[styles.root, { backgroundColor: colors.bg }]}>
       <Animated.View entering={overlayIn} style={styles.flex}>
         <ScrollView contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
-          <StripedBanner height={216} stripe={7}>
+          <StripedBanner height={216} stripe={7} tint={bannerTintForPlan(plan)}>
             <Floral variant="corner" style={styles.bannerFloral} />
             <View style={styles.bannerLabel}>
               <Text variant="eyebrow" color={colors.accent2} style={styles.tagline}>{plan.tagline ?? ''}</Text>

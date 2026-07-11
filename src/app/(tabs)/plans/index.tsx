@@ -11,6 +11,7 @@ import { fonts } from '../../../constants/typography';
 import { useTheme } from '../../../providers/ThemeProvider';
 import { useCouple } from '../../../providers/CoupleProvider';
 import { getCuratedPlans, getCouplePlans, getCompletedCouplePlans } from '../../../lib/plans';
+import { bannerTintForPlan } from '../../../lib/planArtwork';
 import { haptics } from '../../../lib/haptics';
 
 const PLANS_CACHE_KEY = 'pamwe:plansBrowse';
@@ -117,7 +118,7 @@ export default function PlansScreen() {
           <Text variant="eyebrow" color={colors.muted} style={styles.eyebrow}>Reading now</Text>
           <TouchableOpacity activeOpacity={0.85} onPress={() => open(activePlan.id)}
             style={[styles.hero, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-            <StripedBanner height={92} stripe={6}>
+            <StripedBanner height={92} stripe={6} tint={bannerTintForPlan(activePlan)}>
               <View style={styles.heroBannerLabel}>
                 <Text variant="scripture" italic color={colors.accent}>{activePlan.title}</Text>
               </View>
@@ -185,7 +186,7 @@ export default function PlansScreen() {
         {curated.map((p) => (
           <TouchableOpacity key={p.id} activeOpacity={0.85} onPress={() => open(p.id)}
             style={[styles.gridCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-            <StripedBanner height={64} stripe={6} />
+            <StripedBanner height={64} stripe={6} tint={bannerTintForPlan(p)} />
             <View style={styles.gridBody}>
               <Text style={[styles.gridTitle, { color: colors.ink }]} numberOfLines={2}>{p.title}</Text>
               <Text style={[styles.gridMeta, { color: colors.muted }]}>{metaLine(p)}</Text>

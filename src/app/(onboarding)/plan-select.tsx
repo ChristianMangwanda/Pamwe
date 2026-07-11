@@ -10,6 +10,7 @@ import { fonts } from '../../constants/typography';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useCouple } from '../../providers/CoupleProvider';
 import { getCuratedPlans, enrollInPlan, switchPlan } from '../../lib/plans';
+import { bannerTintForPlan } from '../../lib/planArtwork';
 import { getUserCouple } from '../../lib/couples';
 import { haptics } from '../../lib/haptics';
 
@@ -112,7 +113,7 @@ export default function PlanSelectScreen() {
                 { backgroundColor: colors.surface, borderColor: selected ? colors.accent : colors.line, borderWidth: selected ? 2 : 1 },
               ]}
             >
-              <StripedBanner height={72} stripe={6}>
+              <StripedBanner height={72} stripe={6} tint={bannerTintForPlan(plan)}>
                 <View style={styles.cardBannerLabel}>
                   <Text variant="scripture" italic color={colors.accent}>{plan.title}</Text>
                 </View>
