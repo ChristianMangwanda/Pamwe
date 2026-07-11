@@ -88,12 +88,22 @@ export function findBook(slug: string): BibleBook | undefined {
   return BIBLE_BOOKS.find((b) => b.name.toLowerCase() === normalized);
 }
 
-export type Translation = 'web' | 'kjv' | 'bbe';
+// bible-api.com translation ids. All public domain.
+export type Translation = 'web' | 'kjv' | 'asv' | 'bbe' | 'ylt' | 'darby';
+
+export const TRANSLATIONS: Translation[] = ['web', 'kjv', 'asv', 'bbe', 'ylt', 'darby'];
 
 export const TRANSLATION_NAMES: Record<Translation, string> = {
   web: 'World English Bible',
   kjv: 'King James Version',
+  asv: 'American Standard Version',
   bbe: 'Bible in Basic English',
+  ylt: "Young's Literal Translation",
+  darby: 'Darby Translation',
+};
+
+export const TRANSLATION_ABBR: Record<Translation, string> = {
+  web: 'WEB', kjv: 'KJV', asv: 'ASV', bbe: 'BBE', ylt: 'YLT', darby: 'DBY',
 };
 
 export interface BibleVerse {

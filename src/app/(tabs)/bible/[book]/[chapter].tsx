@@ -5,7 +5,6 @@ import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CaretLeft, CaretRight, BookmarkSimple, Feather, Sun, Moon, X, Prohibit, NotePencil, HandTap } from 'phosphor-react-native';
 import { Text } from '../../../../components/ui/Text';
-import { SegmentedControl } from '../../../../components/ui/SegmentedControl';
 import { Switch } from '../../../../components/ui/Switch';
 import { BottomSheet } from '../../../../components/ui/BottomSheet';
 import { Floral } from '../../../../components/ui/Floral';
@@ -14,7 +13,7 @@ import { fonts } from '../../../../constants/typography';
 import { GUTTER, swatches, SwatchColor } from '../../../../theme/tokens';
 import { useTheme } from '../../../../providers/ThemeProvider';
 import { useCouple } from '../../../../providers/CoupleProvider';
-import { findBook, fetchChapterVerses, TRANSLATION_NAMES, type Translation, type BibleVerse } from '../../../../lib/bible';
+import { findBook, fetchChapterVerses, TRANSLATION_NAMES, TRANSLATION_ABBR, TRANSLATIONS, type Translation, type BibleVerse } from '../../../../lib/bible';
 import { getMarksForChapter, setHighlight, clearHighlight, type VerseHighlight, type VerseNote } from '../../../../lib/verseMarks';
 import { haptics } from '../../../../lib/haptics';
 
@@ -40,6 +39,7 @@ export default function ChapterReader() {
   const [scale, setScale] = useState<ReaderScale>('m');
   const [showNums, setShowNums] = useState(true);
   const [typoOpen, setTypoOpen] = useState(false);
+  const [transOpen, setTransOpen] = useState(false);
 
   const [highlights, setHighlights] = useState<VerseHighlight[]>([]);
   const [notes, setNotes] = useState<VerseNote[]>([]);
@@ -64,6 +64,9 @@ export default function ChapterReader() {
   useEffect(() => {
     AsyncStorage.getItem('pamwe:readerScale').then((v) => { if (v) setScale(v as ReaderScale); });
     AsyncStorage.getItem('pamwe:verseNums').then((v) => { if (v != null) setShowNums(v === '1'); });
+    AsyncStorage.getItem('pamwe:readerTranslation').then((v) => {
+      if (v && (TRANSLATIONS as string[]).includes(v)) setTranslation(v as Translation);
+    });
   }, []);
 
   const load = useCallback(async () => {
@@ -114,6 +117,12 @@ export default function ChapterReader() {
 
   const changeScale = (s: ReaderScale) => { setScale(s); AsyncStorage.setItem('pamwe:readerScale', s); haptics.tap(); };
   const changeNums = (v: boolean) => { setShowNums(v); AsyncStorage.setItem('pamwe:verseNums', v ? '1' : '0'); };
+  const changeTranslation = (t: Translation) => {
+    setTranslation(t);
+    AsyncStorage.setItem('pamwe:readerTranslation', t);
+    setTransOpen(false);
+    haptics.tap();
+  };
 
   const onVersePress = (verse: number) => { haptics.tap(); setSelVerse(verse); };
   const applyHighlight = async (color: SwatchColor) => {
@@ -159,12 +168,17 @@ export default function ChapterReader() {
             <Text style={[styles.aaText, { color: colors.accent }]}>Aa</Text>
           </TouchableOpacity>
         </View>
-        <SegmentedControl
-          segments={[{ key: 'web', label: 'WEB' }, { key: 'kjv', label: 'KJV' }, { key: 'bbe', label: 'BBE' }]}
-          value={translation}
-          onChange={(t) => setTranslation(t)}
-          style={styles.transControl}
-        />
+        <TouchableOpacity
+          onPress={() => { haptics.tap(); setTransOpen(true); }}
+          activeOpacity={0.8}
+          style={[styles.transPill, { backgroundColor: colors.surface, borderColor: colors.line }]}
+          accessibilityRole="button"
+          accessibilityLabel={`Translation: ${TRANSLATION_NAMES[translation]}`}
+        >
+          <Text style={[styles.transAbbr, { color: colors.accent }]}>{TRANSLATION_ABBR[translation]}</Text>
+          <Text style={[styles.transName, { color: colors.muted }]} numberOfLines={1}>{TRANSLATION_NAMES[translation]}</Text>
+          <CaretRight size={14} color={colors.muted} weight="bold" />
+        </TouchableOpacity>
 
         {hasCtx && (
           <View style={[styles.banner, { backgroundColor: colors.surface2, borderColor: colors.lineAccent }]}>
@@ -296,6 +310,24 @@ export default function ChapterReader() {
           <Text style={[styles.noteBtnLabel, { color: colors.accent }]}>{selNote ? 'Edit note' : 'Add note'}</Text>
         </TouchableOpacity>
       </BottomSheet>
+
+      <BottomSheet visible={transOpen} onClose={() => setTransOpen(false)}>
+        <View style={styles.sheetHead}>
+          <Text style={{ fontFamily: fonts.serif, fontSize: 20, color: colors.ink }}>Translation</Text>
+          <TouchableOpacity onPress={() => setTransOpen(false)} hitSlop={10}><X size={18} color={colors.muted} /></TouchableOpacity>
+        </View>
+        {TRANSLATIONS.map((t) => {
+          const on = t === translation;
+          return (
+            <TouchableOpacity key={t} onPress={() => changeTranslation(t)} activeOpacity={0.8}
+              accessibilityRole="button" accessibilityState={{ selected: on }}
+              style={[styles.transRow, { borderColor: on ? colors.accent : colors.line, backgroundColor: on ? colors.surface2 : 'transparent' }]}>
+              <Text style={[styles.transRowAbbr, { color: colors.accent }]}>{TRANSLATION_ABBR[t]}</Text>
+              <Text style={[styles.transRowName, { color: colors.ink }]}>{TRANSLATION_NAMES[t]}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </BottomSheet>
     </SafeAreaView>
   );
 }
@@ -309,6 +341,12 @@ const styles = StyleSheet.create({
   chaptersLink: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   chaptersLabel: { fontFamily: fonts.sansSemiBold, fontSize: 12 },
   transControl: { marginTop: 14 },
+  transPill: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, marginTop: 14 },
+  transAbbr: { fontFamily: fonts.sansSemiBold, fontSize: 12, letterSpacing: 0.6 },
+  transName: { flex: 1, fontFamily: fonts.sans, fontSize: 13 },
+  transRow: { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, marginBottom: 8 },
+  transRowAbbr: { fontFamily: fonts.sansSemiBold, fontSize: 12, letterSpacing: 0.6, width: 40 },
+  transRowName: { flex: 1, fontFamily: fonts.serif, fontSize: 15 },
   aa: { width: 34, height: 34, borderRadius: 17, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   aaText: { fontFamily: fonts.serifSemiBold, fontSize: 15 },
   banner: { marginTop: 16, flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderRadius: 16, paddingVertical: 13, paddingHorizontal: 16 },
