@@ -93,6 +93,21 @@ export async function getRevealedReflections(coupleId: string): Promise<Reflecti
   return items;
 }
 
+// Pick a reflection worth resurfacing ("From your story"): one revealed about
+// a month ago (28-35 days), else about a week ago (6-9 days). Null while the
+// history is too young; the card simply doesn't show.
+export function pickOnThisDay(
+  items: ReflectionSummary[],
+  now: Date = new Date(),
+): { item: ReflectionSummary; label: string } | null {
+  const ageDays = (iso: string) => (now.getTime() - new Date(iso).getTime()) / 86_400_000;
+  const monthAgo = items.find((it) => { const a = ageDays(it.revealedAt); return a >= 28 && a <= 35; });
+  if (monthAgo) return { item: monthAgo, label: 'About a month ago' };
+  const weekAgo = items.find((it) => { const a = ageDays(it.revealedAt); return a >= 6 && a <= 9; });
+  if (weekAgo) return { item: weekAgo, label: 'A week ago' };
+  return null;
+}
+
 // Full detail for one revealed day (re-fetched fresh for the detail screen).
 export async function getReflectionDetail(couplePlanId: string, dayNumber: number) {
   const { data: { session } } = await supabase.auth.getSession();

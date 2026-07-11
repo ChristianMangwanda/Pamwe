@@ -12,7 +12,7 @@ import { useTheme } from '../../../providers/ThemeProvider';
 import { useAuth } from '../../../providers/AuthProvider';
 import { useCouple } from '../../../providers/CoupleProvider';
 import { profileInitial } from '../../../lib/couples';
-import { getRevealedReflections, ReflectionSummary } from '../../../lib/reflections';
+import { getRevealedReflections, pickOnThisDay, ReflectionSummary } from '../../../lib/reflections';
 import { haptics } from '../../../lib/haptics';
 
 function formatDate(iso: string) {
@@ -68,6 +68,7 @@ export default function ReflectScreen() {
   }, [items]);
 
   const visible = filter === 'all' ? items : items.filter((it) => it.book === filter);
+  const onThisDay = useMemo(() => pickOnThisDay(items), [items]);
 
   const myInitial = (user?.user_metadata?.full_name || user?.email || 'Y')[0]?.toUpperCase() ?? 'Y';
   const partnerInitial = profileInitial(partner) ?? '?';
@@ -106,6 +107,17 @@ export default function ReflectScreen() {
           </View>
         ) : (
           <>
+            {onThisDay && (
+              <TouchableOpacity activeOpacity={0.85} onPress={() => open(onThisDay.item)}
+                style={[styles.storyCard, { backgroundColor: colors.surface2, borderColor: colors.lineAccent }]}>
+                <Text variant="eyebrow" color={colors.accent2}>From your story · {onThisDay.label}</Text>
+                <Text style={[styles.storySnippet, { color: colors.ink }]} numberOfLines={2}>“{onThisDay.item.snippet}”</Text>
+                <Text style={[styles.storyMeta, { color: colors.muted }]}>
+                  {formatDate(onThisDay.item.revealedAt)} · {onThisDay.item.reference}
+                </Text>
+              </TouchableOpacity>
+            )}
+
             {books.length > 1 && (
               <View style={styles.filters}>
                 <FilterChip label="All" active={filter === 'all'} onPress={() => setFilter('all')} colors={colors} />
@@ -179,6 +191,9 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center', paddingTop: 44, paddingHorizontal: 24 },
   emptyTitle: { marginTop: 16, textAlign: 'center' },
   emptyText: { fontSize: 15, marginTop: 10, textAlign: 'center', lineHeight: 24 },
+  storyCard: { borderWidth: 1, borderRadius: 16, paddingHorizontal: 18, paddingVertical: 15, marginTop: 16 },
+  storySnippet: { fontFamily: fonts.serifItalic, fontSize: 15, lineHeight: 22.5, marginTop: 9 },
+  storyMeta: { fontFamily: fonts.sansSemiBold, fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase', marginTop: 10 },
   filters: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 16 },
   filterChip: { borderWidth: 1.2, borderRadius: 999, paddingHorizontal: 11, paddingVertical: 6 },
   filterText: { fontFamily: fonts.sansMedium, fontSize: 10 },
