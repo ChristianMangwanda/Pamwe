@@ -8,23 +8,26 @@ import { BackLink } from '../../components/ui/BackLink';
 import { fonts } from '../../constants/typography';
 import { GUTTER } from '../../theme/tokens';
 import { useTheme } from '../../providers/ThemeProvider';
+import { useCouple } from '../../providers/CoupleProvider';
 import { haptics } from '../../lib/haptics';
 import { joinCouple } from '../../lib/couples';
 
 export default function JoinScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { refresh } = useCouple();
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
 
   const cleaned = code.replace(/[^A-Za-z0-9]/g, '');
-  const canConnect = cleaned.length >= 4;
+  const canConnect = cleaned.length === 6;
 
   const onConnect = async () => {
     if (!canConnect) return;
     setLoading(true);
     try {
       await joinCouple(cleaned);
+      await refresh();
       haptics.success();
       router.replace('/(onboarding)/connected');
     } catch (e: any) {

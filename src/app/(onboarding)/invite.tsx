@@ -10,6 +10,7 @@ import { Spinner } from '../../components/ui/Spinner';
 import { fonts } from '../../constants/typography';
 import { GUTTER } from '../../theme/tokens';
 import { useTheme } from '../../providers/ThemeProvider';
+import { useCouple } from '../../providers/CoupleProvider';
 import { haptics } from '../../lib/haptics';
 import { createCouple, getUserCouple } from '../../lib/couples';
 import { supabase } from '../../lib/supabase';
@@ -19,6 +20,7 @@ const FALLBACK_POLL_MS = 30000;
 export default function InviteScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { refresh } = useCouple();
   const [code, setCode] = useState<string | null>(null);
   const [coupleId, setCoupleId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -40,6 +42,9 @@ export default function InviteScreen() {
         const couple = await createCouple();
         setCode(couple.invite_code);
         setCoupleId(couple.id);
+        // Provider was loaded pre-couple; sync it so its realtime
+        // subscription attaches and catches the partner joining.
+        refresh();
       } catch (e: any) {
         Alert.alert('Could not create invite', e.message);
       }

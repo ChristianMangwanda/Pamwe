@@ -38,7 +38,9 @@ export default function PrayersScreen() {
   const partnerId = couple?.partner_a_id === user?.id ? couple?.partner_b_id : couple?.partner_a_id;
 
   const load = useCallback(async () => {
-    if (!couple?.id) return;
+    // Clear the spinner even with no couple yet — returning early here left
+    // `loading` true forever (the eternal-spinner bug from the first beta).
+    if (!couple?.id) { setLoading(false); return; }
     try {
       const [a, ans, todayMarks] = await Promise.all([
         getPrayers(couple.id, 'active'),

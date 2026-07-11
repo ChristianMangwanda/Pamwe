@@ -8,6 +8,7 @@ import { StripedBanner } from '../../components/ui/StripedBanner';
 import { GUTTER } from '../../theme/tokens';
 import { fonts } from '../../constants/typography';
 import { useTheme } from '../../providers/ThemeProvider';
+import { useCouple } from '../../providers/CoupleProvider';
 import { getCuratedPlans, enrollInPlan, switchPlan } from '../../lib/plans';
 import { getUserCouple } from '../../lib/couples';
 import { haptics } from '../../lib/haptics';
@@ -15,6 +16,7 @@ import { haptics } from '../../lib/haptics';
 export default function PlanSelectScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { refresh } = useCouple();
   const { mode } = useLocalSearchParams<{ mode?: string }>();
   const isSwitch = mode === 'change';
   const [plans, setPlans] = useState<any[]>([]);
@@ -48,6 +50,9 @@ export default function PlanSelectScreen() {
       } else {
         await enrollInPlan(couple.id, selectedId);
       }
+      // The tabs read couple/plan from CoupleProvider — bring it up to date
+      // before entering, or every tab sees a stale null plan.
+      await refresh();
       haptics.success();
       router.replace('/(tabs)/(today)');
     } catch (err: any) {

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { useAuth } from './AuthProvider';
 import { getUserCouple, getPartnerProfile } from '../lib/couples';
 import { getActiveCouPlan } from '../lib/plans';
+import { supabase } from '../lib/supabase';
 
 type CoupleContextType = {
   couple: any | null;
@@ -54,6 +55,18 @@ export function CoupleProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  // Keep couple state live. Without this, pairing or enrolling in a plan
+  // mid-session left every tab reading a stale null couple until relaunch.
+  useEffect(() => {
+    if (!couple?.id) return;
+    const channel = supabase
+      .channel(`couple-state-${couple.id}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'couples', filter: `id=eq.${couple.id}` }, () => refresh())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'couple_plans', filter: `couple_id=eq.${couple.id}` }, () => refresh())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [couple?.id, refresh]);
 
   return (
     <CoupleContext.Provider value={{ couple, partner, couplePlan, loading, refresh }}>
