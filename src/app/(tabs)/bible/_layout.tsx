@@ -9,6 +9,7 @@ export default function BibleStackLayout() {
       <Stack.Screen name="[book]" />
       <Stack.Screen name="[book]/[chapter]" />
       <Stack.Screen name="marks" />
+      <Stack.Screen name="search" />
       <Stack.Screen name="note" options={{ presentation: 'modal' }} />
     </Stack>
   );

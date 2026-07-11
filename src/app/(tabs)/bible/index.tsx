@@ -94,6 +94,16 @@ export default function BibleBooks() {
         <CaretRight size={16} color={colors.accent2} />
       </TouchableOpacity>
 
+      <TouchableOpacity
+        onPress={() => router.push('/(tabs)/bible/search' as any)}
+        activeOpacity={0.85}
+        style={[styles.searchEntry, { borderColor: colors.line }]}
+      >
+        <MagnifyingGlass size={18} color={colors.accent2} weight="regular" />
+        <Text style={[styles.searchEntryText, { color: colors.accent }]}>Search your notes & reflections</Text>
+        <CaretRight size={15} color={colors.accent2} />
+      </TouchableOpacity>
+
       {oldT.length > 0 && <BookList label="Old Testament" books={oldT} onOpen={openBook} />}
       {newT.length > 0 && <BookList label="New Testament" books={newT} onOpen={openBook} />}
       {oldT.length === 0 && newT.length === 0 && !jump && (
@@ -137,6 +147,8 @@ const styles = StyleSheet.create({
   marksEntry: { marginTop: 16, flexDirection: 'row', alignItems: 'center', gap: 13, borderWidth: 1, borderRadius: 16, paddingVertical: 15, paddingHorizontal: 16 },
   marksTitle: { fontFamily: fonts.serifMedium, fontSize: 15 },
   marksSub: { fontSize: 11, marginTop: 1 },
+  searchEntry: { marginTop: 10, flexDirection: 'row', alignItems: 'center', gap: 11, borderWidth: 1, borderRadius: 14, paddingVertical: 13, paddingHorizontal: 16 },
+  searchEntryText: { flex: 1, fontFamily: fonts.sansMedium, fontSize: 13 },
   sectionLabel: { marginTop: 22, marginBottom: 8 },
   bookRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 15, paddingHorizontal: 2, borderBottomWidth: 1 },
   bookName: { fontFamily: fonts.serif, fontSize: 18 },

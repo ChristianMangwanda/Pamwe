@@ -94,4 +94,23 @@ their church community. No chat tab, no message bubbles, no "AI" labels, no memo
 
 ## Progress log
 
-(Updated as the run proceeds; per-feature commits on main.)
+Overnight run 2026-07-11 (all committed to main, tsc clean + full Jest green after each):
+- ✅ Ask Pamwe rework (7c7c481): v7 server (help mode, off_topic gate, hardened
+  no-interpretation prompt, rate limit via ask_pamwe_usage RPC), AskPamweSheet,
+  floral FAB on non-ritual tabs, Plans inline card. 5 new tests.
+- ✅ Reflection responses (45ba4d6): entry_responses table + RLS (4 behaviors
+  tested), hearts/amens/replies/saved-lines on reveal + reflect detail.
+- ✅ Faithfulness timeline (085b001): prayers/timeline route over answered prayers.
+- ✅ Per-prayer reminders (81ee2fd): on-device daily local notifications.
+- ✅ Catch-up nudge (34e11be): Today banner when behind pace. lib/catchup.ts + 7 tests.
+  NOTE: grace-day (freeze) VISIBILITY was deliberately deferred — the exact server
+  freeze allowance constant isn't mirrored client-side, and I chose not to show a
+  possibly-wrong "N grace days left". The always-correct catch-up banner shipped.
+- ✅ Partner nudge (49191ad): notify-nudge edge fn + partner_nudges cooldown table
+  + Today "nudge gently" action.
+
+Migrations added locally (need hosted apply): ask_pamwe_usage, entry_responses,
+partner_nudges. Edge functions changed (need deploy): ask-pamwe v7, notify-nudge.
+
+Remaining: #9 search, #10 offline caches, #11 translations, #12 palettes,
+#13 tree streak, #14 copy pass, #15 transcription (native), #16 widget (native).
