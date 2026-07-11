@@ -32,9 +32,15 @@ Rule from Christian: fix all of these before any green-list features or other wo
    un-ignored + trackable (`.gitignore`: `/ios/*` + `!/ios/ExportOptions.plist`).
    Benign dSYM warnings for prebuilt frameworks (React/Hermes/ExpoImage/SDWebImage);
    native frames stay unsymbolicated until those dSYMs are uploaded (optional fix).
-7. ⏳ Remaining: on-device pass on b8 (docked bar feel, cold-launch caches, Ask Pamwe
-   v6 timing); resolve Sentry PAMWE-IOS-1/2 once b8 confirms no PATCH storm; watch
-   for the b6 recaps crash on b8.
+7. ✅ **ROUND 3 VERIFIED ON b8 (2026-07-10 evening).** Christian: "major improvement,
+   feels faster." Committed to main as 1c87587. Hosted API logs from the b8 session:
+   PATCH /users exactly 2× at launch (vs ~200/s on b7), zero non-2xx, windowed
+   plan_days + joined reflections queries visible, a custom plan created fine.
+   ask-pamwe v6 first live call 6.1s (v5 was 7.1-12.8s). Sentry: ZERO b8 events; a
+   third b7 issue surfaced (PAMWE-IOS-3, Swift alloc failure at 7:32 PM, delivered on
+   next launch) — same PATCH-storm OOM family. All three b7 issues can be resolved
+   (Claude was permission-blocked; Christian to say "resolve the three Sentry issues"
+   or click in the UI). Still watch: b6 recaps crash never captured anywhere.
 
 ## Verified facts (hosted project jcyhhxgomhopkoqesbkb, checked 2026-07-11)
 

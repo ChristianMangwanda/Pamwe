@@ -2,10 +2,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { MagnifyingGlass, ArrowRight, CaretRight, Plus, Flower, CheckCircle } from 'phosphor-react-native';
+import { MagnifyingGlass, ArrowRight, CaretRight, Plus, Flower, CheckCircle, Sparkle } from 'phosphor-react-native';
 import { Screen } from '../../../components/ui/Screen';
 import { Text } from '../../../components/ui/Text';
 import { StripedBanner } from '../../../components/ui/StripedBanner';
+import { AskPamweSheet } from '../../../components/AskPamweSheet';
 import { fonts } from '../../../constants/typography';
 import { useTheme } from '../../../providers/ThemeProvider';
 import { useCouple } from '../../../providers/CoupleProvider';
@@ -23,6 +24,7 @@ export default function PlansScreen() {
   const [completed, setCompleted] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [askOpen, setAskOpen] = useState(false);
 
   // Stale-while-revalidate: render the last-seen browse grid instantly on a
   // cold launch while the network load below refreshes it.
@@ -92,8 +94,23 @@ export default function PlansScreen() {
     <Screen refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}>
       <View style={styles.titleRow}>
         <Text variant="h1">Plans</Text>
-        <MagnifyingGlass size={20} color={colors.ink2} weight="regular" />
+        <TouchableOpacity onPress={() => { haptics.tap(); setAskOpen(true); }} hitSlop={12}
+          accessibilityRole="button" accessibilityLabel="Ask Pamwe">
+          <MagnifyingGlass size={20} color={colors.ink2} weight="regular" />
+        </TouchableOpacity>
       </View>
+
+      <TouchableOpacity activeOpacity={0.85} onPress={() => { haptics.tap(); setAskOpen(true); }}
+        style={[styles.askCard, { backgroundColor: colors.surface2, borderColor: colors.lineAccent }]}>
+        <View style={[styles.askIcon, { backgroundColor: colors.surface, borderColor: colors.lineAccent }]}>
+          <Sparkle size={17} color={colors.accent2} weight="fill" />
+        </View>
+        <View style={styles.flex}>
+          <Text style={[styles.askTitle, { color: colors.ink }]}>Not sure what to read next?</Text>
+          <Text style={[styles.askSub, { color: colors.muted }]}>Ask Pamwe for a passage or a plan.</Text>
+        </View>
+        <ArrowRight size={15} color={colors.accent2} weight="bold" />
+      </TouchableOpacity>
 
       {activePlan && (
         <>
@@ -183,6 +200,8 @@ export default function PlansScreen() {
         <Plus size={16} color={colors.accent} weight="bold" />
         <Text variant="chip" color={colors.accent} style={styles.buildText}>Build your own plan</Text>
       </TouchableOpacity>
+
+      <AskPamweSheet visible={askOpen} onClose={() => setAskOpen(false)} />
     </Screen>
   );
 }
@@ -191,6 +210,10 @@ const styles = StyleSheet.create({
   center: { paddingTop: 80, alignItems: 'center' },
   flex: { flex: 1, minWidth: 0 },
   titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
+  askCard: { flexDirection: 'row', alignItems: 'center', gap: 13, borderWidth: 1, borderRadius: 14, padding: 14, marginTop: 16 },
+  askIcon: { width: 40, height: 40, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  askTitle: { fontFamily: fonts.serifMedium, fontSize: 15 },
+  askSub: { fontFamily: fonts.sans, fontSize: 11, marginTop: 2 },
   eyebrow: { marginTop: 22 },
   hero: { marginTop: 10, borderWidth: 1, borderRadius: 18, overflow: 'hidden' },
   heroBannerLabel: { flex: 1, justifyContent: 'flex-end', padding: 14 },

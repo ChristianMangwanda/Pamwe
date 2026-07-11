@@ -57,16 +57,62 @@ export async function askPamwe(query: string): Promise<PlanRecommendation[]> {
   const timer = setTimeout(() => controller.abort(), INVOKE_TIMEOUT_MS);
   try {
     const { data, error } = await supabase.functions.invoke('ask-pamwe', {
-      body: { query },
+      body: { query, mode: 'plans' },
       signal: controller.signal,
     });
     if (error) throw error;
+    // Off-topic (the model flagged it): the builder just shows its gentle
+    // starting points rather than surface the deflection here.
+    if (data?.off_topic) return fallbackRecs();
     const recs = Array.isArray(data?.recommendations) ? data.recommendations : [];
     const normalized = recs.map(normalize).filter(Boolean) as PlanRecommendation[];
     if (normalized.length === 0) return fallbackRecs();
     return normalized.slice(0, 3);
   } catch {
     return fallbackRecs();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export type HelpReference = { reference: string; note: string };
+
+export type HelpAnswer =
+  | { kind: 'answer'; answer: string; references: HelpReference[] }
+  | { kind: 'off_topic'; message: string }
+  | { kind: 'error'; message: string };
+
+const OFF_TOPIC_FALLBACK =
+  "Pamwe is here for Scripture, prayer, and your walk together. For that one, you'll want another guide.";
+
+// The quiet in-app helper (Ask Pamwe sheet). Unlike the builder, help mode has
+// no rich local fallback, so failures surface a gentle one-line message instead
+// of pretending. Only references whose book resolves are kept.
+export async function askPamweHelp(query: string): Promise<HelpAnswer> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), INVOKE_TIMEOUT_MS);
+  try {
+    const { data, error } = await supabase.functions.invoke('ask-pamwe', {
+      body: { query, mode: 'help' },
+      signal: controller.signal,
+    });
+    if (error) throw error;
+    if (data?.off_topic) {
+      return { kind: 'off_topic', message: String(data?.message ?? OFF_TOPIC_FALLBACK) };
+    }
+    const answer = typeof data?.answer === 'string' ? data.answer.trim() : '';
+    if (!answer) {
+      return { kind: 'error', message: 'Pamwe could not find the words just now. Please try again.' };
+    }
+    const references: HelpReference[] = Array.isArray(data?.references)
+      ? data.references
+          .filter((r: any) => r?.reference && parseReference(String(r.reference)))
+          .map((r: any) => ({ reference: String(r.reference).trim(), note: String(r?.note ?? '').trim() }))
+          .slice(0, 3)
+      : [];
+    return { kind: 'answer', answer, references };
+  } catch {
+    return { kind: 'error', message: 'Pamwe is resting right now. Please try again in a moment.' };
   } finally {
     clearTimeout(timer);
   }
