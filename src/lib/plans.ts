@@ -178,16 +178,26 @@ export async function enrollInPlan(coupleId: string, planId: string) {
   return data;
 }
 
-export async function getPlanDay(planId: string, dayNumber: number) {
-  const { data, error } = await supabase
-    .from('plan_days')
-    .select('*')
-    .eq('plan_id', planId)
-    .eq('day_number', dayNumber)
-    .single();
+// The current plan day, with a persistent cache so Today's anchor verse renders
+// on a cold launch with no network. Plan-day content is immutable once seeded.
+const planDayStorageKey = (planId: string, day: number) => `pamwe:planDay:${planId}:${day}`;
 
-  if (error) throw error;
-  return data;
+export async function getPlanDay(planId: string, dayNumber: number) {
+  try {
+    const { data, error } = await supabase
+      .from('plan_days')
+      .select('*')
+      .eq('plan_id', planId)
+      .eq('day_number', dayNumber)
+      .single();
+    if (error) throw error;
+    AsyncStorage.setItem(planDayStorageKey(planId, dayNumber), JSON.stringify(data)).catch(() => {});
+    return data;
+  } catch (err) {
+    const cached = await AsyncStorage.getItem(planDayStorageKey(planId, dayNumber)).catch(() => null);
+    if (cached) return JSON.parse(cached);
+    throw err;
+  }
 }
 
 export async function advancePlanDay(couplePlanId: string, currentDay: number) {

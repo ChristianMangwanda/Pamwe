@@ -1,6 +1,8 @@
 // Minimal Bible browser support. Uses bible-api.com (WEB translation, public domain)
 // for on-demand chapter fetching. No local seed required.
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 export type Testament = 'old' | 'new';
 
 export interface BibleBook {
@@ -99,33 +101,76 @@ export interface BibleVerse {
   text: string;
 }
 
-const chapterCache = new Map<string, { reference: string; verses: BibleVerse[] }>();
+type ChapterResult = { reference: string; verses: BibleVerse[] };
+const chapterCache = new Map<string, ChapterResult>();
+
+// Persistent chapter cache so recently read chapters survive app restarts and
+// read on a subway or a flight. Bounded to the most recent chapters via a small
+// LRU index; scripture text is immutable, so a hit never goes stale.
+const CHAPTER_KEY_PREFIX = 'pamwe:chapter:';
+const CHAPTER_INDEX_KEY = 'pamwe:chapterIndex';
+const CHAPTER_CACHE_MAX = 40;
+
+async function persistChapter(key: string, result: ChapterResult) {
+  try {
+    await AsyncStorage.setItem(CHAPTER_KEY_PREFIX + key, JSON.stringify(result));
+    const raw = await AsyncStorage.getItem(CHAPTER_INDEX_KEY);
+    const index: string[] = raw ? JSON.parse(raw) : [];
+    const next = [key, ...index.filter((k) => k !== key)];
+    const evicted = next.slice(CHAPTER_CACHE_MAX);
+    await AsyncStorage.setItem(CHAPTER_INDEX_KEY, JSON.stringify(next.slice(0, CHAPTER_CACHE_MAX)));
+    if (evicted.length) await AsyncStorage.multiRemove(evicted.map((k) => CHAPTER_KEY_PREFIX + k));
+  } catch {
+    // best effort — the in-memory cache still serves this session
+  }
+}
+
+async function readPersistedChapter(key: string): Promise<ChapterResult | null> {
+  try {
+    const v = await AsyncStorage.getItem(CHAPTER_KEY_PREFIX + key);
+    return v ? (JSON.parse(v) as ChapterResult) : null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Fetch a chapter as individual verses (for the verse-by-verse reader) from
- * bible-api.com. Cached per (book, chapter, translation). Throws on error.
+ * bible-api.com. Served from memory, then disk, then network; a network failure
+ * falls back to the persisted copy so reading works offline. Throws only when
+ * the chapter has never been fetched and the network is unreachable.
  */
 export async function fetchChapterVerses(
   book: string,
   chapter: number,
   translation: Translation = 'web',
-): Promise<{ reference: string; verses: BibleVerse[] }> {
+): Promise<ChapterResult> {
   const key = `${book}|${chapter}|${translation}`;
   const cached = chapterCache.get(key);
   if (cached) return cached;
 
+  const persisted = await readPersistedChapter(key);
+  if (persisted) chapterCache.set(key, persisted);
+
   const slug = book.toLowerCase().replace(/ /g, '+');
   const url = `https://bible-api.com/${slug}+${chapter}?translation=${translation}`;
-  const resp = await fetch(url);
-  if (!resp.ok) throw new Error(`bible-api.com returned HTTP ${resp.status} for ${book} ${chapter}`);
-  const data = await resp.json();
-  const verses: BibleVerse[] = (Array.isArray(data.verses) ? data.verses : []).map((v: any) => ({
-    verse: v.verse,
-    text: String(v.text ?? '').replace(/\s+/g, ' ').trim(),
-  }));
-  const result = { reference: data.reference ?? `${book} ${chapter}`, verses };
-  chapterCache.set(key, result);
-  return result;
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`bible-api.com returned HTTP ${resp.status} for ${book} ${chapter}`);
+    const data = await resp.json();
+    const verses: BibleVerse[] = (Array.isArray(data.verses) ? data.verses : []).map((v: any) => ({
+      verse: v.verse,
+      text: String(v.text ?? '').replace(/\s+/g, ' ').trim(),
+    }));
+    const result = { reference: data.reference ?? `${book} ${chapter}`, verses };
+    chapterCache.set(key, result);
+    persistChapter(key, result);
+    return result;
+  } catch (err) {
+    // Offline: serve the persisted copy if we have one.
+    if (persisted) return persisted;
+    throw err;
+  }
 }
 
 /**
