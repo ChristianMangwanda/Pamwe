@@ -8,6 +8,7 @@ import { Button } from '../../../components/ui/Button';
 import { SectionEyebrow } from '../../../components/ui/SectionEyebrow';
 import { ProgressBar } from '../../../components/ui/ProgressBar';
 import { StreakBar } from '../../../components/ui/StreakBar';
+import { StreakTree } from '../../../components/ui/StreakTree';
 import { Floral } from '../../../components/ui/Floral';
 import { fonts } from '../../../constants/typography';
 import { GUTTER } from '../../../theme/tokens';
@@ -194,6 +195,7 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.streakWrap}>
+          <StreakTree count={streakCount} />
           <StreakBar count={streakCount} />
           {streakCount > 0 && (
             <Text style={[styles.streakCount, { color: colors.muted }]}>{streakCount} day streak</Text>
