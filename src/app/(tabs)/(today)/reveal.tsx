@@ -62,8 +62,13 @@ export default function RevealScreen() {
 
   const onAmen = async () => {
     haptics.tap();
+    // Capture the plan before refresh: completing the final day retires it,
+    // and the celebration screen needs to know what was finished.
+    const completed = isFinalDay && couplePlan
+      ? { title: couplePlan.plan?.title ?? '', days: String(totalDays ?? ''), cpId: couplePlan.id }
+      : null;
     await refreshCouple();
-    if (isFinalDay) router.replace('/(tabs)/(today)/complete');
+    if (completed) router.replace({ pathname: '/(tabs)/(today)/complete', params: completed });
     else router.replace('/(tabs)/(today)');
   };
 

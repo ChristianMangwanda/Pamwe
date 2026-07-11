@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Text } from '../../../components/ui/Text';
 import { Card } from '../../../components/ui/Card';
@@ -15,22 +15,27 @@ export default function CompleteScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { couple, couplePlan } = useCouple();
+  // A just-completed plan is no longer the active plan, so callers pass what
+  // to celebrate (title/days/cpId); the active plan stays as a fallback. This
+  // is what lets the manual "Mark plan complete" path reach this moment too.
+  const params = useLocalSearchParams<{ title?: string; days?: string; cpId?: string }>();
   const [reflections, setReflections] = useState<number | null>(null);
 
-  const planTitle = couplePlan?.plan?.title ?? 'your plan';
-  const totalDays = couplePlan?.plan?.duration_days ?? couplePlan?.current_day ?? 0;
+  const planTitle = params.title || couplePlan?.plan?.title || 'your plan';
+  const totalDays = Number(params.days) || couplePlan?.plan?.duration_days || couplePlan?.current_day || 0;
   const streak = couple?.streak_count ?? 0;
+  const entriesFrom = params.cpId || couplePlan?.id;
 
   useEffect(() => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
   }, []);
 
   useEffect(() => {
-    if (!couplePlan?.id) return;
-    countMySubmittedEntries(couplePlan.id)
+    if (!entriesFrom) return;
+    countMySubmittedEntries(entriesFrom)
       .then(setReflections)
       .catch(() => setReflections(null));
-  }, [couplePlan?.id]);
+  }, [entriesFrom]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>

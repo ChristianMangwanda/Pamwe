@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, RefreshControl, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { GearSix } from 'phosphor-react-native';
@@ -9,6 +10,7 @@ import { SectionEyebrow } from '../../../components/ui/SectionEyebrow';
 import { ProgressBar } from '../../../components/ui/ProgressBar';
 import { StreakBar } from '../../../components/ui/StreakBar';
 import { StreakTree } from '../../../components/ui/StreakTree';
+import { MilestoneCard } from '../../../components/MilestoneCard';
 import { Floral } from '../../../components/ui/Floral';
 import { fonts } from '../../../constants/typography';
 import { GUTTER } from '../../../theme/tokens';
@@ -20,6 +22,7 @@ import { profileInitial } from '../../../lib/couples';
 import { parseReference } from '../../../lib/bible';
 import { daysBehind, todayInTimezone } from '../../../lib/catchup';
 import { nudgePartner } from '../../../lib/notifications';
+import { milestoneFor, Milestone } from '../../../lib/milestones';
 import { haptics } from '../../../lib/haptics';
 
 export default function HomeScreen() {
@@ -31,6 +34,26 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [nudging, setNudging] = useState(false);
   const [nudged, setNudged] = useState(false);
+  const [milestone, setMilestone] = useState<Milestone | null>(null);
+
+  // Celebrate a streak milestone once: an AsyncStorage high-water mark per
+  // couple decides whether this one has already had its moment.
+  const streakNow = couple?.streak_count ?? 0;
+  useEffect(() => {
+    if (!couple?.id) return;
+    const m = milestoneFor(streakNow);
+    if (!m) return;
+    AsyncStorage.getItem(`pamwe:milestoneSeen:${couple.id}`)
+      .then((v) => { if (Number(v ?? 0) < m) setMilestone(m); })
+      .catch(() => {});
+  }, [couple?.id, streakNow]);
+
+  const dismissMilestone = () => {
+    if (couple?.id && milestone) {
+      AsyncStorage.setItem(`pamwe:milestoneSeen:${couple.id}`, String(milestone)).catch(() => {});
+    }
+    setMilestone(null);
+  };
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -201,6 +224,8 @@ export default function HomeScreen() {
             <Text style={[styles.streakCount, { color: colors.muted }]}>{streakCount} day streak</Text>
           )}
         </View>
+
+        {milestone && <MilestoneCard milestone={milestone} onDismiss={dismissMilestone} />}
 
         <View style={styles.ctaWrap}>
           <Button title={cta.label} onPress={onCta} />

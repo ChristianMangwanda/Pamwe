@@ -122,10 +122,17 @@ export default function PlanDetailScreen() {
           onPress: async () => {
             try {
               setBusy(true);
-              await completePlan(couplePlan.id);
+              const cpId = couplePlan.id;
+              await completePlan(cpId);
               await refreshCouple();
               haptics.success();
-              router.replace('/(onboarding)/plan-select');
+              // Manual completion earns the same celebration as finishing the
+              // final day; the params carry the just-completed plan since it
+              // is no longer the active one.
+              router.replace({
+                pathname: '/(tabs)/(today)/complete',
+                params: { title: plan?.title ?? '', days: String(plan?.duration_days ?? ''), cpId },
+              });
             } catch (err: any) {
               setBusy(false);
               Alert.alert('Could not update the plan', err?.message ?? 'Please try again.');
