@@ -80,28 +80,22 @@ their church community. No chat tab, no message bubbles, no "AI" labels, no memo
     Highest build risk; attempted only if everything above is green. If it breaks
     the xcodeproj, revert and leave notes.
 
-## Morning checklist (needs Christian)
+## Morning checklist — status (2026-07-11 morning)
 
-1. Apply the 3 new migrations to hosted (jcyhhxgomhopkoqesbkb) via MCP — say
-   "apply the round 4 migrations to hosted": `20260711000001_ask_pamwe_usage`,
-   `20260711000002_entry_responses`, `20260711000003_partner_nudges`. All are
-   applied + verified on local; entry_responses RLS was 4-way tested.
-2. Deploy the edge functions — say "deploy the round 4 edge functions to hosted":
-   ask-pamwe (help mode + off_topic gate + hardened no-interpretation prompt +
-   rate limit; hosted is at v6, this deploy becomes v7) and the new **notify-nudge**
-   (verify_jwt=true). ask-pamwe's rate limit
-   needs the ask_pamwe_usage migration applied first (step 1); it fails open if not.
-3. "Resolve the three Sentry issues" (b7 crashes, still open from last session).
-4. b9 release: bump CURRENT_PROJECT_VERSION → archive → verify bundle →
-   "upload build 9 to TestFlight".
-5. Taste review (all easy to retune): floral FAB placement + Ask Pamwe sheet tone,
+1. ✅ 3 migrations applied to hosted (ask_pamwe_usage, entry_responses,
+   partner_nudges), Christian-approved.
+2. ✅ Edge functions deployed: ask-pamwe v7 + notify-nudge v1, both ACTIVE.
+3. ⏳ "Resolve the three Sentry issues" (b7 crashes) — still open.
+4. ✅ Pushed to GitHub (main = 84e3b37 + b9 work). ✅ b9 archived (bundle verified,
+   CFBundleVersion 9) and uploaded to TestFlight.
+5. ⏳ Taste review (all easy to retune): floral FAB placement + Ask Pamwe sheet tone,
    per-plan palettes (lib/planArtwork), tree streak visual + thresholds
    (ui/StreakTree), the partial copy pass.
-6. On-device once b9 lands: the floral Ask Pamwe FAB + sheet, reflection responses on
-   a real reveal, prayer reminder firing, catch-up banner, nudge (push still needs EAS
-   push enabled), offline reading on airplane mode, the 6 translations.
-7. Decide on the two deferred native features (#15 transcription, #16 widget).
-8. Optionally "push" — local main is now well ahead of GitHub.
+6. ⏳ On-device once b9 lands: the floral Ask Pamwe FAB + sheet, reflection responses
+   on a real reveal, prayer reminder firing, catch-up banner, nudge (push banner still
+   needs EAS push enabled; cooldown + call already work), offline reading on airplane
+   mode, the 6 translations.
+7. ⏳ Decide on the two deferred native features (#15 transcription, #16 widget).
 
 ## Progress log
 

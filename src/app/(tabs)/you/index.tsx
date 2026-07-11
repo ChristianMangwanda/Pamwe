@@ -160,7 +160,7 @@ function Row({ icon: Icon, label, onPress, colors, last }: { icon: any; label: s
 const styles = StyleSheet.create({
   container: { flex: 1 },
   flex: { flex: 1, minWidth: 0 },
-  scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 32 },
+  scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 96 },
   floral: { position: 'absolute', top: -10, right: -18, width: 96, height: 96, opacity: 0.55, transform: [{ scaleX: -1 }] },
   profile: { marginTop: 18, flexDirection: 'row', alignItems: 'center', gap: 16 },
   bigAvatar: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center' },

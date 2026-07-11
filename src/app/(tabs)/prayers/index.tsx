@@ -245,7 +245,7 @@ export default function PrayersScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 32 },
+  scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 96 },
   subtitle: { fontSize: 14, marginTop: 6 },
   addBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, borderRadius: 14, paddingVertical: 15, marginTop: 16 },
   addText: { letterSpacing: 0.9 },

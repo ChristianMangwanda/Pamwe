@@ -5,6 +5,7 @@ import Animated from 'react-native-reanimated';
 import { fadeUp } from '../../lib/motion';
 import { GUTTER } from '../../theme/tokens';
 import { useTheme } from '../../providers/ThemeProvider';
+import { FAB_CLEARANCE } from '../PamweFab';
 
 interface ScreenProps extends Pick<ScrollViewProps, 'refreshControl' | 'keyboardShouldPersistTaps'> {
   children: ReactNode;
@@ -28,14 +29,14 @@ export function Screen({ children, scroll = true, animated = true, ...scrollProp
   const body = scroll ? (
     <ScrollView
       style={styles.flex}
-      contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: 32 }}
+      contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: FAB_CLEARANCE }}
       showsVerticalScrollIndicator={false}
       {...scrollProps}
     >
       {content}
     </ScrollView>
   ) : (
-    <View style={[styles.flex, { paddingTop: insets.top + 8, paddingBottom: 32 }]}>{content}</View>
+    <View style={[styles.flex, { paddingTop: insets.top + 8, paddingBottom: FAB_CLEARANCE }]}>{content}</View>
   );
 
   if (!animated) {

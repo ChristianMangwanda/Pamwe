@@ -149,7 +149,7 @@ function ReflectionCard({ label, voiceLabel, initial, entry, accent, filled, col
 const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 40 },
+  scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 96 },
   eyebrow: { fontFamily: fonts.sansSemiBold, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', marginTop: 16 },
   title: { marginTop: 8, lineHeight: 30 },
   plan: { fontFamily: fonts.sans, fontSize: 12, marginTop: 6 },

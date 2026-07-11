@@ -115,7 +115,7 @@ export default function PrayerTimelineScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 40 },
+  scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 96 },
   floral: { position: 'absolute', top: -10, right: -18, width: 96, height: 96, opacity: 0.55, transform: [{ scaleX: -1 }] },
   subtitle: { fontSize: 14, marginTop: 6 },
   center: { paddingTop: 60, alignItems: 'center' },
