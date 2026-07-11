@@ -19,6 +19,7 @@ import { useTodayEntry } from '../../../hooks/useTodayEntry';
 import { useCouple } from '../../../providers/CoupleProvider';
 import { useAuth } from '../../../providers/AuthProvider';
 import { profileInitial } from '../../../lib/couples';
+import { supabase } from '../../../lib/supabase';
 import { getResponsesForDay, EntryResponse } from '../../../lib/entryResponses';
 
 export default function RevealScreen() {
@@ -39,13 +40,24 @@ export default function RevealScreen() {
     if (revealed) haptics.success();
   }, [revealed]);
 
-  // Responses layer: what each of us left on the other's reflection.
+  // Responses layer: what each of us left on the other's reflection. Live:
+  // realtime on entry_responses refetches, and `revision` tells the cards to
+  // re-sync to server truth.
   const [responsesByEntry, setResponsesByEntry] = useState<Record<string, EntryResponse[]>>({});
+  const [responsesRev, setResponsesRev] = useState(0);
   useEffect(() => {
     if (!revealed || !couplePlan?.id) return;
-    getResponsesForDay(couplePlan.id, dayNumber)
-      .then(setResponsesByEntry)
-      .catch(() => {});
+    const load = () => {
+      getResponsesForDay(couplePlan.id, dayNumber)
+        .then((r) => { setResponsesByEntry(r); setResponsesRev((n) => n + 1); })
+        .catch(() => {});
+    };
+    load();
+    const channel = supabase
+      .channel(`responses-${couplePlan.id}-${dayNumber}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'entry_responses', filter: `couple_plan_id=eq.${couplePlan.id}` }, load)
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [revealed, couplePlan?.id, dayNumber]);
 
   const onAmen = async () => {
@@ -104,6 +116,7 @@ export default function RevealScreen() {
                 canRespond={false}
                 partnerName={partnerName}
                 initial={responsesByEntry[myEntry.id] ?? []}
+                revision={responsesRev}
               />
             )}
           </EntryCard>
@@ -125,6 +138,7 @@ export default function RevealScreen() {
                 canRespond
                 partnerName={partnerName}
                 initial={responsesByEntry[partnerEntry.id] ?? []}
+                revision={responsesRev}
               />
             )}
           </EntryCard>

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { View, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { Heart, HandsPraying, ChatCircle, Trash } from 'phosphor-react-native';
 import { Text } from './ui/Text';
@@ -12,9 +12,12 @@ import {
 // Renders the response layer for one reflection entry.
 //  - canRespond (the partner's entry): heart / amen / reply controls, editable.
 //  - otherwise (my own entry): the partner's responses to me, read only.
-// Optimistic: local state leads, the server call follows.
+// Optimistic: local state leads, the server call follows. When the parent
+// refetches (initial load landing, or a realtime event), it bumps `revision`
+// and this component re-syncs to server truth; syncing on the `initial` array
+// itself would loop, since parents rebuild it every render.
 export function ReflectionResponses({
-  entry, couplePlanId, dayNumber, canRespond, partnerName, initial,
+  entry, couplePlanId, dayNumber, canRespond, partnerName, initial, revision = 0,
 }: {
   entry: { id: string };
   couplePlanId: string;
@@ -22,12 +25,18 @@ export function ReflectionResponses({
   canRespond: boolean;
   partnerName: string;
   initial: EntryResponse[];
+  revision?: number;
 }) {
   const { colors } = useTheme();
   const [responses, setResponses] = useState<EntryResponse[]>(initial);
   const [replyOpen, setReplyOpen] = useState(false);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (revision > 0) setResponses(initial);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [revision]);
 
   const hearted = useMemo(() => responses.some((r) => r.kind === 'heart'), [responses]);
   const amened = useMemo(() => responses.some((r) => r.kind === 'amen'), [responses]);

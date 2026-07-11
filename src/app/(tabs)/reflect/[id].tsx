@@ -13,6 +13,7 @@ import { useTheme } from '../../../providers/ThemeProvider';
 import { useAuth } from '../../../providers/AuthProvider';
 import { useCouple } from '../../../providers/CoupleProvider';
 import { profileInitial } from '../../../lib/couples';
+import { supabase } from '../../../lib/supabase';
 import { getReflectionDetail } from '../../../lib/reflections';
 import { getResponsesForDay, EntryResponse } from '../../../lib/entryResponses';
 import { fetchPassage } from '../../../lib/bible';
@@ -31,6 +32,7 @@ export default function ReflectionDetailScreen() {
   const [passage, setPassage] = useState<string | null>(null);
   const [passageErr, setPassageErr] = useState(false);
   const [responsesByEntry, setResponsesByEntry] = useState<Record<string, EntryResponse[]>>({});
+  const [responsesRev, setResponsesRev] = useState(0);
 
   useEffect(() => {
     let alive = true;
@@ -44,10 +46,19 @@ export default function ReflectionDetailScreen() {
         if (alive) setLoading(false);
       }
     })();
-    getResponsesForDay(couplePlanId, dayNumber)
-      .then((r) => { if (alive) setResponsesByEntry(r); })
-      .catch(() => {});
-    return () => { alive = false; };
+    // Responses load + stay live: a partner's heart or reply lands without
+    // reopening the screen; `revision` re-syncs the cards to server truth.
+    const loadResponses = () => {
+      getResponsesForDay(couplePlanId, dayNumber)
+        .then((r) => { if (alive) { setResponsesByEntry(r); setResponsesRev((n) => n + 1); } })
+        .catch(() => {});
+    };
+    loadResponses();
+    const channel = supabase
+      .channel(`responses-${couplePlanId}-${dayNumber}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'entry_responses', filter: `couple_plan_id=eq.${couplePlanId}` }, loadResponses)
+      .subscribe();
+    return () => { alive = false; supabase.removeChannel(channel); };
   }, [couplePlanId, dayNumber]);
 
   const reference: string | undefined = data?.planDay?.passage_reference;
@@ -105,13 +116,13 @@ export default function ReflectionDetailScreen() {
         <ReflectionCard label="You wrote" voiceLabel="You recorded" initial={myInitial} entry={data?.mine} accent="primary" filled={false} colors={colors}>
           {data?.mine && (
             <ReflectionResponses entry={data.mine} couplePlanId={couplePlanId} dayNumber={dayNumber}
-              canRespond={false} partnerName={partnerName} initial={responsesByEntry[data.mine.id] ?? []} />
+              canRespond={false} partnerName={partnerName} initial={responsesByEntry[data.mine.id] ?? []} revision={responsesRev} />
           )}
         </ReflectionCard>
         <ReflectionCard label={`${partnerName} wrote`} voiceLabel={`${partnerName} recorded`} initial={partnerInitial} entry={data?.partner} accent="partner" filled colors={colors}>
           {data?.partner && (
             <ReflectionResponses entry={data.partner} couplePlanId={couplePlanId} dayNumber={dayNumber}
-              canRespond partnerName={partnerName} initial={responsesByEntry[data.partner.id] ?? []} />
+              canRespond partnerName={partnerName} initial={responsesByEntry[data.partner.id] ?? []} revision={responsesRev} />
           )}
         </ReflectionCard>
       </ScrollView>
