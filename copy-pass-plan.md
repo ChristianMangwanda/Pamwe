@@ -7,12 +7,13 @@ plan metadata seed), plus the mechanical fixes below. tsc clean, 96/96 Jest
 (2 test assertions updated to match new copy). Before/after review page:
 https://claude.ai/code/artifact/8e03a71d-82b2-4dd5-b2be-b7e817d36478
 
-**Remaining to go live:**
-1. Commit + ship app copy with the next build (b12).
-2. Hosted (jcyhhxgomhopkoqesbkb, needs Christian's word): redeploy edge
-   functions ask-pamwe / notify-partner / notify-freeze; re-apply
-   supabase/seeds/plan_metadata.sql (also re-run against local).
-3. Flag for Christian: you/privacy.tsx says Anthropic powers "the reading-plan
+**Go-live (2026-07-12, Christian's word):** committed to main as 837f28b and
+pushed to GitHub. Hosted (jcyhhxgomhopkoqesbkb): ask-pamwe v8 (verify_jwt true),
+notify-partner v5 + notify-freeze v6 (verify_jwt false, webhook targets),
+plan_metadata.sql re-applied to hosted AND local, all 4 taglines verified.
+**Remaining:**
+1. App copy ships with the next TestFlight build (b12).
+2. Flag for Christian: you/privacy.tsx says Anthropic powers "the reading-plan
    builder" but v7's help sheet also sends questions to Anthropic; policy
    accuracy fix is his call.
 
