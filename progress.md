@@ -1,6 +1,22 @@
 # Pamwe Build Progress Summary
 
-**Last Updated:** July 11, 2026
+**Last Updated:** July 12, 2026
+
+---
+
+## ⭐⭐⭐⭐ COPY PASS ROUND (2026-07-12): b12 UPLOADED, Sentry board cleared
+
+The three b7 Sentry crashes (PAMWE-IOS-1/2/3, all the PATCH-storm) resolved;
+sweep found zero other issues, zero events b8-b11. Then the whole-app
+copywriting pass: voice derived from Christian's own Notion writing into
+[`copy-voice.md`](copy-voice.md) (approved: "I like this voice"), 119 of ~800
+strings rewritten (plan + inventory + go-live log: [`copy-pass-plan.md`](copy-pass-plan.md)).
+Committed 837f28b, pushed. Hosted deployed same day: ask-pamwe v8,
+notify-partner v5, notify-freeze v6, plan_metadata.sql applied (hosted + local).
+**b12 (copy-only build) archived + uploaded ~13:00 PT**; new copy verified in
+the bundle before upload (hosted refs 1, new welcome H1 present, old lines gone).
+Open: b12 on-device pass with Ammy (doubles as the b11 feature pass), privacy-page
+Anthropic wording (Christian to phrase), widget (own session).
 
 ---
 
