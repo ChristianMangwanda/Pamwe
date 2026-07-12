@@ -47,7 +47,7 @@ const json = (body: unknown, status = 200) =>
   });
 
 const OFF_TOPIC_MESSAGE =
-  "Pamwe is here for Scripture, prayer, and your walk together. For that one, you'll want another guide.";
+  "Pamwe stays in its lane: Scripture, prayer, and the two of you. For that one, you'll want another guide.";
 
 const PLANS_SCHEMA = {
   type: "object",
@@ -161,7 +161,7 @@ Deno.serve(async (req) => {
   }
 
   if (!query) return json({ error: "Tell Pamwe what you'd like to read about." }, 400);
-  if (query.length > MAX_QUERY) return json({ error: `Please keep it under ${MAX_QUERY} characters.` }, 400);
+  if (query.length > MAX_QUERY) return json({ error: `Keep it under ${MAX_QUERY} characters.` }, 400);
 
   // Rate limit per user. The gateway has already verified the JWT
   // (verify_jwt = true), so its sub claim is trustworthy here.
@@ -176,7 +176,7 @@ Deno.serve(async (req) => {
     if (!error && data && data[0]) {
       const { new_count, prev_last_at } = data[0] as { new_count: number; prev_last_at: string | null };
       if (new_count > DAILY_CAP) {
-        return json({ error: "Pamwe needs to rest for today. Ask again tomorrow." }, 429);
+        return json({ error: "Pamwe is resting for today. Ask again tomorrow." }, 429);
       }
       if (prev_last_at && Date.now() - new Date(prev_last_at).getTime() < COOLDOWN_MS) {
         return json({ error: "One question at a time. Give Pamwe a breath and try again." }, 429);
@@ -218,7 +218,7 @@ Deno.serve(async (req) => {
     try {
       parsed = JSON.parse(text);
     } catch {
-      return json({ error: "Pamwe's answer came back garbled. Please try again." }, 502);
+      return json({ error: "Pamwe's answer came back garbled. Ask again soon." }, 502);
     }
 
     if (parsed.off_topic) {
@@ -229,6 +229,6 @@ Deno.serve(async (req) => {
     return json(parsed, 200);
   } catch (err) {
     console.error("ask-pamwe error:", err);
-    return json({ error: "Pamwe is resting right now. Please try again in a moment." }, 502);
+    return json({ error: "Pamwe is resting for a moment. Ask again soon." }, 502);
   }
 });

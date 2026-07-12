@@ -24,7 +24,7 @@ export default function PairChoiceScreen() {
         <BackLink onPress={() => router.back()} />
         <Text style={[styles.title, { color: colors.ink }]}>Link with your partner</Text>
         <Text italic color={colors.ink2} style={styles.subtitle}>
-          Pamwe is meant for two. Connect now so everything you read and pray is shared.
+          Pamwe is meant for two. Once you're linked, everything you read and pray is shared.
         </Text>
       </View>
 

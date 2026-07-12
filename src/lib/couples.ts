@@ -57,7 +57,7 @@ export async function joinCouple(inviteCode: string) {
     .gt('invite_expires_at', new Date().toISOString())
     .single();
 
-  if (findError || !couple) throw new Error('Invalid or expired invite code');
+  if (findError || !couple) throw new Error("That code didn't work. Check it with your partner and try again.");
   if (couple.partner_a_id === user.id) throw new Error("You can't join your own invite");
 
   const { error: updateError } = await supabase

@@ -32,7 +32,7 @@ export default function JoinScreen() {
       router.replace('/(onboarding)/connected');
     } catch (e: any) {
       setLoading(false);
-      Alert.alert('Could not join', e.message);
+      Alert.alert("Couldn't connect you", e.message);
     }
   };
 

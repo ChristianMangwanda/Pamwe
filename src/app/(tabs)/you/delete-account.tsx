@@ -23,7 +23,7 @@ export default function DeleteAccountScreen() {
       router.replace('/');
     } catch (err: any) {
       setDeleting(false);
-      Alert.alert('Could not delete account', err?.message ?? 'Please try again.');
+      Alert.alert("Couldn't delete your account", err?.message ?? 'Try again in a moment.');
     }
   };
 
@@ -59,7 +59,7 @@ export default function DeleteAccountScreen() {
             • Your partner keeps their own reflections and prayers.
           </Text>
           <Text variant="body" color={colors.ink2} style={styles.line}>
-            • Your partner is unpaired and let know you've left.
+            • Your partner is unpaired and told that you've left.
           </Text>
           <Text variant="body" color={colors.ink2} style={styles.line}>
             • This is immediate and cannot be undone.

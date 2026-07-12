@@ -142,7 +142,7 @@ describe('joinCouple', () => {
     const selectChain = chainMock({ data: null, error: { message: 'not found' } });
     mockFrom.mockReturnValue(selectChain);
 
-    await expect(joinCouple('BADCODE')).rejects.toThrow('Invalid or expired invite code');
+    await expect(joinCouple('BADCODE')).rejects.toThrow("That code didn't work. Check it with your partner and try again.");
   });
 
   it('throws if trying to join own invite', async () => {

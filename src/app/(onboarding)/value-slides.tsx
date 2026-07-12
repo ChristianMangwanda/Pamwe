@@ -17,8 +17,8 @@ import { ONB_INTENT_KEY } from '../(auth)/welcome';
 // Copy lifted verbatim from the prototype's valueSlides array.
 const SLIDES = [
   { Icon: BookOpen, title: 'Read together', body: 'Move through Scripture side by side: the same passage, the same day, wherever you each are.' },
-  { Icon: LockKey, title: 'Reflect, then reveal', body: "Write privately. Your words stay sealed until you've both reflected. Then you open them together." },
-  { Icon: HandsPraying, title: 'Carry each other', body: 'Share prayer points and pray for what the other is walking through, every day.' },
+  { Icon: LockKey, title: 'Reflect, then reveal', body: "You each write alone. It stays sealed until you've both finished. Then you open it together." },
+  { Icon: HandsPraying, title: 'Carry each other', body: 'Share prayer points. Pray for what the other is walking through, every day.' },
 ];
 
 export default function ValueSlidesScreen() {

@@ -73,7 +73,7 @@ export function ReflectionResponses({
       setResponses((prev) => had
         ? [...prev, { id: `tmp-${kind}`, entry_id: entry.id, author_id: 'me', kind, body: null, created_at: '' }]
         : prev.filter((r) => r.kind !== kind));
-      Alert.alert('Could not save', 'Please try again.');
+      Alert.alert("Couldn't save that", 'Try again in a moment.');
     }
   };
 
@@ -88,7 +88,7 @@ export function ReflectionResponses({
       setDraft('');
       setReplyOpen(false);
     } catch {
-      Alert.alert('Could not send', 'Please try again.');
+      Alert.alert("Couldn't send that", 'Your reply is still here. Try again in a moment.');
     } finally {
       setBusy(false);
     }
@@ -108,20 +108,20 @@ export function ReflectionResponses({
       setResponses((prev) => [...prev, saved]);
       setQuoteOpen(false);
     } catch {
-      Alert.alert('Could not keep that line', 'Please try again.');
+      Alert.alert("Couldn't keep that line", 'Try again in a moment.');
     } finally {
       setBusy(false);
     }
   };
 
   const onDelete = (r: EntryResponse) => {
-    Alert.alert('Remove this?', 'It will be removed for both of you.', [
+    Alert.alert('Remove this?', "It'll be removed for both of you.", [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Remove', style: 'destructive',
         onPress: async () => {
           setResponses((prev) => prev.filter((x) => x.id !== r.id));
-          try { await deleteResponse(r.id); } catch { Alert.alert('Could not remove', 'Please try again.'); }
+          try { await deleteResponse(r.id); } catch { Alert.alert("Couldn't remove that", 'Try again in a moment.'); }
         },
       },
     ]);

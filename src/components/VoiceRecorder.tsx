@@ -116,7 +116,7 @@ export function VoiceRecorder({
       stopRequestedRef.current = false;
       recorder.record();
     } catch (err: any) {
-      Alert.alert('Could not start recording', err?.message ?? 'Unknown error');
+      Alert.alert("Couldn't start recording", err?.message ?? 'Something went wrong. Try again.');
     } finally {
       setPreparing(false);
     }
@@ -128,14 +128,14 @@ export function VoiceRecorder({
       await recorder.stop();
       const uri = recorder.uri;
       if (!uri) {
-        Alert.alert('Recording failed', 'No audio file was produced.');
+        Alert.alert("That one didn't record", 'No audio came through. Try once more.');
         return;
       }
       await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
       setRecordedUri(uri);
       setRecordedDuration(Math.round(durationMs / 1000));
     } catch (err: any) {
-      Alert.alert('Could not stop recording', err?.message ?? 'Unknown error');
+      Alert.alert("Couldn't stop recording", err?.message ?? 'Something went wrong. Try again.');
     }
   };
 
@@ -229,7 +229,7 @@ function PlaybackUI({ uri, durationSeconds, onAccept, onDiscard }: { uri: string
       </View>
 
       <View style={styles.actions}>
-        <Button title="Send to partner" onPress={onAccept} />
+        <Button title="Send to your partner" onPress={onAccept} />
         <Button title="Re-record" variant="ghost" onPress={onDiscard} style={styles.discardButton} />
       </View>
     </View>

@@ -30,7 +30,7 @@ export default function WelcomeScreen() {
         <Floral variant="corner" style={styles.floralTop} />
         <Floral variant="corner" style={styles.floralBottom} />
         <Text style={[styles.eyebrow, { color: colors.accent2 }]}>Pamwe</Text>
-        <Text style={[styles.h1, { color: colors.ink }]}>Grow closer to God, together.</Text>
+        <Text style={[styles.h1, { color: colors.ink }]}>Closer to God. Closer to each other.</Text>
         <Text italic color={colors.ink2} style={styles.pron}>pah-mweh · "together" in Shona</Text>
       </View>
 

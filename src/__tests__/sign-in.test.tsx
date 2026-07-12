@@ -64,7 +64,7 @@ describe('Apple sign-in', () => {
     fireEvent.press(getByText('Continue with Apple'));
 
     await waitFor(() =>
-      expect(Alert.alert).toHaveBeenCalledWith('Apple Sign In Error', 'Unacceptable audience in id_token'),
+      expect(Alert.alert).toHaveBeenCalledWith("Couldn't sign in with Apple", 'Unacceptable audience in id_token'),
     );
     expect(mockRouter.replace).not.toHaveBeenCalled();
   });
@@ -118,7 +118,7 @@ describe('Google sign-in', () => {
 
     await waitFor(() =>
       expect(Alert.alert).toHaveBeenCalledWith(
-        'Google Sign In Error',
+        "Couldn't sign in with Google",
         'Passed nonce and nonce in id_token should either both exist or not.',
       ),
     );

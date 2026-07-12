@@ -45,9 +45,9 @@ export default function WaitingScreen() {
         <Animated.View entering={popIn} style={[styles.check, { backgroundColor: colors.surface2, borderColor: colors.lineAccent }]}>
           <Check size={32} color={colors.accent} weight="bold" />
         </Animated.View>
-        <Text style={[styles.title, { color: colors.ink }]}>Your reflection is in.</Text>
+        <Text style={[styles.title, { color: colors.ink }]}>Yours is in.</Text>
         <Text color={colors.ink2} style={styles.body}>
-          It stays sealed until {partnerName} has read and reflected too. We'll nudge you both the moment it's ready to open together.
+          It stays sealed until {partnerName} has written too. The moment you both have, we'll tell you. Some things are worth the wait.
         </Text>
 
         <View style={[styles.partnerCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>

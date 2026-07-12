@@ -27,7 +27,7 @@ export default function SignInScreen() {
       options: { emailRedirectTo: 'pamwe://(auth)/magic-link' },
     });
     setLoading(false);
-    if (error) Alert.alert('Error', error.message);
+    if (error) Alert.alert("Couldn't send the email", error.message);
     else router.push('/(auth)/magic-link');
   };
 
@@ -46,7 +46,7 @@ export default function SignInScreen() {
       // v16 resolves (not throws) on cancel — a dismissed picker is a no-op.
       if (result.type !== 'success') return;
       const idToken = result.data?.idToken;
-      if (!idToken) throw new Error('No idToken received from Google.');
+      if (!idToken) throw new Error("Google didn't finish signing you in. Try again.");
       setLoading(true);
       const { error } = await supabase.auth.signInWithIdToken({ provider: 'google', token: idToken });
       if (error) throw error;
@@ -57,7 +57,7 @@ export default function SignInScreen() {
     } catch (e: any) {
       setLoading(false);
       if (e?.code === statusCodes.SIGN_IN_CANCELLED) return;
-      Alert.alert('Google Sign In Error', e?.message || 'An error occurred.');
+      Alert.alert("Couldn't sign in with Google", e?.message || 'Something went wrong. Try again.');
     }
   };
 
@@ -76,11 +76,11 @@ export default function SignInScreen() {
         setLoading(false);
         router.replace('/');
       } else {
-        throw new Error('No identityToken received from Apple.');
+        throw new Error("Apple didn't finish signing you in. Try again.");
       }
     } catch (e: any) {
       setLoading(false);
-      if (e.code !== 'ERR_REQUEST_CANCELED') Alert.alert('Apple Sign In Error', e.message || 'An error occurred.');
+      if (e.code !== 'ERR_REQUEST_CANCELED') Alert.alert("Couldn't sign in with Apple", e.message || 'Something went wrong. Try again.');
     }
   };
 
@@ -92,7 +92,7 @@ export default function SignInScreen() {
           <SectionEyebrow style={styles.eyebrow}>Welcome</SectionEyebrow>
           <Text variant="h1" style={styles.title}>Sign in</Text>
           <Text italic color={colors.ink2} style={styles.subtitle}>
-            Sign in separately from your partner. You'll pair in the next step.
+            You each sign in on your own. You'll link with your partner in the next step.
           </Text>
 
           <View style={styles.form}>

@@ -65,7 +65,7 @@ export default function YouScreen() {
   const streak = couple?.streak_count ?? 0;
 
   const confirmSignOut = () => {
-    Alert.alert('Sign out?', 'You can sign back in any time.', [
+    Alert.alert('Sign out?', 'You can sign back in anytime.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Sign out', style: 'destructive', onPress: () => { signOut(); router.replace('/'); } },
     ]);

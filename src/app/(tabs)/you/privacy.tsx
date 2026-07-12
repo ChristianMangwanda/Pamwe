@@ -99,8 +99,8 @@ export default function PrivacyScreen() {
         <P>
           You can delete your account any time in Settings → Delete account. This permanently
           removes your reflections, voice recordings, prayers, prayer marks, highlights, notes,
-          and account details. Your partner keeps their own reflections and prayers and is
-          unpaired. Deletion is not reversible.
+          and account details. Your partner is unpaired and keeps their own reflections and
+          prayers. Deletion is not reversible.
         </P>
 
         <H>Children</H>

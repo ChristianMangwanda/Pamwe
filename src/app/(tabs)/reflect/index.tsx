@@ -102,7 +102,7 @@ export default function ReflectScreen() {
             <Feather size={40} color="#CBB99B" weight="regular" />
             <Text variant="h2" italic style={styles.emptyTitle}>No reflections yet</Text>
             <Text color={colors.muted} style={styles.emptyText}>
-              When you read a plan day and reflect, what you each write will gather here.
+              When you read a day together and reflect, what you each write will gather here.
             </Text>
           </View>
         ) : (

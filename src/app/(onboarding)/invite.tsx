@@ -46,7 +46,7 @@ export default function InviteScreen() {
         // subscription attaches and catches the partner joining.
         refresh();
       } catch (e: any) {
-        Alert.alert('Could not create invite', e.message);
+        Alert.alert("Couldn't create your code", e.message);
       }
     })();
   }, [router]);
@@ -77,7 +77,7 @@ export default function InviteScreen() {
   const onShare = async () => {
     if (!code) return;
     haptics.tap();
-    await Share.share({ message: `Join me on Pamwe. Enter this code to link with me: ${code}` });
+    await Share.share({ message: `I want us to read the Bible together, a little each day. Join me on Pamwe. Enter this code to link with me: ${code}` });
   };
 
   return (

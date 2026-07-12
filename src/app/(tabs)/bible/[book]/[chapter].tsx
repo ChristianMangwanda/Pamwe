@@ -202,9 +202,9 @@ export default function ChapterReader() {
 
         {error && !loading && (
           <View style={[styles.errorCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-            <Text color={colors.ink2} style={styles.errorText}>Could not load this chapter. Check your connection and try again.</Text>
+            <Text color={colors.ink2} style={styles.errorText}>We couldn't load this chapter. Check your connection and try again.</Text>
             <TouchableOpacity onPress={load} style={{ marginTop: 12 }}>
-              <Text color={colors.accent} style={styles.link}>Retry</Text>
+              <Text color={colors.accent} style={styles.link}>Try again</Text>
             </TouchableOpacity>
           </View>
         )}

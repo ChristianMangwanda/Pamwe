@@ -91,12 +91,12 @@ export async function getRecap(coupleId: string, timezone: string, period: Recap
     ? `You're building a real rhythm: ${days} days of showing up for each other. Keep going.`
     : days > 0
       ? 'Small steps still count. Every day in the Word plants something between you.'
-      : 'A quiet season is still a season. When you return to the Word, it will be here.';
+      : "A quiet stretch. That's okay. The Word will be here when you come back.";
 
-  const read = readRefs.length ? readRefs.slice(0, 8).join(', ') : "You'll see what you read here once you've read a few days.";
+  const read = readRefs.length ? readRefs.slice(0, 8).join(', ') : "After a few days of reading together, you'll see it here.";
   const pray = prayerTexts.length
     ? prayerTexts.slice(0, 3).map((t) => `“${t.length > 90 ? t.slice(0, 87) + '…' : t}”`).join('  ')
-    : 'Nothing new brought to prayer this ' + word + '.';
+    : 'No new prayers this ' + word + '.';
 
   return { period, rangeLabel: RECAP_LABEL[period], headline, days, highlights: highlights ?? 0, prayers, read, learned, pray };
 }

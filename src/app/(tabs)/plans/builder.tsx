@@ -133,7 +133,7 @@ export default function BuilderScreen() {
       setCreatedId(plan.id);
     } catch (err: any) {
       setCreating(false);
-      Alert.alert('Could not create the plan', err?.message ?? 'Please try again.');
+      Alert.alert("Couldn't create the plan", err?.message ?? 'Try again in a moment.');
     }
   };
 
@@ -260,7 +260,7 @@ export default function BuilderScreen() {
           {step === 1 && (
             <>
               <Text variant="h1">How long?</Text>
-              <Text color={colors.ink2} style={styles.sub}>Choose the length of your journey.</Text>
+              <Text color={colors.ink2} style={styles.sub}>Pick how many days you'll read together.</Text>
               <View style={styles.lengths}>
                 {LENGTHS.map((d) => {
                   const sel = days === d;

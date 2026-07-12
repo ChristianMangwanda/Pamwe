@@ -48,7 +48,7 @@ export default function BibleBooks() {
   };
 
   const marksSub =
-    markCount === null ? 'Everything you’ve marked, together' : markCount === 0 ? 'Nothing marked yet' : `${markCount} marked`;
+    markCount === null ? "Everything you've marked, together" : markCount === 0 ? 'Nothing marked yet' : `${markCount} marked`;
 
   return (
     <Screen>

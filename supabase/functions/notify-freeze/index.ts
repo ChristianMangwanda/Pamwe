@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
     to,
     sound: "default",
     title: "Today is a fresh start",
-    body: "Yesterday was a freeze day, so your streak is safe. Pick up where you left off.",
+    body: "Your streak is safe. Pick up where you left off.",
     data: { type: "freeze" },
   }));
 

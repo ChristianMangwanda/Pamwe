@@ -35,7 +35,7 @@ export default function NoteEditor() {
       router.back();
     } catch (e: any) {
       setSaving(false);
-      Alert.alert('Could not save', e.message);
+      Alert.alert("Couldn't save your note", e.message);
     }
   };
 

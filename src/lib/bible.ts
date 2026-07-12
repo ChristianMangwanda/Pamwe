@@ -166,7 +166,7 @@ export async function fetchChapterVerses(
   const url = `https://bible-api.com/${slug}+${chapter}?translation=${translation}`;
   try {
     const resp = await fetch(url);
-    if (!resp.ok) throw new Error(`bible-api.com returned HTTP ${resp.status} for ${book} ${chapter}`);
+    if (!resp.ok) throw new Error("The Bible text couldn't load. Check your connection and try again.");
     const data = await resp.json();
     const verses: BibleVerse[] = (Array.isArray(data.verses) ? data.verses : []).map((v: any) => ({
       verse: v.verse,
@@ -191,7 +191,7 @@ export async function fetchPassage(reference: string, translation: Translation =
   const slug = reference.toLowerCase().replace(/ /g, '+');
   const url = `https://bible-api.com/${slug}?translation=${translation}`;
   const resp = await fetch(url);
-  if (!resp.ok) throw new Error(`bible-api.com returned HTTP ${resp.status} for ${reference}`);
+  if (!resp.ok) throw new Error("The Bible text couldn't load. Check your connection and try again.");
   const data = await resp.json();
   return String(data.text ?? '').replace(/\s+/g, ' ').trim();
 }

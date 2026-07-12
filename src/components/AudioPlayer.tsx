@@ -44,7 +44,7 @@ export function AudioPlayer({ audioPath, durationSeconds, label, accent = 'prima
   if (urlError) {
     return (
       <View style={styles.container}>
-        <Text variant="label" color={colors.muted}>Couldn't load recording.</Text>
+        <Text variant="label" color={colors.muted}>Couldn't load this recording. Try again in a moment.</Text>
       </View>
     );
   }

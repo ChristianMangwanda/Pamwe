@@ -48,7 +48,7 @@ export default function SettingsScreen() {
     try {
       await updateNotificationPrefs(patch);
     } catch (err: any) {
-      Alert.alert('Could not save', err?.message ?? 'Please try again.');
+      Alert.alert("Couldn't save that", err?.message ?? 'Try again in a moment.');
     }
   };
 
@@ -106,7 +106,7 @@ export default function SettingsScreen() {
           </View>
 
           <View style={[styles.divider, { backgroundColor: colors.line }]} />
-          <ToggleRow label="Partner reflections" description="When your partner submits, so both unlock." value={prefs?.notification_partner ?? true} onChange={(v) => savePref({ notification_partner: v })} colors={colors} />
+          <ToggleRow label="Partner reflections" description="When your partner submits and both reflections unlock." value={prefs?.notification_partner ?? true} onChange={(v) => savePref({ notification_partner: v })} colors={colors} />
           <View style={[styles.divider, { backgroundColor: colors.line }]} />
           <ToggleRow label="New prayers" description="When your partner adds a prayer point." value={prefs?.notification_prayer ?? true} onChange={(v) => savePref({ notification_prayer: v })} colors={colors} />
         </Card>

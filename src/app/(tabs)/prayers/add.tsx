@@ -52,7 +52,7 @@ export default function AddPrayerScreen() {
       }
       router.back();
     } catch (err: any) {
-      Alert.alert('Could not save your prayer', err?.message ?? 'Please try again in a moment.');
+      Alert.alert("Couldn't save your prayer", err?.message ?? 'Try again in a moment.');
       setSaving(false);
     }
   };

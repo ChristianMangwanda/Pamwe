@@ -80,7 +80,7 @@ export default function HomeScreen() {
         <View style={styles.center}>
           <Text variant="h2" italic style={styles.centerTitle}>Ready for what's next</Text>
           <Text color={colors.ink2} style={styles.centerText}>
-            You don't have an active reading plan right now. Choose one to begin a new journey together.
+            You don't have an active reading plan right now. Choose one and begin together.
           </Text>
           <View style={styles.centerCta}>
             <Button title="Choose a plan" onPress={() => router.push('/(onboarding)/plan-select')} />
@@ -157,7 +157,7 @@ export default function HomeScreen() {
     setNudging(false);
     if (res.ok) { setNudged(true); haptics.success(); }
     else if (res.cooldown) { setNudged(true); Alert.alert('Already sent', res.message ?? 'You just sent a nudge.'); }
-    else Alert.alert('Could not send', res.message ?? 'Please try again.');
+    else Alert.alert("Couldn't send the nudge", res.message ?? 'Try again in a moment.');
   };
 
   return (
@@ -198,8 +198,8 @@ export default function HomeScreen() {
           <View style={[styles.catchup, { backgroundColor: colors.surface2, borderColor: colors.lineAccent }]}>
             <Text style={[styles.catchupText, { color: colors.ink }]}>
               {behind === 1
-                ? "You're a day behind. No rush, just pick it up together when you can."
-                : `You're ${behind} days behind. Read today's together tonight and you'll be back in step.`}
+                ? "You're a day behind. That's okay. Pick it back up together when you can."
+                : `You're ${behind} days behind. That's okay. Read today's together and you'll be back in step.`}
             </Text>
           </View>
         )}

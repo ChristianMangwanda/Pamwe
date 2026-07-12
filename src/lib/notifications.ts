@@ -176,11 +176,11 @@ export type NudgeResult = { ok: boolean; cooldown?: boolean; message?: string };
 export async function nudgePartner(): Promise<NudgeResult> {
   try {
     const { data, error } = await supabase.functions.invoke('notify-nudge', { body: {} });
-    if (error) return { ok: false, message: 'Could not send a nudge right now.' };
+    if (error) return { ok: false, message: "The nudge didn't send. Try again in a moment." };
     if (data?.cooldown) return { ok: false, cooldown: true, message: data?.message };
     return { ok: !!data?.ok };
   } catch {
-    return { ok: false, message: 'Could not send a nudge right now.' };
+    return { ok: false, message: "The nudge didn't send. Try again in a moment." };
   }
 }
 
@@ -189,8 +189,8 @@ export async function scheduleMorningNotification(hour: number, minute: number) 
 
   await Notifications.scheduleNotificationAsync({
     content: {
-      title: 'Good morning',
-      body: "Today's reading is waiting for you and your partner.",
+      title: "Today's reading is ready",
+      body: 'Open Pamwe and read it together.',
       sound: true,
       data: { type: 'morning' },
     },

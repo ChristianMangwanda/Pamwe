@@ -114,7 +114,7 @@ export default function PrayersScreen() {
       await markPrayedFor(prayerId, couple.timezone);
     } catch {
       await load();
-      Alert.alert('Could not save', "That didn't go through. Please try again.");
+      Alert.alert("Couldn't save that", "That didn't go through. Try again in a moment.");
     }
   };
 
@@ -122,13 +122,13 @@ export default function PrayersScreen() {
     setDetail(null);
     const submit = async (note?: string) => {
       try { await markAnswered(prayer.id, note); clearReminder(prayer.id); load(); }
-      catch (err: any) { Alert.alert('Could not update the prayer', err?.message ?? 'Please try again in a moment.'); }
+      catch (err: any) { Alert.alert("Couldn't update the prayer", err?.message ?? 'Try again in a moment.'); }
     };
     if (Platform.OS === 'ios') {
       Alert.prompt('Mark as answered', 'Add a note about how it was answered (optional).',
         [{ text: 'Cancel', style: 'cancel' }, { text: 'Mark answered', onPress: (note?: string) => submit(note) }], 'plain-text');
     } else {
-      Alert.alert('Mark as answered', 'This moves the prayer to your answered archive.',
+      Alert.alert('Mark as answered', 'It moves to your answered prayers.',
         [{ text: 'Cancel', style: 'cancel' }, { text: 'Mark answered', onPress: () => submit() }]);
     }
   };
@@ -140,7 +140,7 @@ export default function PrayersScreen() {
 
   const handleDelete = (prayer: Prayer) => {
     setDetail(null);
-    Alert.alert('Delete this prayer?', 'This removes it for both of you and can’t be undone.', [
+    Alert.alert('Delete this prayer?', "This removes it for both of you and can't be undone.", [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete', style: 'destructive',
@@ -148,7 +148,7 @@ export default function PrayersScreen() {
           setActive((prev) => prev.filter((p) => p.id !== prayer.id));
           clearReminder(prayer.id);
           try { await deletePrayer(prayer.id); await load(); }
-          catch (err: any) { await load(); Alert.alert('Could not remove it', err?.message ?? 'Please try again in a moment.'); }
+          catch (err: any) { await load(); Alert.alert("Couldn't remove it", err?.message ?? 'Try again in a moment.'); }
         },
       },
     ]);
@@ -179,9 +179,9 @@ export default function PrayersScreen() {
         ) : allEmpty ? (
           <View style={styles.empty}>
             <HandsPraying size={40} color="#CBB99B" weight="regular" />
-            <Text variant="h2" italic style={styles.emptyTitle}>Nothing on your hearts yet</Text>
+            <Text variant="h2" italic style={styles.emptyTitle}>No prayers here yet</Text>
             <Text color={colors.muted} style={styles.emptyText}>
-              Add your first prayer point above, and {partnerName} can pray it with you.
+              Write the first one down. {partnerName} will pray it with you.
             </Text>
           </View>
         ) : (

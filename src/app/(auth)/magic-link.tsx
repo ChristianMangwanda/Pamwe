@@ -19,7 +19,7 @@ export default function MagicLinkScreen() {
         </View>
         <Text variant="h1" style={styles.title}>Check your email</Text>
         <Text italic color={colors.ink2} style={styles.subtitle}>
-          We've sent you a magic link. Tap it to sign in, then come back here.
+          We've sent you a sign-in link. Tap it, then come back here.
         </Text>
       </View>
       <View style={styles.footer}>

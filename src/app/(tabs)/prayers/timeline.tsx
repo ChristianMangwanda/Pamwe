@@ -70,7 +70,7 @@ export default function PrayerTimelineScreen() {
             <SealCheck size={38} color="#CBB99B" weight="regular" />
             <Text variant="h2" italic style={styles.emptyTitle}>Nothing answered yet</Text>
             <Text color={colors.muted} style={styles.emptyText}>
-              When you mark a prayer answered, it will be gathered here as part of your story.
+              When you mark a prayer answered, it gathers here. Part of your story.
             </Text>
           </View>
         ) : (

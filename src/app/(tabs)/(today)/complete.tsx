@@ -44,7 +44,7 @@ export default function CompleteScreen() {
           <Text variant="eyebrow" color={colors.muted}>Plan complete</Text>
           <Text variant="hero" style={styles.title}>You finished {planTitle}, together</Text>
           <Text variant="body" color={colors.ink2} style={styles.subtitle}>
-            Every day, you both showed up and shared what you saw. That is the whole point.
+            Day after day, you both showed up and said what you saw. That is the whole point.
           </Text>
         </View>
 

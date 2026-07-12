@@ -45,7 +45,7 @@ export default function PlanSelectScreen() {
     try {
       setEnrolling(true);
       const couple = await getUserCouple();
-      if (!couple) throw new Error('No couple found');
+      if (!couple) throw new Error("We couldn't find your couple. Check your connection and try again.");
       if (isSwitch) {
         await switchPlan(couple.id, selectedId);
       } else {
@@ -58,7 +58,7 @@ export default function PlanSelectScreen() {
       router.replace('/(tabs)/(today)');
     } catch (err: any) {
       setEnrolling(false);
-      Alert.alert('Could not change plan', err?.message ?? 'Please try again.');
+      Alert.alert("Couldn't set your plan", err?.message ?? "That didn't go through. Give it another try in a moment.");
     }
   };
 
@@ -67,7 +67,7 @@ export default function PlanSelectScreen() {
     if (!isSwitch) { doEnroll(); return; }
     Alert.alert(
       'Switch reading plan?',
-      'Your current plan will be marked complete and the new one will start at day 1. This affects you and your partner.',
+      'Your current plan will be marked complete. The new one starts at day 1, for both of you.',
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Switch', style: 'destructive', onPress: doEnroll },

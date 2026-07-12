@@ -50,7 +50,7 @@ export async function setReminder(
   const body = prayerText.length > 90 ? `${prayerText.slice(0, 88).trim()}…` : prayerText;
   const notificationId = await Notifications.scheduleNotificationAsync({
     content: {
-      title: 'A prayer to carry',
+      title: 'Time to pray',
       body,
       sound: true,
       data: { type: 'prayer_reminder', prayerId },

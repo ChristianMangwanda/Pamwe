@@ -21,7 +21,7 @@ export default function ChapterPicker() {
       <Screen>
         <BackLink onPress={() => router.replace('/(tabs)/bible')} label="Bible" />
         <Text variant="h2" style={{ marginTop: 22 }}>Unknown book</Text>
-        <Text color={colors.ink2} style={{ marginTop: 8 }}>"{bookName}" isn't a recognized Bible book.</Text>
+        <Text color={colors.ink2} style={{ marginTop: 8 }}>We couldn't find a book called "{bookName}".</Text>
         <Button title="Back to books" variant="secondary" onPress={() => router.replace('/(tabs)/bible')} style={{ marginTop: 24 }} />
       </Screen>
     );

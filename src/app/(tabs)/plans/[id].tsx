@@ -93,13 +93,13 @@ export default function PlanDetailScreen() {
         router.replace('/(tabs)/(today)');
       } catch (err: any) {
         setBusy(false);
-        Alert.alert('Could not start this plan', err?.message ?? 'Please try again.');
+        Alert.alert("Couldn't start this plan", err?.message ?? 'Try again in a moment.');
       }
     };
     if (couplePlan) {
       Alert.alert(
         'Switch reading plan?',
-        `Your current plan will be marked complete and "${plan.title}" will start at day 1. This affects you and your partner.`,
+        `Your current plan is marked complete. "${plan.title}" starts at day 1, for both of you.`,
         [
           { text: 'Cancel', style: 'cancel' },
           { text: 'Begin together', style: 'destructive', onPress: begin },
@@ -135,7 +135,7 @@ export default function PlanDetailScreen() {
               });
             } catch (err: any) {
               setBusy(false);
-              Alert.alert('Could not update the plan', err?.message ?? 'Please try again.');
+              Alert.alert("Couldn't update the plan", err?.message ?? 'Try again in a moment.');
             }
           },
         },

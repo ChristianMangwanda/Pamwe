@@ -83,7 +83,7 @@ export type HelpAnswer =
   | { kind: 'error'; message: string };
 
 const OFF_TOPIC_FALLBACK =
-  "Pamwe is here for Scripture, prayer, and your walk together. For that one, you'll want another guide.";
+  "Pamwe stays in its lane: Scripture, prayer, and the two of you. For that one, you'll want another guide.";
 
 // The quiet in-app helper (Ask Pamwe sheet). Unlike the builder, help mode has
 // no rich local fallback, so failures surface a gentle one-line message instead
@@ -102,7 +102,7 @@ export async function askPamweHelp(query: string): Promise<HelpAnswer> {
     }
     const answer = typeof data?.answer === 'string' ? data.answer.trim() : '';
     if (!answer) {
-      return { kind: 'error', message: 'Pamwe could not find the words just now. Please try again.' };
+      return { kind: 'error', message: "Pamwe couldn't find the words just now. Ask again soon." };
     }
     const references: HelpReference[] = Array.isArray(data?.references)
       ? data.references
@@ -112,7 +112,7 @@ export async function askPamweHelp(query: string): Promise<HelpAnswer> {
       : [];
     return { kind: 'answer', answer, references };
   } catch {
-    return { kind: 'error', message: 'Pamwe is resting right now. Please try again in a moment.' };
+    return { kind: 'error', message: 'Pamwe is resting for a moment. Ask again soon.' };
   } finally {
     clearTimeout(timer);
   }
@@ -121,19 +121,19 @@ export async function askPamweHelp(query: string): Promise<HelpAnswer> {
 export function fallbackRecs(): PlanRecommendation[] {
   return [
     {
-      title: 'Meet Jesus, Together',
+      title: 'Meet Jesus, together',
       meta: 'The Gospel of John · 21 days',
       days: 21,
       rhythm: 'chapter',
       readings: generateSchedule('John', 1, 21),
       prompts: [
-        'What did Jesus reveal about himself in today’s reading?',
+        "What did Jesus reveal about himself in today's reading?",
         'Where do you each need his grace this week?',
         'What is one thing you want to remember together?',
       ],
     },
     {
-      title: 'Words for Every Weather',
+      title: 'Words for every weather',
       meta: 'Psalms of comfort · 14 days',
       days: 14,
       rhythm: 'verses',

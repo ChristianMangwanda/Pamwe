@@ -66,11 +66,11 @@ Deno.serve(async (req) => {
   const message = partnerAlsoSubmitted
     ? {
         title: "Both reflections are in",
-        body: "Open Pamwe to see what you both wrote.",
+        body: "Open Pamwe and read them together.",
       }
     : {
-        title: "Your partner finished today's reflection",
-        body: "Write yours to unlock both.",
+        title: "Your partner just wrote theirs",
+        body: "Write yours and open them together.",
       };
 
   const response = await fetch("https://exp.host/--/api/v2/push/send", {

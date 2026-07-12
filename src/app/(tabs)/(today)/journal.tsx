@@ -78,7 +78,7 @@ export default function JournalScreen() {
 
   const handleSubmitText = () => {
     if (!text.trim()) return;
-    Alert.alert(`Share with ${partnerName}?`, 'Once shared, your reflection is sealed and cannot be edited.', [
+    Alert.alert(`Share with ${partnerName}?`, "Once it's shared, it's sealed. No edits after this.", [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Share',
@@ -93,10 +93,10 @@ export default function JournalScreen() {
             router.replace('/(tabs)/(today)/waiting');
           } catch (err: any) {
             Alert.alert(
-              'Could not send',
+              "Couldn't send it",
               isNetworkError(err)
-                ? "You look offline. Your draft is saved. Try again when you're connected."
-                : err.message ?? 'Failed to submit. Your draft is saved, so try again.',
+                ? "You're offline. Don't worry, your words are saved. Send them when you're back."
+                : err.message ?? 'Your words are saved. Try sending them again.',
             );
           } finally {
             setSubmitting(false);
@@ -124,10 +124,10 @@ export default function JournalScreen() {
       router.replace('/(tabs)/(today)/waiting');
     } catch (err: any) {
       Alert.alert(
-        'Could not send recording',
+        "Couldn't send the recording",
         isNetworkError(err)
-          ? "You look offline. Your recording is still here. Try again when you're connected."
-          : err?.message ?? 'Upload failed. Your recording is still here, so try sending again.',
+          ? "You're offline. Don't worry, your recording is still here. Send it when you're back."
+          : err?.message ?? 'Your recording is still here. Try sending it again.',
       );
     } finally {
       setUploadingVoice(false);
@@ -148,7 +148,7 @@ export default function JournalScreen() {
   const LockHint = (
     <View style={styles.lockHint}>
       <LockSimple size={14} color={colors.muted} />
-      <Text color={colors.muted} style={styles.lockText}>Hidden until you've both reflected.</Text>
+      <Text color={colors.muted} style={styles.lockText}>Sealed until you've both written.</Text>
     </View>
   );
 
@@ -178,7 +178,7 @@ export default function JournalScreen() {
               <TextInput
                 style={[styles.textInput, { backgroundColor: colors.surface, borderColor: colors.line, color: colors.ink }]}
                 multiline
-                placeholder={`Write honestly. Only ${partnerName} will see it, and only once you've both written…`}
+                placeholder={`Write it as it is. Only ${partnerName} will ever see this, and only after they've written theirs.`}
                 placeholderTextColor={colors.muted}
                 value={text}
                 onChangeText={setText}
