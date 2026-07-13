@@ -335,3 +335,23 @@ Needed to verify the APNs key upload without clicking through menus. `eas creden
 ### Apple push key facts worth remembering
 
 Teams max out at 2 APNs keys, and a key's .p8 downloads exactly once at creation. Expo holds Pamwe's active key (EAS-generated, portal ID K45Q3988W2); the manually created TDA69K9QWF key was never uploaded anywhere and can be revoked if a slot is ever needed.
+
+## Home-screen widget (VerseWidget, 2026-07-12)
+
+### "Cycle inside Pamwe" when embedding the widget appex
+
+Adding the "Embed App Extensions" copy-files phase to the app target with xcodeproj's `new_copy_files_build_phase` **appends it last**. That makes it copy `VerseWidget.appex` into `Pamwe.app/PlugIns/` AFTER the implicit late steps that scan the whole app bundle (`ProcessInfoPlistFile`, `ExtractAppIntentsMetadata`) and the Expo "Strip Local Network Keys" script, so the build system reports `error: Cycle inside Pamwe`. Fix: **move the embed phase to right after the Frameworks phase** (early), before any whole-bundle step, so the appex exists when they run. `scripts/add_widget_target.rb` now positions it at `frameworks_index + 1` and re-asserts that position on every run (idempotent).
+
+### Building/verifying the widget headlessly
+
+- The auto-generated `VerseWidget` scheme treats the app as its extension host, so `xcodebuild -scheme VerseWidget` drags in the whole RN app + Pods and fails under `-project` (no Pods). To compile just the widget: `xcodebuild -project ios/Pamwe.xcodeproj -target VerseWidget -sdk iphonesimulator ... build` (redirect output with `SYMROOT`/`OBJROOT`; `-derivedDataPath` requires `-scheme`).
+- Full end-to-end proof (app compiles + embeds the appex, versions match) needs the **workspace**: `xcodebuild -workspace ios/Pamwe.xcworkspace -scheme Pamwe -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build`.
+- The SwiftUI view is kept WidgetKit-free so it can be snapshot-rendered off device: `swiftc` the view + a tiny `main.swift` host that registers the TTFs via `CTFontManagerRegisterFontsForURL` and uses `ImageRenderer` to emit PNGs per size/mode. Swift 6 strict concurrency makes `ImageRenderer` main-actor-only; wrap the host body in `MainActor.assumeIsolated { ... }`.
+
+### xcodeproj gem lives inside Homebrew CocoaPods
+
+There's no standalone `xcodeproj` gem on any Ruby here, but CocoaPods vendors it. Run splice scripts with `GEM_HOME=/opt/homebrew/Cellar/cocoapods/<ver>/libexec /opt/homebrew/opt/ruby/bin/ruby …` (set GEM_HOME only, like the `pod` wrapper does — overriding GEM_PATH hides rexml and breaks the load).
+
+### pod install stamps the widget Info.plist
+
+The Expo `react_native_post_install` hook writes `RCTNewArchEnabled` into every target's Info.plist, including the widget's, on each `pod install`. Harmless (WidgetKit ignores it) and it reappears if removed, so leave it. It does NOT attach any `[CP]` pod phases to the widget target (verified: the widget keeps just Sources/Frameworks/Resources).

@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pamwe · Verse of the Day Widget</title>
+<link rel="stylesheet" href="../fonts/fonts.css">
+<style>
+  :root{
+    --bg:#EFE6D6; --surface:#F7F0E1; --line:#D9CCB0;
+    --ink:#2B1F14; --ink2:#7A6A55; --muted:#A89678;
+    --accent:#6B2421; --accent2:#9B5651;
+    --serif:'Fraunces_400Regular',Georgia,serif;
+    --serif-it:'Fraunces_400Regular_Italic',Georgia,serif;
+    --serif-light-it:'Fraunces_300Light_Italic',Georgia,serif;
+    --serif-semi:'Fraunces_600SemiBold',Georgia,serif;
+    --sans:'InstrumentSans_500Medium',system-ui,sans-serif;
+    --sans-semi:'InstrumentSans_600SemiBold',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;background:#e7ddca;}
+  body{
+    font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;
+    color:var(--ink);
+  }
+  a{color:var(--accent);} a:hover{color:var(--accent2);}
+
+  .page{max-width:1180px;margin:0 auto;padding:64px 40px 96px;}
+  .grid{display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start;}
+  .grid > .wall{flex:1 1 420px;}
+
+  /* ---- header ---- */
+  .head{max-width:760px;margin:0 0 48px;}
+  .head .eyebrow{
+    font-family:var(--sans-semi);font-size:13px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--accent2);margin:0 0 14px;
+  }
+  .head h1{
+    font-family:var(--serif-light-it);font-weight:400;
+    font-size:52px;line-height:1.04;margin:0 0 18px;color:#241a12;
+    letter-spacing:-.01em;
+  }
+  .head p{
+    font-family:var(--serif);font-size:18px;line-height:1.55;
+    color:#5c4f3d;margin:0;max-width:660px;
+  }
+
+  /* ---- home-screen wallpaper panels ---- */
+  .wall{
+    border-radius:44px;padding:52px 52px 58px;
+    box-shadow:0 30px 70px -30px rgba(40,28,18,.45), inset 0 1px 0 rgba(255,255,255,.06);
+  }
+  .wall--light{
+    background:
+      radial-gradient(120% 90% at 22% 6%, #FBEFD6 0%, rgba(251,239,214,0) 55%),
+      linear-gradient(158deg,#F3E4C8 0%,#E9D6B8 48%,#E2CBA6 100%);
+  }
+  .wall--dark{
+    background:
+      radial-gradient(120% 90% at 22% 6%, #2c2117 0%, rgba(44,33,23,0) 55%),
+      linear-gradient(158deg,#1d160f 0%,#161009 55%,#0f0b07 100%);
+  }
+  .wall-label{
+    display:flex;align-items:center;gap:14px;margin:0 0 30px;
+    font-family:var(--sans-semi);font-size:14px;letter-spacing:.2em;
+    text-transform:uppercase;
+  }
+  .wall-label .dot{width:9px;height:9px;border-radius:50%;}
+  .wall--light .wall-label{color:#7a5b2f;}
+  .wall--light .wall-label .dot{background:#c79a54;box-shadow:0 0 0 4px rgba(199,154,84,.18);}
+  .wall--dark .wall-label{color:#d8b48a;}
+  .wall--dark .wall-label .dot{background:#e7aa9c;box-shadow:0 0 0 4px rgba(231,170,156,.16);}
+
+  .row{display:flex;gap:38px;align-items:flex-start;margin-bottom:38px;}
+  .row:last-child{margin-bottom:0;}
+  .stack{display:flex;flex-direction:column;gap:14px;}
+
+  .cap{
+    font-family:var(--sans-semi);font-size:12px;letter-spacing:.14em;
+    text-transform:uppercase;
+  }
+  .wall--light .cap{color:rgba(70,52,28,.62);}
+  .wall--dark .cap{color:rgba(226,200,164,.6);}
+  .cap span{font-family:var(--sans);letter-spacing:.02em;text-transform:none;opacity:.72;}
+
+  /* ---- the widget itself ---- */
+  .widget{
+    position:relative;overflow:hidden;border-radius:26px;isolation:isolate;
+    box-shadow:0 18px 34px -18px rgba(30,20,12,.55), 0 3px 8px -3px rgba(30,20,12,.35);
+  }
+  .widget.small{border-radius:22px;}
+  .w-light{
+    background:
+      radial-gradient(88% 68% at 20% 2%, #FFF7E6 0%, rgba(255,247,230,0) 62%),
+      linear-gradient(157deg,#FBF4E6 0%,#F4E9D3 62%,#EFE2CB 100%);
+    color:var(--ink);
+  }
+  .w-dark{
+    background:
+      radial-gradient(92% 70% at 18% 0%, #3a2a1d 0%, rgba(58,42,29,0) 60%),
+      linear-gradient(157deg,#241b13 0%,#1a140d 60%,#150f0a 100%);
+    color:#F1E8D8;
+  }
+  /* thin morning-light rim */
+  .widget::after{
+    content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:3;
+    box-shadow:inset 0 1px 0 rgba(255,250,236,.5), inset 0 0 0 1px rgba(120,90,50,.06);
+  }
+  .w-dark::after{
+    box-shadow:inset 0 1px 0 rgba(255,232,200,.10), inset 0 0 0 1px rgba(255,220,180,.05);
+  }
+
+  .willow{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0;}
+  .tree{position:absolute;inset:0;z-index:0;background-repeat:no-repeat;pointer-events:none;}
+
+  .content{position:relative;z-index:2;height:100%;display:flex;flex-direction:column;}
+
+  .veye{
+    font-family:var(--sans-semi);letter-spacing:.2em;text-transform:uppercase;
+    display:flex;align-items:center;gap:8px;
+  }
+  .veye .tick{width:16px;height:1.5px;border-radius:2px;background:currentColor;opacity:.55;}
+  .verse{
+    font-family:var(--serif-it);font-weight:400;letter-spacing:.002em;
+    text-wrap:pretty;
+    display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;
+  }
+  .ref{
+    font-family:var(--sans-semi);letter-spacing:.13em;text-transform:uppercase;
+  }
+  .w-light .veye{color:var(--accent2);}
+  .w-light .ref{color:#93502f;}
+  .w-light .verse{color:#33251a;text-shadow:0 1px 10px rgba(251,244,230,.9),0 0 2px rgba(251,244,230,.8);}
+  .w-dark  .veye{color:#e0a08f;}
+  .w-dark  .ref{color:#e7aa9c;}
+  .w-dark  .verse{color:#F1E8D8;text-shadow:0 1px 12px rgba(18,12,8,.95),0 0 3px rgba(18,12,8,.9);}
+
+  /* ---- annotation cards ---- */
+  .notes{width:100%;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px;margin-top:44px;}
+  .note{
+    background:#F7F0E1;border:1px solid var(--line);border-radius:18px;
+    padding:24px 26px;box-shadow:0 12px 30px -20px rgba(40,28,18,.4);
+  }
+  .note h3{
+    font-family:var(--serif-semi);font-weight:400;font-size:20px;margin:0 0 8px;color:#2a1e14;
+    display:flex;align-items:center;gap:10px;
+  }
+  .note h3 .idx{
+    font-family:var(--sans-semi);font-size:12px;letter-spacing:.06em;
+    color:var(--accent);background:#F0E1DC;border:1px solid #E4CFC9;
+    width:26px;height:26px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;flex:none;
+  }
+  .note p{font-family:var(--serif);font-size:15.5px;line-height:1.6;color:#5b4e3d;margin:0;}
+  .note p b{font-family:var(--sans-semi);font-weight:400;color:#7a4030;letter-spacing:.01em;}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ============ HEADER ============ -->
+  <header class="head">
+    <p class="eyebrow">Pamwe · Home Screen Widget</p>
+    <h1>Verse of the Day</h1>
+    <p>One verse each morning, keyed to the calendar date. A tree of life stands at the
+       center of the frame, its branches and roots framing the verse, so the widget feels
+       quiet and rooted even though it never moves. Small, medium, and large, in light and dark.</p>
+  </header>
+
+  <div class="grid">
+    <!-- ============ LIGHT PANEL ============ -->
+    <section class="wall wall--light" id="wall-light"></section>
+
+    <!-- ============ DARK PANEL ============ -->
+    <section class="wall wall--dark" id="wall-dark"></section>
+  </div>
+
+  <!-- ============ NOTES ============ -->
+  <aside class="notes">
+    <div class="note">
+      <h3><span class="idx">S</span>Small · emblem + short form</h3>
+      <p>At 170&nbsp;pt there is no room for a long verse. The tree sits behind as a
+         <b>faint centered emblem</b> and the app serves a <b>pre-selected short line</b> from the
+         same day's entry, clamped to four lines with a trailing ellipsis if it still overflows.</p>
+    </div>
+    <div class="note">
+      <h3><span class="idx">M</span>Medium · verse over the tree</h3>
+      <p>The tree is centered behind the verse, which is set over it with a soft glow so it
+         stays legible. The verse is <b>clamped to three lines</b>; anything longer truncates with an
+         ellipsis before the reference, which is always pinned to the bottom.</p>
+    </div>
+    <div class="note">
+      <h3><span class="idx">L</span>Large · room to breathe</h3>
+      <p>Full 20–30 word verse with an eyebrow and generous leading. The tree grows to full
+         height, canopy above and roots below the verse, so it <b>anchors the frame</b>
+         without competing with the text.</p>
+    </div>
+    <div class="note">
+      <h3><span class="idx">◐</span>Light &amp; dark</h3>
+      <p>Light mode is early-morning cream with a warm glow top-left; dark mode is a deep, warm
+         near-black with a rosy accent. The tree recolors from <b>warm maroon</b> to a
+         <b>soft rosy tone</b> so it reads at a glance against either wallpaper.</p>
+    </div>
+  </aside>
+
+</div>
+
+<script>
+/* ---------------- deterministic RNG ---------------- */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+
+/* cubic point helper */
+function cub(t,a,b,c,d){const m=1-t;return m*m*m*a+3*m*m*t*b+3*m*t*t*c+t*t*t*d;}
+function quad(t,a,b,c){const m=1-t;return m*m*a+2*m*t*b+t*t*c;}
+
+/* ---------------- willow generator ----------------
+   A weeping willow rooted at bottom-left. Trunk forks into boughs that arch
+   up and out; from the boughs, bellied strands cascade down, all leaning
+   gently RIGHT (wind) and curling at the tips — a frozen mid-drift still.
+   Foliage hangs downward along the strands. Crown is contained to the left
+   so the verse keeps a clear column on the right. ------------------------- */
+function willow({w,h,seed=7,dense=false,c}){
+  const rnd=mulberry32(seed); const R=(a,b)=>a+(b-a)*rnd();
+
+  const bx=w*0.19, by=h*1.05;                 // trunk base (just below frame)
+  const forkX=w*(dense?0.30:0.25), forkY=h*(dense?0.34:0.42);
+  const crownW=w*(dense?0.44:0.39);           // horizontal reach of crown
+  const crownTop=h*(dense?0.11:0.14);
+  const wind=(dense?9:13);                     // px of rightward lean per unit drop
+  const maxDrop=h*(dense?1.05:1.02);
+
+  let back='', mid='', front='', foliage='';
+
+  /* ---- trunk ---- */
+  const tw=Math.max(2.6,w*0.013);
+  mid+=`<path d="M ${bx-tw} ${by} C ${bx-tw*0.4} ${h*0.74} ${forkX-3} ${forkY+h*0.14} ${forkX} ${forkY}
+        C ${forkX+3} ${forkY+h*0.14} ${bx+tw*0.7} ${h*0.74} ${bx+tw} ${by} Z"
+        fill="${c.branch}" opacity="${dense?0.6:0.55}"/>`;
+
+  /* ---- boughs: arch up and out from the fork ---- */
+  const nB=dense?4:5;
+  const boughs=[];
+  for(let b=0;b<nB;b++){
+    const t=b/(nB-1);                                   // 0 = left, 1 = right
+    const tipX=forkX+(t-0.12)*crownW + wind*0.4;
+    const tipY=crownTop + Math.abs(t-0.46)*h*0.07 + R(-3,3);   // dome: middle highest
+    const midX=forkX+(tipX-forkX)*0.5 + (t<0.45?-1:1)*w*0.045;
+    const midY=forkY-(forkY-tipY)*0.5;
+    boughs.push({tipX,tipY,midX,midY});
+    mid+=`<path d="M ${forkX} ${forkY} Q ${midX} ${midY} ${tipX} ${tipY}" fill="none"
+          stroke="${c.branch}" stroke-width="${Math.max(1.0,w*0.006*(1-t*0.35)).toFixed(2)}"
+          stroke-linecap="round" opacity="${dense?0.42:0.36}"/>`;
+  }
+
+  /* ---- strand origins sampled along the boughs (weighted to outer half) ---- */
+  const perBough=dense?7:9;
+  const pts=[];
+  boughs.forEach((bg,bi)=>{
+    for(let k=0;k<perBough;k++){
+      const u=0.2+0.8*(k/(perBough-1))*R(0.85,1.0);
+      pts.push({
+        x:quad(u,forkX,bg.midX,bg.tipX)+R(-3,3),
+        y:quad(u,forkY,bg.midY,bg.tipY)+R(-2,4),
+        outer:u,                                        // how far out on the bough
+        layer:R(0,1)
+      });
+    }
+  });
+  pts.sort((a,b)=>a.layer-b.layer);                      // paint back-to-front
+
+  /* ---- cascading strands ---- */
+  pts.forEach(p=>{
+    const isBack=p.layer<0.42;
+    const drop=maxDrop*R(0.34,1)*(0.55+0.45*p.outer);    // outer strands hang longer
+    const dir=p.x<forkX?-1:1;                            // belly away from trunk
+    const belly=w*R(0.05,0.13)*dir;
+    const tipX=p.x+belly*0.35+wind*(drop/h)+R(-3,6);
+    const tipY=p.y+drop;
+    const c1x=p.x+belly, c1y=p.y+drop*0.30;
+    const c2x=tipX+belly*0.30, c2y=p.y+drop*0.72;
+    const sw=(isBack?0.65:1.05)*R(0.85,1.3);
+    const op=c.strandOpacity*(isBack?0.4:0.85)*R(0.7,1);
+    const path=`<path d="M ${p.x.toFixed(1)} ${p.y.toFixed(1)} C ${c1x.toFixed(1)} ${c1y.toFixed(1)} ${c2x.toFixed(1)} ${c2y.toFixed(1)} ${tipX.toFixed(1)} ${tipY.toFixed(1)}" fill="none"
+       stroke="${c.branch}" stroke-width="${sw.toFixed(2)}" stroke-linecap="round" opacity="${op.toFixed(2)}"/>`;
+    if(isBack) back+=path; else front+=path;
+
+    /* foliage: little downward leaf-blades along the lower half of front strands */
+    if(!isBack){
+      const nl=dense?4:5;
+      for(let k=0;k<nl;k++){
+        const u=R(0.42,0.99);
+        const px=cub(u,p.x,c1x,c2x,tipX), py=cub(u,p.y,c1y,c2y,tipY);
+        const ll=(dense?4.5:6)*R(0.7,1.15);
+        const rot=90+wind*1.1+R(-14,16);                 // hang down, sway with wind
+        foliage+=`<g transform="translate(${px.toFixed(1)} ${py.toFixed(1)}) rotate(${rot.toFixed(0)})">
+          <path d="M 0 0 Q ${(ll*0.5).toFixed(1)} ${(-ll*0.22).toFixed(1)} ${ll.toFixed(1)} 0 Q ${(ll*0.5).toFixed(1)} ${(ll*0.22).toFixed(1)} 0 0 Z"
+          fill="${c.leaf}" opacity="${(c.strandOpacity*R(0.6,0.95)).toFixed(2)}"/></g>`;
+      }
+    }
+  });
+
+  /* ---- a few detached leaves drifting right: frozen motion (leaf + faint streak) ---- */
+  const flyers=dense?3:5;
+  for(let i=0;i<flyers;i++){
+    const fx=forkX+crownW*R(0.55,1.35)+w*0.04;
+    const fy=crownTop+h*R(0.2,0.72);
+    const ll=(dense?4.5:6)*R(0.8,1.2);
+    const rot=70+R(-20,24);
+    const streak=ll*R(2.6,4);
+    foliage+=`<line x1="${(fx-streak).toFixed(1)}" y1="${(fy-streak*0.14).toFixed(1)}" x2="${fx.toFixed(1)}" y2="${fy.toFixed(1)}"
+      stroke="${c.branch}" stroke-width="0.7" stroke-linecap="round" opacity="${(c.strandOpacity*0.22).toFixed(2)}"/>`;
+    foliage+=`<g transform="translate(${fx.toFixed(1)} ${fy.toFixed(1)}) rotate(${rot.toFixed(0)})">
+      <path d="M 0 0 Q ${(ll*0.5).toFixed(1)} ${(-ll*0.22).toFixed(1)} ${ll.toFixed(1)} 0 Q ${(ll*0.5).toFixed(1)} ${(ll*0.22).toFixed(1)} 0 0 Z"
+      fill="${c.leaf}" opacity="${(c.strandOpacity*0.85).toFixed(2)}"/></g>`;
+  }
+
+  return `<svg class="willow" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMinYMax slice">${back}${mid}${front}${foliage}</svg>`;
+}
+
+/* ---------------- verse data ---------------- */
+const VERSE = {
+  full:"Though one may be overpowered, two can defend themselves. A cord of three strands is not quickly broken.",
+  short:"A cord of three strands is not quickly broken.",
+  ref:"Ecclesiastes 4:12"
+};
+
+/* light + dark willow palettes */
+const PAL = {
+  light:{ branch:"#7d3f34", leaf:"#8a4a34", strandOpacity:0.5 },
+  dark: { branch:"#e7aa9c", leaf:"#e7aa9c", strandOpacity:0.44 }
+};
+
+/* ---------------- widget builder ---------------- */
+function widget(size, mode){
+  const dark = mode==='dark';
+  const pal = dark?PAL.dark:PAL.light;
+  const dims = {small:[170,170], medium:[364,170], large:[364,382]}[size];
+  const [w,h]=dims;
+  const seed = {small:11,medium:23,large:41}[size] + (dark?100:0);
+  const dense = size==='small';
+
+  const wrap=document.createElement('div');
+  wrap.className=`widget ${size} ${dark?'w-dark':'w-light'}`;
+  wrap.style.width=w+'px'; wrap.style.height=h+'px';
+
+  // tree-of-life art — centered emblem behind the verse
+  const treePos = {
+    small:  'background-size:auto 118%;background-position:center 52%;opacity:.30;',
+    medium: 'background-size:auto 132%;background-position:center 46%;opacity:.30;',
+    large:  'background-size:contain;background-position:center 42%;opacity:.28;'
+  }[size];
+  const tree=document.createElement('div');
+  tree.className='tree';
+  tree.style.cssText = `background-image:url("${dark?'tree-dark.png':'tree-light.png'}");` + treePos;
+  wrap.appendChild(tree);
+
+  const content=document.createElement('div');
+  content.className='content';
+
+  if(size==='small'){
+    content.style.cssText='padding:15px 15px 14px;justify-content:flex-end;align-items:center;text-align:center;';
+    content.innerHTML=`
+      <div class="verse" style="flex:none;font-size:14.5px;line-height:1.32;-webkit-line-clamp:4;margin-bottom:9px;max-width:140px;">${VERSE.short}</div>
+      <div class="ref" style="font-size:9px;">${VERSE.ref}</div>`;
+  }
+  if(size==='medium'){
+    content.style.cssText='padding:20px 22px 19px;justify-content:center;align-items:center;text-align:center;';
+    content.innerHTML=`
+      <div class="veye" style="font-size:9.5px;margin-bottom:11px;justify-content:center;"><span class="tick"></span>Verse of the day<span class="tick"></span></div>
+      <div class="verse" style="flex:none;font-size:15px;line-height:1.38;-webkit-line-clamp:3;max-width:290px;">${VERSE.full}</div>
+      <div class="ref" style="font-size:10px;margin-top:13px;">${VERSE.ref}</div>`;
+  }
+  if(size==='large'){
+    content.style.cssText='padding:34px 34px 32px;justify-content:flex-end;align-items:center;text-align:center;';
+    content.innerHTML=`
+      <div class="veye" style="font-size:11px;margin-bottom:auto;justify-content:center;"><span class="tick"></span>Verse of the day<span class="tick"></span></div>
+      <div class="verse" style="flex:none;font-size:26px;line-height:1.42;-webkit-line-clamp:6;max-width:300px;margin-top:20px;">${VERSE.full}</div>
+      <div class="ref" style="font-size:12px;margin-top:20px;letter-spacing:.15em;">${VERSE.ref}</div>`;
+  }
+  wrap.appendChild(content);
+  return wrap;
+}
+
+function labelled(size, mode, caption){
+  const col=document.createElement('div');
+  col.className='stack';
+  const cap=document.createElement('div');
+  cap.className='cap';
+  cap.innerHTML=caption;
+  col.appendChild(cap);
+  col.appendChild(widget(size,mode));
+  return col;
+}
+
+/* ---------------- assemble panels ---------------- */
+function buildPanel(el, mode){
+  const dark=mode==='dark';
+  el.innerHTML=`<div class="wall-label"><span class="dot"></span>${dark?'Dark mode':'Light mode'}</div>`;
+  const row1=document.createElement('div'); row1.className='row';
+  row1.appendChild(labelled('small',mode,`Small <span>· 170&nbsp;pt</span>`));
+  row1.appendChild(labelled('medium',mode,`Medium <span>· 364×170&nbsp;pt</span>`));
+  const row2=document.createElement('div'); row2.className='row';
+  row2.appendChild(labelled('large',mode,`Large <span>· 364×382&nbsp;pt</span>`));
+  el.appendChild(row1); el.appendChild(row2);
+}
+buildPanel(document.getElementById('wall-light'),'light');
+buildPanel(document.getElementById('wall-dark'),'dark');
+</script>
+</body>
+</html>

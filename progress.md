@@ -4,6 +4,27 @@
 
 ---
 
+## ⭐⭐⭐⭐⭐ HOME-SCREEN WIDGET (2026-07-12): "Verse of the Day" built + compiling
+
+Design handed off as `widgets/Verse of the Day Widget.html` + light/dark tree PNGs.
+Built as a native **WidgetKit + SwiftUI** app-extension `VerseWidget` (own session,
+matching the mock in all 3 sizes × light/dark). Decisions with Christian: a
+**self-contained curated daily verse** (bundles a curated set of uplifting,
+standalone verses, picks by calendar day-of-year, rolls at midnight; no App Group,
+no native bridge, zero JS changes) and **I spliced the target in code** via the xcodeproj gem inside
+Homebrew CocoaPods (no `expo prebuild`). Full record: [`widget-plan.md`](widget-plan.md).
+All in [ios/VerseWidget/](ios/VerseWidget/) (now git-tracked); target reproducible via
+`scripts/add_widget_target.rb`, data via `scripts/gen_widget_verses.py`.
+**Verified headless**: view rendered off device to PNGs (matches the mock),
+widget target compiles + links for the simulator, the built `.appex` carries the
+fonts + the curated verses + tree, and it survives `pod install` untouched. **Remaining for
+Christian**: open Xcode once to confirm VerseWidget signing (team 5LX4YFCXPK, auto;
+no capability toggles needed), then a device build to drop it on the home screen.
+Release note: the version bump is now **4 spots** (see CLAUDE.md) so the appex
+CFBundleVersion matches the app.
+
+---
+
 ## ⭐⭐⭐⭐ COPY PASS ROUND (2026-07-12): b12 UPLOADED, Sentry board cleared
 
 The three b7 Sentry crashes (PAMWE-IOS-1/2/3, all the PATCH-storm) resolved;
