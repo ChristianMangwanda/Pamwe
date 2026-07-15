@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { View, StyleSheet, TextInput, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import * as Sentry from '@sentry/react-native';
 import { LockSimple } from 'phosphor-react-native';
 import { Text } from '../../../components/ui/Text';
 import { Button } from '../../../components/ui/Button';
@@ -21,6 +22,7 @@ import {
   ensureVoiceDraft,
   uploadVoiceRecording,
   attachAudioToEntry,
+  getMyEntry,
 } from '../../../lib/entries';
 
 const AUTOSAVE_INTERVAL_MS = 5000;
@@ -76,6 +78,23 @@ export default function JournalScreen() {
     return () => clearInterval(timer);
   }, [saveDraft, mode]);
 
+  // Postgres commits the seal before the response reaches us, so a dropped
+  // response throws a network error for words that are already shared, and the
+  // old copy told them the opposite. Ask the server what actually happened
+  // before reporting a failure; if it landed, carry on to waiting as normal.
+  const landedAnyway = useCallback(async () => {
+    if (!couplePlan) return false;
+    try {
+      const actual = await getMyEntry(couplePlan.id, dayNumber);
+      if (!actual?.submitted_at) return false;
+      await refresh();
+      router.replace('/(tabs)/(today)/waiting');
+      return true;
+    } catch {
+      return false;
+    }
+  }, [couplePlan, dayNumber, refresh, router]);
+
   const handleSubmitText = () => {
     if (!text.trim()) return;
     Alert.alert(`Share with ${partnerName}?`, "Once it's shared, it's sealed. No edits after this.", [
@@ -92,6 +111,8 @@ export default function JournalScreen() {
             await refresh();
             router.replace('/(tabs)/(today)/waiting');
           } catch (err: any) {
+            if (await landedAnyway()) return;
+            Sentry.captureException(err);
             Alert.alert(
               "Couldn't send it",
               isNetworkError(err)
@@ -123,6 +144,8 @@ export default function JournalScreen() {
       await refresh();
       router.replace('/(tabs)/(today)/waiting');
     } catch (err: any) {
+      if (await landedAnyway()) return;
+      Sentry.captureException(err);
       Alert.alert(
         "Couldn't send the recording",
         isNetworkError(err)
@@ -173,7 +196,16 @@ export default function JournalScreen() {
 
         {mode === 'text' ? (
           <>
-            <View style={styles.textBody}>
+            {/* Scrollable, not a plain View: with the keyboard up there isn't
+                room for the prompt, a 180pt-minimum input, and the lock hint, so
+                a fixed body pushed what you were typing under the keyboard.
+                flexGrow lets the input still fill the space when there is room. */}
+            <ScrollView
+              style={styles.flex}
+              contentContainerStyle={styles.textBody}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="interactive"
+            >
               {PromptCard}
               <TextInput
                 style={[styles.textInput, { backgroundColor: colors.surface, borderColor: colors.line, color: colors.ink }]}
@@ -186,7 +218,7 @@ export default function JournalScreen() {
                 textAlignVertical="top"
               />
               {LockHint}
-            </View>
+            </ScrollView>
             {!isSubmitted && (
               <View style={styles.footer}>
                 <Button title={`Share with ${partnerName}`} onPress={handleSubmitText} loading={submitting} disabled={!text.trim() || submitting} />
@@ -218,7 +250,7 @@ const styles = StyleSheet.create({
   eyebrow: { fontFamily: fonts.sansSemiBold, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', marginTop: 14 },
   title: { fontFamily: fonts.serifLight, fontSize: 28, marginTop: 6 },
   toggle: { paddingHorizontal: GUTTER, marginTop: 16, alignItems: 'center' },
-  textBody: { flex: 1, paddingHorizontal: GUTTER, paddingTop: 16 },
+  textBody: { flexGrow: 1, paddingHorizontal: GUTTER, paddingTop: 16 },
   promptCard: { borderWidth: 1, borderRadius: 16, paddingVertical: 15, paddingHorizontal: 18, marginBottom: 16 },
   promptLabel: { fontFamily: fonts.sansSemiBold, fontSize: 9, letterSpacing: 1.6, textTransform: 'uppercase', marginBottom: 6 },
   textInput: { flex: 1, minHeight: 180, borderWidth: 1, borderRadius: 16, padding: 18, fontFamily: fonts.serif, fontSize: 17, lineHeight: 27 },

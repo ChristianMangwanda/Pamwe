@@ -97,7 +97,7 @@ src/app/
 ├── (onboarding)/                  # value-slides, name, pair-choice, invite, join, waiting, connected, plan-select
 └── (tabs)/                        # 6-tab DOCKED bar (DockedTabBar; the b7 glass oval is gone): Today · Bible · Plans · Prayers · Reflect · You
     ├── (today)/                   # home (tree streak, milestones, catch-up, nudge) → reading → journal → waiting → reveal → complete
-    ├── bible/                     # index → [book] → [book]/[chapter] reader (6 translations); marks, note
+    ├── bible/                     # index → [book] → [book]/[chapter] reader (6 translations, 2 sources); marks, note
     ├── plans/                     # index (Ask Pamwe card) → [id] detail; builder (Ask Pamwe)
     ├── prayers/                   # index (swipe cards + detail sheet w/ reminders) → add → timeline (answered)
     ├── reflect/                   # index (history + From-your-story card) → [id] detail (responses) → words (Their Words)
@@ -123,7 +123,7 @@ Auth gate in [src/app/index.tsx](src/app/index.tsx) sequences:
 | `couples` | Invite code + partner_a/b + paired_at + streak state + timezone. |
 | `plans` | Reading plans. Curated (M'Cheyne 365, John 21, Psalms 30, Cord 21) + couple-built custom plans (`is_curated=false`, `couple_id`, `created_by`). Browse metadata cols: `tagline/about/explore/gain/minutes_label/rhythm_label/book_label`. |
 | `plan_days` | Rows per plan-day: passage ref, text (**nullable** — custom plans store NULL and live-fetch), pull quote, reflection prompt. |
-| `couple_plans` | A couple's enrollment in a plan (current_day, start_date, status). |
+| `couple_plans` | A couple's enrollment in a plan (current_day, start_date, status, `cadence_days`). |
 | `entries` | Per-user per-day reflection. Type text or voice. `submitted_at` is the locked-reveal trigger. `transcript` (nullable) holds the on-device voice transcript. |
 | `entry_responses` | Hearts/amens/replies/kept-lines a partner leaves on a revealed reflection (`kind`: heart/amen/reply/quote). RLS mirrors locked-reveal via `can_respond_to_entry()`; in the realtime publication. |
 | `prayers` / `prayer_marks` | Shared prayer requests with "I prayed today" marks. `prayers.category` (family/health/work/guidance/thanks/other); author-only update/delete. |
@@ -161,6 +161,34 @@ UI screens go through `src/lib/*.ts` (couples, entries, plans, notifications) wh
 
 `couples.streak_count`, `couple_plans.current_day`, `entries.audio_duration_seconds`, `plan_days.day_number` are all `int4`. Anything monetary or stat-y would be Postgres `numeric`, not JS `number`. There's nothing of the latter category yet.
 
+### Cadence: the day advances on Amen, and a streak means sessions kept
+
+Two coupled rules, both from the 2026-07-14 round:
+
+**`current_day` only ever moves when a partner taps Amen on the reveal**
+([reveal.tsx](src/app/(tabs)/(today)/reveal.tsx) → `advancePlanDay`). The DB
+trigger used to bump it the instant both partners submitted, which pulled every
+ritual screen onto the next, empty day and ate the reveal. `advancePlanDay`
+guards on `current_day` so a double tap is a no-op, and **the reveal pins its day
+via a `day` route param** (`useTodayEntry(dayOverride)`) so the other partner's
+Amen can't shift it mid-read. Nothing else writes `current_day`: a client that
+doesn't call it will freeze the plan.
+
+**`couple_plans.cadence_days`** (1 daily, 2 every other day, 7 weekly) is set per
+enrollment, since M'Cheyne is dated and inherently daily. It feeds three things,
+which must stay in step: `expectedDay`/`daysBehind` ([catchup.ts](src/lib/catchup.ts)),
+the streak trigger, and the morning reminder. **A streak counts plan days
+completed in a row on the couple's own rhythm**, not calendar days: the trigger
+increments when the gap since `streak_last_date` fits inside the cadence window.
+At cadence 1 that is identical to the old consecutive-days rule.
+
+The morning reminder uses a DAILY trigger at cadence 1 and individually **dated**
+reminders otherwise (no repeating trigger honours both a rhythm and a chosen
+clock time), topped up on each sign-in by `scheduleMorningFromPrefs`. It cancels
+**by id** (`pamwe-morning*`): it used to call `cancelAllScheduledNotificationsAsync()`,
+which silently killed every prayer reminder on launch while their stored ids
+still claimed they were set. Never reintroduce a cancel-all here.
+
 ### Timezone is captured once at couple creation, immutable in v1
 
 [src/lib/couples.ts](src/lib/couples.ts) writes `Intl.DateTimeFormat().resolvedOptions().timeZone` into `couples.timezone` when partner A generates the invite code. **No editable timezone setting in v1.** The Weekend-8 streak Edge Function uses this. If long-distance couples become a real case, revisit.
@@ -176,6 +204,34 @@ All of src/lib reads identity via `supabase.auth.getSession()` (local) — `getU
 ### Beta feedback loop
 
 Christian logs findings in the Notion page **"Pamwe Ramblings"** (Notion MCP connector). Triage into rounds, fix in batches, one TestFlight build per round. Current triage state lives in progress.md's top banner.
+
+### Bible translations: public domain only, two sources
+
+The reader ships 6 translations, from **two** APIs ([src/lib/bible.ts](src/lib/bible.ts)):
+bible-api.com serves WEB/KJV/ASV/BBE/Darby; **BSB (Berean Standard Bible) comes
+from bible.helloao.org**, keyed by USFM book code (`USFM_CODES`, generated from
+that API's own book list, not hand-typed). `fetchPassage` is bible-api.com only
+(BSB is excluded at the type level) because helloao serves whole chapters, not
+free-form references.
+
+**Never add a copyrighted translation.** NIV, ESV, NLT, NKJV, CSB and NASB are
+all copyrighted; the only legitimate routes are YouVersion Platform, API.Bible,
+or the publisher's own API, and **every one of them is non-commercial: a paywall,
+ads, or any paid tier revokes access for the whole app**, not just the Bible
+feature. Christian wants to keep the option to charge (2026-07-14), so the answer
+is public domain. The BSB is the modern, readable one, public domain since
+2023-04-30 ("Licensing is not required for any use"), no attribution needed. NET
+is *not* an option: free use is limited to "not-for-sale media".
+
+⚠️ **bolls.life serves NIV/ESV/NLT text unauthenticated with no license
+statement. That is unlicensed redistribution.** Pulling from it, or scraping
+Bible Gateway, or hardcoding copyrighted text into a seed, would put infringing
+text in an App Store binary. Don't, however convenient.
+
+Also: YLT was removed (2026-07-14) because bible-api.com carries it NT-only, so
+every OT chapter 404'd behind a "check your connection" error. Chapter cache
+hits are authoritative and never revalidate (scripture is immutable); bible-api.com
+429s after ~15 requests, which used to surface as random "broken" translations.
 
 ### Don't modify the M'Cheyne plan or pull quotes silently
 

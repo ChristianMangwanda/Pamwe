@@ -1,8 +1,9 @@
 import { useEffect, useState, ReactNode } from 'react';
 import { View, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated from 'react-native-reanimated';
+import * as Sentry from '@sentry/react-native';
 import { HandsPraying } from 'phosphor-react-native';
 import { Text } from '../../../components/ui/Text';
 import { Button } from '../../../components/ui/Button';
@@ -19,6 +20,7 @@ import { useTodayEntry } from '../../../hooks/useTodayEntry';
 import { useCouple } from '../../../providers/CoupleProvider';
 import { useAuth } from '../../../providers/AuthProvider';
 import { profileInitial } from '../../../lib/couples';
+import { advancePlanDay } from '../../../lib/plans';
 import { supabase } from '../../../lib/supabase';
 import { getResponsesForDay, EntryResponse } from '../../../lib/entryResponses';
 
@@ -26,7 +28,12 @@ export default function RevealScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { user } = useAuth();
-  const { myEntry, partnerEntry, dayNumber, planDay, loading, refresh } = useTodayEntry();
+  // Pin to the day we opened, so the other partner tapping Amen (which advances
+  // the couple's current_day and arrives here over realtime) can't pull this
+  // screen onto the next, empty day while it's still being read.
+  const { day } = useLocalSearchParams<{ day?: string }>();
+  const pinnedDay = day ? Number(day) : undefined;
+  const { myEntry, partnerEntry, dayNumber, planDay, loading, refresh } = useTodayEntry(pinnedDay);
   const { couplePlan, partner, refresh: refreshCouple } = useCouple();
 
   const myInitial = (user?.user_metadata?.full_name || user?.email || 'Y')[0]?.toUpperCase() ?? 'Y';
@@ -67,6 +74,19 @@ export default function RevealScreen() {
     const completed = isFinalDay && couplePlan
       ? { title: couplePlan.plan?.title ?? '', days: String(totalDays ?? ''), cpId: couplePlan.id }
       : null;
+    // Move to the next day here, once the reveal has actually been read. The DB
+    // used to do it the instant both partners submitted, which pulled every
+    // ritual screen onto the next empty day and ate the reveal. The final day
+    // has no next day: the submit trigger retires the plan instead.
+    if (!completed && couplePlan) {
+      try {
+        await advancePlanDay(couplePlan.id, dayNumber);
+      } catch (err) {
+        // Staying on the day is recoverable (Today re-derives its CTA from
+        // server state), so let them leave the reveal either way.
+        Sentry.captureException(err);
+      }
+    }
     await refreshCouple();
     if (completed) router.replace({ pathname: '/(tabs)/(today)/complete', params: completed });
     else router.replace('/(tabs)/(today)');

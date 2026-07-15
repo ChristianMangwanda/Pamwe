@@ -16,7 +16,7 @@ export function VersePassage({
   showNums = true,
   highlights = {},
   notedVerses,
-  onVersePress,
+  onVerseLongPress,
   focusVerse,
   flashVerse,
   onFocusVerseLayout,
@@ -26,7 +26,8 @@ export function VersePassage({
   showNums?: boolean;
   highlights?: Record<number, SwatchColor>;
   notedVerses?: Set<number>;
-  onVersePress?: (verse: number) => void;
+  /** Long press, so a stray touch mid-scroll doesn't select a verse. */
+  onVerseLongPress?: (verse: number) => void;
   /** Verse to locate on layout (jump target from the marks screen). */
   focusVerse?: number;
   /** Verse to render with a temporary "here it is" background. */
@@ -70,7 +71,9 @@ export function VersePassage({
         return (
           <RNText
             key={v.verse}
-            onPress={onVersePress ? () => onVersePress(v.verse) : undefined}
+            // Long press, not tap: a tap selected whatever verse your thumb
+            // happened to touch while scrolling, which fought the reading.
+            onLongPress={onVerseLongPress ? () => onVerseLongPress(v.verse) : undefined}
             style={bg ? { backgroundColor: bg, color: hl ? swatches.highlightInk : colors.ink } : undefined}
           >
             {showNums ? (

@@ -106,9 +106,16 @@ export default function HomeScreen() {
   const progress = totalDays > 0 ? (dayNumber - 1) / totalDays : 0;
 
   // Gentle catch-up: how many days behind the couple's own start-date pace they
-  // are. Server owns advancement; this only decides whether to nudge.
+  // are, measured against their chosen cadence so a slower rhythm is never
+  // reported as late. Server owns advancement; this only decides whether to nudge.
   const behind = couplePlan?.start_date
-    ? daysBehind(couplePlan.start_date, dayNumber, todayInTimezone(couple?.timezone ?? 'UTC'), totalDays)
+    ? daysBehind(
+        couplePlan.start_date,
+        dayNumber,
+        todayInTimezone(couple?.timezone ?? 'UTC'),
+        totalDays,
+        couplePlan.cadence_days ?? 1,
+      )
     : 0;
 
   const now = new Date();
@@ -140,7 +147,10 @@ export default function HomeScreen() {
   };
 
   const cta = bothSubmitted
-    ? { label: 'Reveal together', go: () => router.push('/(tabs)/(today)/reveal') }
+    ? {
+        label: 'Reveal together',
+        go: () => router.push({ pathname: '/(tabs)/(today)/reveal', params: { day: String(dayNumber) } }),
+      }
     : mySubmitted
     ? { label: `Waiting for ${partnerName}`, go: () => router.push('/(tabs)/(today)/waiting') }
     : { label: `Read Day ${dayNumber}`, go: openReading };
@@ -155,7 +165,14 @@ export default function HomeScreen() {
     setNudging(true);
     const res = await nudgePartner();
     setNudging(false);
-    if (res.ok) { setNudged(true); haptics.success(); }
+    if (res.ok) {
+      setNudged(true);
+      haptics.success();
+      // The nudge is logged either way, but say so plainly when no banner lands.
+      if (!res.delivered) {
+        Alert.alert('Nudge saved', `${partnerName} has notifications off, so it won't buzz their phone.`);
+      }
+    }
     else if (res.cooldown) { setNudged(true); Alert.alert('Already sent', res.message ?? 'You just sent a nudge.'); }
     else Alert.alert("Couldn't send the nudge", res.message ?? 'Try again in a moment.');
   };

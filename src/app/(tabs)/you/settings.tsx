@@ -8,9 +8,13 @@ import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { Text } from '../../../components/ui/Text';
 import { Card } from '../../../components/ui/Card';
 import { BackLink } from '../../../components/ui/BackLink';
+import { SegmentedControl } from '../../../components/ui/SegmentedControl';
 import { GUTTER } from '../../../theme/tokens';
 import { useTheme } from '../../../providers/ThemeProvider';
 import { useAuth } from '../../../providers/AuthProvider';
+import { useCouple } from '../../../providers/CoupleProvider';
+import { setPlanCadence, CADENCE_OPTIONS, type Cadence } from '../../../lib/plans';
+import { haptics } from '../../../lib/haptics';
 import {
   getNotificationPrefs, updateNotificationPrefs, getNotificationPermissionStatus,
   scheduleMorningNotification, NotificationPrefs,
@@ -23,9 +27,11 @@ export default function SettingsScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { user, signOut } = useAuth();
+  const { couplePlan, refresh: refreshCouple } = useCouple();
 
   const [prefs, setPrefs] = useState<NotificationPrefs | null>(null);
   const [permission, setPermission] = useState<string>('granted');
+  const cadence = (couplePlan?.cadence_days ?? 1) as Cadence;
 
   // The shell paints immediately; prefs and permission fill in as they land.
   // Every row already tolerates a null prefs (`prefs?.`), so there is nothing
@@ -43,6 +49,21 @@ export default function SettingsScreen() {
     }, []),
   );
 
+  // The couple's plan is the source of truth, so refresh rather than hold a
+  // local copy: the partner can change the rhythm too.
+  const saveCadence = async (key: string) => {
+    if (!couplePlan) return;
+    haptics.tap();
+    const next = Number(key) as Cadence;
+    try {
+      await setPlanCadence(couplePlan.id, next);
+      await refreshCouple();
+      await rescheduleMorning(undefined, next);
+    } catch (err: any) {
+      Alert.alert("Couldn't save that", err?.message ?? 'Try again in a moment.');
+    }
+  };
+
   const savePref = async (patch: Partial<NotificationPrefs>) => {
     setPrefs((prev) => (prev ? { ...prev, ...patch } : prev));
     try {
@@ -54,10 +75,18 @@ export default function SettingsScreen() {
 
   const setMorningTime = async (time: string) => {
     await savePref({ notification_morning_time: `${time}:00` });
-    if (permission === 'granted') {
-      const [h, m] = time.split(':').map(Number);
-      try { await scheduleMorningNotification(h, m); } catch { /* best-effort */ }
-    }
+    await rescheduleMorning(time);
+  };
+
+  // The reminder follows the rhythm, so it has to be rebuilt whenever either
+  // the time or the cadence changes.
+  const rescheduleMorning = async (time?: string, nextCadence: Cadence = cadence) => {
+    if (permission !== 'granted') return;
+    const hhmmStr = time ?? hhmm(prefs?.notification_morning_time ?? '06:30:00');
+    const [h, m] = hhmmStr.split(':').map(Number);
+    try {
+      await scheduleMorningNotification(h, m, nextCadence, couplePlan?.start_date);
+    } catch { /* best-effort */ }
   };
 
   const handleSignOut = () => {
@@ -113,6 +142,22 @@ export default function SettingsScreen() {
 
         <Text variant="eyebrow" color={colors.muted} style={styles.sectionLabel}>Plan</Text>
         <Card style={styles.card}>
+          {/* Rhythm is changeable mid-plan: only the pace moves, the day you're
+              on and your streak stand. */}
+          {couplePlan && (
+            <>
+              <Text variant="body" color={colors.ink2} style={styles.rowLabel}>Reading rhythm</Text>
+              <SegmentedControl
+                segments={CADENCE_OPTIONS.map((o) => ({ key: String(o.value), label: o.label }))}
+                value={String(cadence)}
+                onChange={saveCadence}
+              />
+              <Text style={[styles.cadenceBlurb, { color: colors.muted }]}>
+                {CADENCE_OPTIONS.find((o) => o.value === cadence)?.blurb}
+              </Text>
+              <View style={[styles.divider, { backgroundColor: colors.line }]} />
+            </>
+          )}
           <ActionRow label="Change reading plan" onPress={() => router.push('/(onboarding)/plan-select?mode=change')} colors={colors} />
         </Card>
 
@@ -170,6 +215,7 @@ const styles = StyleSheet.create({
   presetRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   preset: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: 999, borderWidth: 1 },
   divider: { height: 1, marginVertical: 16 },
+  cadenceBlurb: { fontSize: 12, lineHeight: 17, marginTop: 8 },
   toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   toggleText: { flex: 1, paddingRight: 16 },
   toggleDesc: { marginTop: 4, lineHeight: 18 },

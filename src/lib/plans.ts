@@ -144,7 +144,19 @@ export async function getActiveCouPlan(coupleId: string) {
 // Enrolling always completes any existing active enrollment first, so every
 // entry point (onboarding plan-select, plan detail, Today fallbacks) is safe.
 // The DB's couple_plans_one_active unique index is the backstop.
-export async function enrollInPlan(coupleId: string, planId: string) {
+// One plan day per N calendar days. Every day suits M'Cheyne; the slower
+// rhythms exist because a daily ritual is more than most couples can hold.
+export type Cadence = 1 | 2 | 7;
+
+// Labels stay short because they sit in a 3-way segmented control; the blurb
+// carries the meaning.
+export const CADENCE_OPTIONS: { value: Cadence; label: string; blurb: string }[] = [
+  { value: 1, label: 'Every day', blurb: 'A reading a day, the way the plans are written.' },
+  { value: 2, label: 'Every 2 days', blurb: 'A gentler rhythm, with room to breathe between readings.' },
+  { value: 7, label: 'Once a week', blurb: 'One reading a week, for a slower season.' },
+];
+
+export async function enrollInPlan(coupleId: string, planId: string, cadenceDays: Cadence = 1) {
   const { error: completeError } = await supabase
     .from('couple_plans')
     .update({ status: 'completed' })
@@ -160,6 +172,7 @@ export async function enrollInPlan(coupleId: string, planId: string) {
       plan_id: planId,
       start_date: new Date().toISOString().split('T')[0],
       current_day: 1,
+      cadence_days: cadenceDays,
       status: 'active',
     })
     .select('*, plan:plans(*)')
@@ -200,17 +213,32 @@ export async function getPlanDay(planId: string, dayNumber: number) {
   }
 }
 
-export async function advancePlanDay(couplePlanId: string, currentDay: number) {
+// Change the rhythm mid-plan. Only the pace changes: the day they're on, their
+// entries and their streak all stand.
+export async function setPlanCadence(couplePlanId: string, cadenceDays: Cadence) {
   const { error } = await supabase
     .from('couple_plans')
-    .update({ current_day: currentDay + 1 })
+    .update({ cadence_days: cadenceDays })
     .eq('id', couplePlanId);
 
   if (error) throw error;
 }
 
-export async function switchPlan(coupleId: string, newPlanId: string) {
+// Called from the reveal's Amen. Guarding on the day we think we're on makes a
+// double tap (or a retry after a lost response) a no-op instead of skipping a
+// day, which is what the DB trigger used to do for itself.
+export async function advancePlanDay(couplePlanId: string, currentDay: number) {
+  const { error } = await supabase
+    .from('couple_plans')
+    .update({ current_day: currentDay + 1 })
+    .eq('id', couplePlanId)
+    .eq('current_day', currentDay);
+
+  if (error) throw error;
+}
+
+export async function switchPlan(coupleId: string, newPlanId: string, cadenceDays: Cadence = 1) {
   // enrollInPlan completes existing actives itself now; kept as a named
   // export because the switch flow reads better at call sites.
-  return enrollInPlan(coupleId, newPlanId);
+  return enrollInPlan(coupleId, newPlanId, cadenceDays);
 }

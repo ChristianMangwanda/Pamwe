@@ -89,16 +89,33 @@ export async function createOrUpdateDraft(
   return data;
 }
 
+// Sealing an entry has to be safe to repeat. Postgres commits the row before
+// the response reaches us, so a dropped response is indistinguishable from a
+// write that never happened, and the natural reaction is to send again. But
+// entries_update_own_draft is USING (submitted_at IS NULL), so once sealed the
+// row is invisible to this update and a second attempt matches zero rows.
+// Read the row back rather than failing: an entry that is already submitted
+// means the first attempt landed, so report that first timestamp as the truth.
 export async function submitEntry(entryId: string) {
   const { data, error } = await supabase
     .from('entries')
     .update({ submitted_at: new Date().toISOString() })
     .eq('id', entryId)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
-  return data;
+  if (data) return data;
+
+  const { data: existing, error: readError } = await supabase
+    .from('entries')
+    .select()
+    .eq('id', entryId)
+    .maybeSingle();
+
+  if (readError) throw readError;
+  if (existing?.submitted_at) return existing;
+  throw new Error('Your words are saved. Try sending them again.');
 }
 
 export async function ensureVoiceDraft(couplePlanId: string, dayNumber: number) {

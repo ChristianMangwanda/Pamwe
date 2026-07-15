@@ -13,7 +13,15 @@ type TodayState = {
   refresh: () => Promise<void>;
 };
 
-export function useTodayEntry(): TodayState {
+/**
+ * Today's plan day and both entries for it.
+ *
+ * `dayOverride` pins the hook to one day instead of following the couple's live
+ * current_day. The reveal needs this: current_day advances when a partner taps
+ * Amen and realtime delivers that to both phones, so an unpinned reveal would
+ * jump to the next (empty) day mid-read the instant the other partner amened.
+ */
+export function useTodayEntry(dayOverride?: number): TodayState {
   const { couplePlan } = useCouple();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -24,7 +32,7 @@ export function useTodayEntry(): TodayState {
   // Today keeps its content instead of blanking on every couple-state refresh.
   const loadedOnce = useRef(false);
 
-  const dayNumber = couplePlan?.current_day ?? 1;
+  const dayNumber = dayOverride ?? couplePlan?.current_day ?? 1;
 
   const refresh = useCallback(async () => {
     if (!couplePlan) {

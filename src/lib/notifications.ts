@@ -3,6 +3,8 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { supabase } from './supabase';
+import { getUserCouple } from './couples';
+import { getActiveCouPlan } from './plans';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -117,8 +119,10 @@ export function watchPushTokenRotation() {
   });
 }
 
-// Schedule the daily reminder from the user's saved preference — never a
-// hardcoded default (a launch-time 06:30 call used to override Settings).
+// Schedule the reminder from the user's saved preference — never a hardcoded
+// default (a launch-time 06:30 call used to override Settings). Runs on every
+// sign-in, which is also what tops the dated reminders of a slower cadence back
+// up before the scheduled batch runs out.
 export async function scheduleMorningFromPrefs() {
   try {
     const status = await getNotificationPermissionStatus();
@@ -127,7 +131,13 @@ export async function scheduleMorningFromPrefs() {
     const [hour, minute] = (prefs?.notification_morning_time ?? '06:30:00')
       .split(':')
       .map(Number);
-    await scheduleMorningNotification(hour, minute);
+
+    // A couple reading weekly should not be reminded daily: that is the very
+    // pressure the cadence exists to relieve.
+    const couple = await getUserCouple().catch(() => null);
+    const plan = couple ? await getActiveCouPlan(couple.id).catch(() => null) : null;
+
+    await scheduleMorningNotification(hour, minute, plan?.cadence_days ?? 1, plan?.start_date);
   } catch {
     // best-effort — Settings re-schedules whenever the user changes the time
   }
@@ -171,33 +181,101 @@ export async function getNotificationPermissionStatus(): Promise<string> {
 
 // Nudge my partner to read today. The edge function enforces a one-per-hour
 // cooldown per sender and sends the push. Returns a result the UI can voice.
-export type NudgeResult = { ok: boolean; cooldown?: boolean; message?: string };
+// `delivered` is false when the nudge was logged but no banner could land, so
+// the UI can say which of the two happened instead of claiming success.
+export type NudgeResult = {
+  ok: boolean;
+  cooldown?: boolean;
+  delivered?: boolean;
+  message?: string;
+};
 
 export async function nudgePartner(): Promise<NudgeResult> {
   try {
     const { data, error } = await supabase.functions.invoke('notify-nudge', { body: {} });
     if (error) return { ok: false, message: "The nudge didn't send. Try again in a moment." };
     if (data?.cooldown) return { ok: false, cooldown: true, message: data?.message };
-    return { ok: !!data?.ok };
+    if (!data?.ok) {
+      const message =
+        data?.reason === 'no_partner' || data?.reason === 'no_couple'
+          ? "You're not paired with anyone yet."
+          : "The nudge didn't send. Try again in a moment.";
+      return { ok: false, message };
+    }
+    return { ok: true, delivered: data?.delivered !== false };
   } catch {
     return { ok: false, message: "The nudge didn't send. Try again in a moment." };
   }
 }
 
-export async function scheduleMorningNotification(hour: number, minute: number) {
-  await Notifications.cancelAllScheduledNotificationsAsync();
+// Stable ids for the morning reminder, so re-scheduling replaces only its own
+// notifications. This used to call cancelAllScheduledNotificationsAsync(), which
+// also silently cancelled every prayer reminder (prayerReminders.ts owns those
+// by id) on every sign-in, while their stored ids still claimed they were set.
+const MORNING_ID = 'pamwe-morning';
+// A non-daily rhythm has no repeating trigger that also honours a chosen clock
+// time, so those get individually dated reminders, topped up on each launch.
+const MORNING_AHEAD = 12;
+const morningIdAt = (i: number) => `${MORNING_ID}-${i}`;
 
-  await Notifications.scheduleNotificationAsync({
-    content: {
-      title: "Today's reading is ready",
-      body: 'Open Pamwe and read it together.',
-      sound: true,
-      data: { type: 'morning' },
-    },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.DAILY,
-      hour,
-      minute,
-    },
-  });
+async function cancelMorningReminders() {
+  const ids = [MORNING_ID, ...Array.from({ length: MORNING_AHEAD }, (_, i) => morningIdAt(i))];
+  await Promise.all(
+    ids.map((id) => Notifications.cancelScheduledNotificationAsync(id).catch(() => {})),
+  );
+}
+
+const MORNING_CONTENT = {
+  title: "Today's reading is ready",
+  body: 'Open Pamwe and read it together.',
+  sound: true,
+  data: { type: 'morning' },
+};
+
+// The next `count` reading days at hour:minute, from a start date on a cadence.
+// Exported for testing: the arithmetic is the whole feature.
+export function nextReadingDates(
+  startDate: string, cadenceDays: number, hour: number, minute: number,
+  count: number, now: Date = new Date(),
+): Date[] {
+  const interval = Math.max(1, cadenceDays);
+  const [y, m, d] = startDate.split('-').map(Number);
+  const dates: Date[] = [];
+  for (let step = 0; dates.length < count; step++) {
+    const when = new Date(y, m - 1, d + step * interval, hour, minute, 0, 0);
+    if (when > now) dates.push(when);
+    // A long-running plan on a daily cadence would otherwise scan forever.
+    if (step > 5000) break;
+  }
+  return dates;
+}
+
+export async function scheduleMorningNotification(
+  hour: number, minute: number, cadenceDays = 1, startDate?: string,
+) {
+  await cancelMorningReminders();
+
+  if (cadenceDays <= 1 || !startDate) {
+    await Notifications.scheduleNotificationAsync({
+      identifier: MORNING_ID,
+      content: MORNING_CONTENT,
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DAILY,
+        hour,
+        minute,
+      },
+    });
+    return;
+  }
+
+  const dates = nextReadingDates(startDate, cadenceDays, hour, minute, MORNING_AHEAD);
+  await Promise.all(
+    dates.map((date, i) =>
+      Notifications.scheduleNotificationAsync({
+        identifier: morningIdAt(i),
+        content: MORNING_CONTENT,
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date },
+      }),
+    ),
+  );
 }

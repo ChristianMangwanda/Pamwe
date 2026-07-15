@@ -124,7 +124,7 @@ export default function ChapterReader() {
     haptics.tap();
   };
 
-  const onVersePress = (verse: number) => { haptics.tap(); setSelVerse(verse); };
+  const onVerseLongPress = (verse: number) => { haptics.medium(); setSelVerse(verse); };
   const applyHighlight = async (color: SwatchColor) => {
     if (!couple?.id || selVerse == null) return;
     haptics.light();
@@ -218,7 +218,7 @@ export default function ChapterReader() {
                 showNums={showNums}
                 highlights={hlMap}
                 notedVerses={notedVerses}
-                onVersePress={onVersePress}
+                onVerseLongPress={onVerseLongPress}
                 focusVerse={focusVerse}
                 flashVerse={flashVerse}
                 onFocusVerseLayout={setFocusY}
@@ -226,8 +226,24 @@ export default function ChapterReader() {
             </View>
             <View style={styles.hint}>
               <HandTap size={14} color="#B7A88C" />
-              <Text style={{ color: '#B7A88C', fontFamily: fonts.sans, fontSize: 12 }}>Tap a verse to highlight or note it.</Text>
+              <Text style={{ color: '#B7A88C', fontFamily: fonts.sans, fontSize: 12 }}>Press and hold a verse to highlight or note it.</Text>
             </View>
+
+            {/* The banner's Reflect button sits at the top of the chapter, which
+                meant scrolling all the way back up after finishing the reading.
+                Offer it again where the reading actually ends. */}
+            {hasCtx && (
+              <TouchableOpacity
+                onPress={() => { haptics.tap(); router.push('/(tabs)/(today)/journal'); }}
+                activeOpacity={0.85}
+                style={[styles.reflectEnd, { backgroundColor: colors.accent }]}
+                accessibilityRole="button"
+                accessibilityLabel="Write your reflection"
+              >
+                <Feather size={15} color={colors.bg} />
+                <Text style={[styles.reflectEndLabel, { color: colors.bg }]}>Write your reflection</Text>
+              </TouchableOpacity>
+            )}
           </>
         )}
 
@@ -362,6 +378,8 @@ const styles = StyleSheet.create({
   errorCard: { marginTop: 20, borderWidth: 1, borderRadius: 14, padding: 20, alignItems: 'center' },
   errorText: { fontFamily: fonts.sans, fontSize: 14, lineHeight: 21, textAlign: 'center' },
   hint: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 16 },
+  reflectEnd: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 14, paddingVertical: 15, marginTop: 22 },
+  reflectEndLabel: { fontFamily: fonts.sansSemiBold, fontSize: 11, letterSpacing: 0.7, textTransform: 'uppercase' },
   navRow: { marginTop: 26, flexDirection: 'row', alignItems: 'center', gap: 12 },
   navBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, borderWidth: 1.5, borderRadius: 14, paddingVertical: 15 },
   navNext: { borderWidth: 0 },

@@ -21,7 +21,7 @@ export default function WaitingScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { couplePlan, partner } = useCouple();
-  const { partnerEntry, refresh, error } = useTodayEntry();
+  const { partnerEntry, dayNumber, refresh, error } = useTodayEntry();
   const partnerName = partner?.display_name ?? 'Your partner';
   const partnerInitial = profileInitial(partner) ?? '?';
 
@@ -36,8 +36,10 @@ export default function WaitingScreen() {
   }, [couplePlan?.id, refresh]);
 
   useEffect(() => {
-    if (partnerEntry?.submitted_at) router.replace('/(tabs)/(today)/reveal');
-  }, [partnerEntry?.submitted_at]);
+    if (partnerEntry?.submitted_at) {
+      router.replace({ pathname: '/(tabs)/(today)/reveal', params: { day: String(dayNumber) } });
+    }
+  }, [partnerEntry?.submitted_at, dayNumber]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top', 'bottom']}>

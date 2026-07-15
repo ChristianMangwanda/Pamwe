@@ -22,16 +22,21 @@ function daysBetween(fromISO: string, toISO: string): number {
 }
 
 // The plan day the couple "should" be on today: day 1 on the start date, then
-// one per calendar day, capped at the plan length. Never below 1.
-export function expectedDay(startDate: string, todayISO: string, totalDays: number): number {
-  const raw = daysBetween(startDate, todayISO) + 1;
+// one per `cadenceDays` calendar days, capped at the plan length. Never below 1.
+// cadenceDays is the couple's chosen rhythm (1 daily, 2 every other day, 7
+// weekly), so a slower rhythm expects fewer days by now and never reads as late.
+export function expectedDay(
+  startDate: string, todayISO: string, totalDays: number, cadenceDays = 1,
+): number {
+  const interval = Math.max(1, cadenceDays);
+  const raw = Math.floor(daysBetween(startDate, todayISO) / interval) + 1;
   return Math.max(1, Math.min(raw, totalDays));
 }
 
-// How many days behind the expected pace the couple is. 0 when on or ahead of
-// pace (finishing early is not "behind").
+// How many plan days behind their own rhythm the couple is. 0 when on or ahead
+// of pace (finishing early is not "behind").
 export function daysBehind(
-  startDate: string, currentDay: number, todayISO: string, totalDays: number,
+  startDate: string, currentDay: number, todayISO: string, totalDays: number, cadenceDays = 1,
 ): number {
-  return Math.max(0, expectedDay(startDate, todayISO, totalDays) - currentDay);
+  return Math.max(0, expectedDay(startDate, todayISO, totalDays, cadenceDays) - currentDay);
 }

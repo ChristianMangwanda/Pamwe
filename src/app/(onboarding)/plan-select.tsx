@@ -5,11 +5,12 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Text } from '../../components/ui/Text';
 import { Button } from '../../components/ui/Button';
 import { StripedBanner } from '../../components/ui/StripedBanner';
+import { SegmentedControl } from '../../components/ui/SegmentedControl';
 import { GUTTER } from '../../theme/tokens';
 import { fonts } from '../../constants/typography';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useCouple } from '../../providers/CoupleProvider';
-import { getCuratedPlans, enrollInPlan, switchPlan } from '../../lib/plans';
+import { getCuratedPlans, enrollInPlan, switchPlan, CADENCE_OPTIONS, type Cadence } from '../../lib/plans';
 import { bannerTintForPlan } from '../../lib/planArtwork';
 import { getUserCouple } from '../../lib/couples';
 import { haptics } from '../../lib/haptics';
@@ -22,6 +23,7 @@ export default function PlanSelectScreen() {
   const isSwitch = mode === 'change';
   const [plans, setPlans] = useState<any[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [cadence, setCadence] = useState<Cadence>(1);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
 
@@ -47,9 +49,9 @@ export default function PlanSelectScreen() {
       const couple = await getUserCouple();
       if (!couple) throw new Error("We couldn't find your couple. Check your connection and try again.");
       if (isSwitch) {
-        await switchPlan(couple.id, selectedId);
+        await switchPlan(couple.id, selectedId, cadence);
       } else {
-        await enrollInPlan(couple.id, selectedId);
+        await enrollInPlan(couple.id, selectedId, cadence);
       }
       // The tabs read couple/plan from CoupleProvider — bring it up to date
       // before entering, or every tab sees a stale null plan.
@@ -132,6 +134,23 @@ export default function PlanSelectScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
+        {/* Beta feedback: every day is more than most couples can hold. The
+            rhythm is set with the plan, since a dated plan like M'Cheyne wants
+            daily while a short plan can suit a slower pace. */}
+        {selectedId && (
+          <View style={styles.cadence}>
+            <Text variant="eyebrow" color={colors.accent2}>How often?</Text>
+            <SegmentedControl
+              segments={CADENCE_OPTIONS.map((o) => ({ key: String(o.value), label: o.label }))}
+              value={String(cadence)}
+              onChange={(k) => setCadence(Number(k) as Cadence)}
+              style={styles.cadenceControl}
+            />
+            <Text style={[styles.cadenceBlurb, { color: colors.muted }]}>
+              {CADENCE_OPTIONS.find((o) => o.value === cadence)?.blurb}
+            </Text>
+          </View>
+        )}
         <Button
           title={isSwitch ? 'Switch to this plan' : 'Begin together'}
           onPress={handleEnroll}
@@ -157,4 +176,7 @@ const styles = StyleSheet.create({
   cardTagline: { letterSpacing: 2 },
   cardMeta: { fontFamily: fonts.sans, fontSize: 11, marginTop: 6 },
   footer: { paddingHorizontal: GUTTER, paddingTop: 12, paddingBottom: 16 },
+  cadence: { marginBottom: 16 },
+  cadenceControl: { marginTop: 10 },
+  cadenceBlurb: { fontFamily: fonts.sans, fontSize: 12, lineHeight: 17, marginTop: 8 },
 });

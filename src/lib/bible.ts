@@ -1,5 +1,12 @@
-// Minimal Bible browser support. Uses bible-api.com (WEB translation, public domain)
-// for on-demand chapter fetching. No local seed required.
+// Minimal Bible browser support. Chapters are fetched on demand, no local seed.
+//
+// Two sources, both public domain. bible-api.com serves the older translations
+// (WEB, KJV, ASV, BBE, Darby). The Berean Standard Bible comes from
+// bible.helloao.org instead, because bible-api.com's catalog predates the BSB's
+// 2023 public-domain release and doesn't carry it. The BSB is the one modern,
+// readable translation that is genuinely free of licensing strings: the popular
+// moderns (NIV, ESV, NLT, NKJV) are all copyrighted and reachable only under
+// non-commercial terms that would restrict the whole app.
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -89,21 +96,53 @@ export function findBook(slug: string): BibleBook | undefined {
 }
 
 // bible-api.com translation ids. All public domain.
-export type Translation = 'web' | 'kjv' | 'asv' | 'bbe' | 'ylt' | 'darby';
+//
+// Young's Literal ('ylt') was removed: bible-api.com carries it for the New
+// Testament only (its catalog names it "Young's Literal Translation (NT only)"),
+// so every Old Testament chapter 404'd and the reader blamed the connection.
+// Because the choice persists globally, picking it inside a Gospel silently
+// broke ~60% of the Bible until the reader switched back.
+export type Translation = 'web' | 'bsb' | 'kjv' | 'asv' | 'bbe' | 'darby';
 
-export const TRANSLATIONS: Translation[] = ['web', 'kjv', 'asv', 'bbe', 'ylt', 'darby'];
+export const TRANSLATIONS: Translation[] = ['web', 'bsb', 'kjv', 'asv', 'bbe', 'darby'];
 
 export const TRANSLATION_NAMES: Record<Translation, string> = {
   web: 'World English Bible',
+  bsb: 'Berean Standard Bible',
   kjv: 'King James Version',
   asv: 'American Standard Version',
   bbe: 'Bible in Basic English',
-  ylt: "Young's Literal Translation",
   darby: 'Darby Translation',
 };
 
 export const TRANSLATION_ABBR: Record<Translation, string> = {
-  web: 'WEB', kjv: 'KJV', asv: 'ASV', bbe: 'BBE', ylt: 'YLT', darby: 'DBY',
+  web: 'WEB', bsb: 'BSB', kjv: 'KJV', asv: 'ASV', bbe: 'BBE', darby: 'DBY',
+};
+
+// Only the BSB is served by helloao; everything else comes from bible-api.com.
+const BSB_TRANSLATION: Translation = 'bsb';
+
+// USFM book codes, which the helloao API keys its chapters by. Generated from
+// that API's own BSB book list rather than hand-typed, and checked against
+// BIBLE_BOOKS: all 66 names line up in order and every chapter count matches.
+const USFM_CODES: Record<string, string> = {
+  'Genesis': 'GEN', 'Exodus': 'EXO', 'Leviticus': 'LEV', 'Numbers': 'NUM',
+  'Deuteronomy': 'DEU', 'Joshua': 'JOS', 'Judges': 'JDG', 'Ruth': 'RUT',
+  '1 Samuel': '1SA', '2 Samuel': '2SA', '1 Kings': '1KI', '2 Kings': '2KI',
+  '1 Chronicles': '1CH', '2 Chronicles': '2CH', 'Ezra': 'EZR', 'Nehemiah': 'NEH',
+  'Esther': 'EST', 'Job': 'JOB', 'Psalms': 'PSA', 'Proverbs': 'PRO',
+  'Ecclesiastes': 'ECC', 'Song of Solomon': 'SNG', 'Isaiah': 'ISA', 'Jeremiah': 'JER',
+  'Lamentations': 'LAM', 'Ezekiel': 'EZK', 'Daniel': 'DAN', 'Hosea': 'HOS',
+  'Joel': 'JOL', 'Amos': 'AMO', 'Obadiah': 'OBA', 'Jonah': 'JON',
+  'Micah': 'MIC', 'Nahum': 'NAM', 'Habakkuk': 'HAB', 'Zephaniah': 'ZEP',
+  'Haggai': 'HAG', 'Zechariah': 'ZEC', 'Malachi': 'MAL', 'Matthew': 'MAT',
+  'Mark': 'MRK', 'Luke': 'LUK', 'John': 'JHN', 'Acts': 'ACT',
+  'Romans': 'ROM', '1 Corinthians': '1CO', '2 Corinthians': '2CO', 'Galatians': 'GAL',
+  'Ephesians': 'EPH', 'Philippians': 'PHP', 'Colossians': 'COL', '1 Thessalonians': '1TH',
+  '2 Thessalonians': '2TH', '1 Timothy': '1TI', '2 Timothy': '2TI', 'Titus': 'TIT',
+  'Philemon': 'PHM', 'Hebrews': 'HEB', 'James': 'JAS', '1 Peter': '1PE',
+  '2 Peter': '2PE', '1 John': '1JN', '2 John': '2JN', '3 John': '3JN',
+  'Jude': 'JUD', 'Revelation': 'REV',
 };
 
 export interface BibleVerse {
@@ -144,10 +183,63 @@ async function readPersistedChapter(key: string): Promise<ChapterResult | null> 
   }
 }
 
+const LOAD_FAILED = "The Bible text couldn't load. Check your connection and try again.";
+
+async function fetchFromBibleApi(
+  book: string,
+  chapter: number,
+  translation: Translation,
+): Promise<ChapterResult> {
+  const slug = book.toLowerCase().replace(/ /g, '+');
+  const resp = await fetch(`https://bible-api.com/${slug}+${chapter}?translation=${translation}`);
+  if (!resp.ok) throw new Error(LOAD_FAILED);
+  const data = await resp.json();
+  const verses: BibleVerse[] = (Array.isArray(data.verses) ? data.verses : []).map((v: any) => ({
+    verse: v.verse,
+    text: String(v.text ?? '').replace(/\s+/g, ' ').trim(),
+  }));
+  return { reference: data.reference ?? `${book} ${chapter}`, verses };
+}
+
+// A BSB verse's content is a mix of bare strings, poetry fragments ({ text,
+// poem }), footnote markers ({ noteId }) and ({ lineBreak }). Only the pieces
+// carrying text belong in the reader: a noteId rendered as-is would surface a
+// bare number mid-sentence.
+function bsbVerseText(content: unknown[]): string {
+  return content
+    .map((part) => {
+      if (typeof part === 'string') return part;
+      const text = (part as { text?: unknown })?.text;
+      return typeof text === 'string' ? text : '';
+    })
+    .filter(Boolean)
+    .join(' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+async function fetchBsbChapter(book: string, chapter: number): Promise<ChapterResult> {
+  const code = USFM_CODES[book];
+  if (!code) throw new Error(LOAD_FAILED);
+  const resp = await fetch(`https://bible.helloao.org/api/BSB/${code}/${chapter}.json`);
+  if (!resp.ok) throw new Error(LOAD_FAILED);
+  const data = await resp.json();
+  // The chapter body also carries headings, line breaks and Hebrew subtitles;
+  // the verse-by-verse reader wants only the verses.
+  const content: any[] = Array.isArray(data?.chapter?.content) ? data.chapter.content : [];
+  const verses: BibleVerse[] = content
+    .filter((item) => item?.type === 'verse')
+    .map((v) => ({
+      verse: v.number,
+      text: bsbVerseText(Array.isArray(v.content) ? v.content : []),
+    }));
+  return { reference: `${book} ${chapter}`, verses };
+}
+
 /**
- * Fetch a chapter as individual verses (for the verse-by-verse reader) from
- * bible-api.com. Served from memory, then disk, then network; a network failure
- * falls back to the persisted copy so reading works offline. Throws only when
+ * Fetch a chapter as individual verses (for the verse-by-verse reader). Served
+ * from memory, then disk, then network. A chapter read before is served from
+ * disk without touching the network, so reading works offline. Throws only when
  * the chapter has never been fetched and the network is unreachable.
  */
 export async function fetchChapterVerses(
@@ -159,39 +251,43 @@ export async function fetchChapterVerses(
   const cached = chapterCache.get(key);
   if (cached) return cached;
 
+  // A disk hit is authoritative: scripture is immutable, so there is nothing to
+  // revalidate. This used to warm memory and then refetch anyway, which made
+  // every chapter open across a restart a fresh request. bible-api.com allows
+  // ~15 before it 429s, and those 429s surfaced as "check your connection" on
+  // whichever translation was tapped last, reading as a broken translation.
   const persisted = await readPersistedChapter(key);
-  if (persisted) chapterCache.set(key, persisted);
-
-  const slug = book.toLowerCase().replace(/ /g, '+');
-  const url = `https://bible-api.com/${slug}+${chapter}?translation=${translation}`;
-  try {
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error("The Bible text couldn't load. Check your connection and try again.");
-    const data = await resp.json();
-    const verses: BibleVerse[] = (Array.isArray(data.verses) ? data.verses : []).map((v: any) => ({
-      verse: v.verse,
-      text: String(v.text ?? '').replace(/\s+/g, ' ').trim(),
-    }));
-    const result = { reference: data.reference ?? `${book} ${chapter}`, verses };
-    chapterCache.set(key, result);
-    persistChapter(key, result);
-    return result;
-  } catch (err) {
-    // Offline: serve the persisted copy if we have one.
-    if (persisted) return persisted;
-    throw err;
+  if (persisted) {
+    chapterCache.set(key, persisted);
+    return persisted;
   }
+
+  const result =
+    translation === BSB_TRANSLATION
+      ? await fetchBsbChapter(book, chapter)
+      : await fetchFromBibleApi(book, chapter, translation);
+
+  chapterCache.set(key, result);
+  persistChapter(key, result);
+  return result;
 }
 
 /**
  * Fetch a passage's plain text by reference string (e.g. "John 3:1-16"). Used for
  * custom-plan days whose passage_text is NULL (fetched live instead of seeded).
+ *
+ * bible-api.com only: it resolves a free-form reference in one call, which the
+ * BSB's source can't do (it serves whole chapters keyed by book code). The BSB
+ * is excluded at the type level rather than failing at runtime.
  */
-export async function fetchPassage(reference: string, translation: Translation = 'web'): Promise<string> {
+export async function fetchPassage(
+  reference: string,
+  translation: Exclude<Translation, 'bsb'> = 'web',
+): Promise<string> {
   const slug = reference.toLowerCase().replace(/ /g, '+');
   const url = `https://bible-api.com/${slug}?translation=${translation}`;
   const resp = await fetch(url);
-  if (!resp.ok) throw new Error("The Bible text couldn't load. Check your connection and try again.");
+  if (!resp.ok) throw new Error(LOAD_FAILED);
   const data = await resp.json();
   return String(data.text ?? '').replace(/\s+/g, ' ').trim();
 }
