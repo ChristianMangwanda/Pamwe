@@ -14,21 +14,35 @@ Deno.serve(async (req) => {
 
   const { couple_plan_id, day_number, user_id } = record;
 
-  const { data: couplePlan } = await supabase
+  // Report a query *error* as a 5xx rather than folding it into "not found":
+  // as a webhook target the only trace of this run is net._http_response, so a
+  // swallowed error becomes an invisible 200 (a missing service_role grant hid
+  // here for days, reading as "No couple plan found").
+  const { data: couplePlan, error: couplePlanErr } = await supabase
     .from("couple_plans")
     .select("couple_id")
     .eq("id", couple_plan_id)
     .single();
 
+  if (couplePlanErr) {
+    console.error("notify-partner: couple_plans lookup failed", couplePlanErr);
+    return new Response("couple_plans lookup failed", { status: 500 });
+  }
+
   if (!couplePlan) {
     return new Response("No couple plan found", { status: 200 });
   }
 
-  const { data: couple } = await supabase
+  const { data: couple, error: coupleErr } = await supabase
     .from("couples")
     .select("partner_a_id, partner_b_id")
     .eq("id", couplePlan.couple_id)
     .single();
+
+  if (coupleErr) {
+    console.error("notify-partner: couples lookup failed", coupleErr);
+    return new Response("couples lookup failed", { status: 500 });
+  }
 
   if (!couple) {
     return new Response("No couple found", { status: 200 });
@@ -43,11 +57,16 @@ Deno.serve(async (req) => {
     return new Response("No partner", { status: 200 });
   }
 
-  const { data: partner } = await supabase
+  const { data: partner, error: partnerErr } = await supabase
     .from("users")
     .select("expo_push_token, notification_partner")
     .eq("id", partnerId)
     .single();
+
+  if (partnerErr) {
+    console.error("notify-partner: partner lookup failed", partnerErr);
+    return new Response("partner lookup failed", { status: 500 });
+  }
 
   if (!partner?.expo_push_token || partner.notification_partner === false) {
     return new Response("Partner has no token or opted out", { status: 200 });
@@ -85,7 +104,12 @@ Deno.serve(async (req) => {
     }),
   });
 
+  // Expo answers 200 with a per-message ticket, so log a rejected push instead
+  // of letting an error ticket read as a delivered banner.
   const result = await response.json();
+  if (!response.ok || result?.data?.status === "error") {
+    console.error("notify-partner: expo push rejected", result);
+  }
   return new Response(JSON.stringify(result), {
     headers: { "Content-Type": "application/json" },
   });
