@@ -135,9 +135,11 @@ export default function SettingsScreen() {
           </View>
 
           <View style={[styles.divider, { backgroundColor: colors.line }]} />
-          <ToggleRow label="Partner reflections" description="When your partner submits and both reflections unlock." value={prefs?.notification_partner ?? true} onChange={(v) => savePref({ notification_partner: v })} colors={colors} />
+          <ToggleRow label="Partner reflections" description="When your partner submits, nudges you, or is thinking of you." value={prefs?.notification_partner ?? true} onChange={(v) => savePref({ notification_partner: v })} colors={colors} />
           <View style={[styles.divider, { backgroundColor: colors.line }]} />
           <ToggleRow label="New prayers" description="When your partner adds a prayer point." value={prefs?.notification_prayer ?? true} onChange={(v) => savePref({ notification_prayer: v })} colors={colors} />
+          <View style={[styles.divider, { backgroundColor: colors.line }]} />
+          <ToggleRow label="New dreams" description="When your partner writes down a dream." value={prefs?.notification_dream ?? true} onChange={(v) => savePref({ notification_dream: v })} colors={colors} />
         </Card>
 
         <Text variant="eyebrow" color={colors.muted} style={styles.sectionLabel}>Plan</Text>

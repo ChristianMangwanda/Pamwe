@@ -27,19 +27,29 @@ const AuthContext = createContext<AuthContextType>({
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  // Derived, not a second source of truth. session and user used to be two
+  // states written by two racing callbacks, so they could disagree.
+  const user: User | null = session?.user ?? null;
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      setUser(session?.user ?? null);
       setLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, next) => {
+      setSession((prev) => {
+        // auth-js emits INITIAL_SESSION with a NULL session whenever restoring
+        // it errors, and a slow radio on a cold launch is enough to trigger
+        // that. Taking it at face value wiped a good session, so the gate saw
+        // "signed out" and flashed the welcome screen at a signed-in user
+        // before the token refresh retried and landed. getSession above still
+        // decides the genuinely signed-out case, and an explicit SIGNED_OUT
+        // still clears the session here.
+        if (event === 'INITIAL_SESSION' && !next && prev) return prev;
+        return next;
+      });
       setLoading(false);
     });
 

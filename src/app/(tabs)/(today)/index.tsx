@@ -11,6 +11,7 @@ import { ProgressBar } from '../../../components/ui/ProgressBar';
 import { StreakBar } from '../../../components/ui/StreakBar';
 import { StreakTree } from '../../../components/ui/StreakTree';
 import { MilestoneCard } from '../../../components/MilestoneCard';
+import { ThinkingFab } from '../../../components/ThinkingFab';
 import { Floral } from '../../../components/ui/Floral';
 import { fonts } from '../../../constants/typography';
 import { GUTTER } from '../../../theme/tokens';
@@ -23,6 +24,7 @@ import { parseReference } from '../../../lib/bible';
 import { daysBehind, todayInTimezone } from '../../../lib/catchup';
 import { nudgePartner } from '../../../lib/notifications';
 import { milestoneFor, Milestone } from '../../../lib/milestones';
+import { countMyTotalSubmitted } from '../../../lib/entries';
 import { haptics } from '../../../lib/haptics';
 
 export default function HomeScreen() {
@@ -35,6 +37,11 @@ export default function HomeScreen() {
   const [nudging, setNudging] = useState(false);
   const [nudged, setNudged] = useState(false);
   const [milestone, setMilestone] = useState<Milestone | null>(null);
+  // The tree grows with days READ, not with the streak. A streak resets to 1 on
+  // any missed day, which yanked a well-established tree back to a seedling and
+  // made it read as broken (a couple 7 sessions in was still showing "Planted").
+  // Days read only ever goes up, so the tree only ever grows.
+  const [daysRead, setDaysRead] = useState(0);
 
   // Celebrate a streak milestone once: an AsyncStorage high-water mark per
   // couple decides whether this one has already had its moment.
@@ -47,6 +54,12 @@ export default function HomeScreen() {
       .then((v) => { if (Number(v ?? 0) < m) setMilestone(m); })
       .catch(() => {});
   }, [couple?.id, streakNow]);
+
+  // Re-read when the day advances so the tree moves the moment a day is sealed.
+  useEffect(() => {
+    if (!couple?.id) return;
+    countMyTotalSubmitted(couple.id).then(setDaysRead).catch(() => {});
+  }, [couple?.id, dayNumber, myEntry?.submitted_at]);
 
   const dismissMilestone = () => {
     if (couple?.id && milestone) {
@@ -235,7 +248,7 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.streakWrap}>
-          <StreakTree count={streakCount} />
+          <StreakTree count={daysRead} />
           <StreakBar count={streakCount} />
           {streakCount > 0 && (
             <Text style={[styles.streakCount, { color: colors.muted }]}>{streakCount} day streak</Text>
@@ -259,6 +272,8 @@ export default function HomeScreen() {
           </Text>
         </View>
       </ScrollView>
+
+      <ThinkingFab />
     </SafeAreaView>
   );
 }
@@ -282,7 +297,8 @@ const styles = StyleSheet.create({
   centerTitle: { textAlign: 'center' },
   centerText: { fontSize: 15, marginTop: 12, textAlign: 'center', lineHeight: 22 },
   centerCta: { marginTop: 28, alignSelf: 'stretch' },
-  scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 32 },
+  // 96 clears the floating "thinking of you" bubble at the scroll end.
+  scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 96 },
   floral: { position: 'absolute', top: -6, left: -16, width: 116, height: 116, opacity: 0.82 },
   gearRow: { flexDirection: 'row', justifyContent: 'flex-end', zIndex: 2 },
   header: { alignItems: 'center', marginTop: 4 },

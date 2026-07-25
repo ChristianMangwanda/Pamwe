@@ -162,6 +162,7 @@ export type NotificationPrefs = {
   notification_morning_time: string; // 'HH:MM:SS'
   notification_partner: boolean;
   notification_prayer: boolean;
+  notification_dream: boolean;
 };
 
 export async function getNotificationPrefs(): Promise<NotificationPrefs | null> {
@@ -171,7 +172,7 @@ export async function getNotificationPrefs(): Promise<NotificationPrefs | null> 
 
   const { data, error } = await supabase
     .from('users')
-    .select('notification_morning_time, notification_partner, notification_prayer')
+    .select('notification_morning_time, notification_partner, notification_prayer, notification_dream')
     .eq('id', user.id)
     .single();
 
@@ -220,6 +221,27 @@ export async function nudgePartner(): Promise<NudgeResult> {
     return { ok: true, delivered: data?.delivered !== false };
   } catch {
     return { ok: false, message: "The nudge didn't send. Try again in a moment." };
+  }
+}
+
+// "Thinking of you": one tap on Today, no reading and nothing to do attached.
+// Same shape as nudgePartner; the edge function holds a 30-minute cooldown per
+// sender, kept separate from the read-nudge's so neither silences the other.
+export async function thinkingOfYou(): Promise<NudgeResult> {
+  try {
+    const { data, error } = await supabase.functions.invoke('notify-thinking', { body: {} });
+    if (error) return { ok: false, message: "That didn't send. Try again in a moment." };
+    if (data?.cooldown) return { ok: false, cooldown: true, message: data?.message };
+    if (!data?.ok) {
+      const message =
+        data?.reason === 'no_partner' || data?.reason === 'no_couple'
+          ? "You're not paired with anyone yet."
+          : "That didn't send. Try again in a moment.";
+      return { ok: false, message };
+    }
+    return { ok: true, delivered: data?.delivered !== false };
+  } catch {
+    return { ok: false, message: "That didn't send. Try again in a moment." };
   }
 }
 

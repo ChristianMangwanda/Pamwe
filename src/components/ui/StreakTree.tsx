@@ -18,6 +18,28 @@ export function treeStage(count: number): TreeStage {
   return 0;
 }
 
+// The count each stage begins at, paired with the stem height it starts from.
+// Kept in step with treeStage() above.
+const STAGE_MIN = [0, 1, 3, 7, 14, 30];
+const STAGE_STEM_TOP = [70, 62, 50, 38, 26, 20];
+
+// The stem used to snap between 6 fixed heights, so on all but 5 days of the
+// first month nothing moved and the tree read as static. It now eases toward
+// the NEXT stage's height as the days accumulate, so every day read nudges it
+// visibly, while the stage boundaries still land on exactly the old heights
+// (the leaves, bud and bloom hang off those, and the design previews and
+// treeStage tests assume them).
+export function stemTopFor(count: number): number {
+  const stage = treeStage(count);
+  if (stage >= 5) return STAGE_STEM_TOP[5];
+  const from = STAGE_STEM_TOP[stage];
+  const to = STAGE_STEM_TOP[stage + 1];
+  const lo = STAGE_MIN[stage];
+  const hi = STAGE_MIN[stage + 1];
+  const t = hi > lo ? Math.min(1, Math.max(0, (count - lo) / (hi - lo))) : 0;
+  return Math.round(from + (to - from) * t);
+}
+
 const STAGE_WORD: Record<TreeStage, string> = {
   0: 'Ready to plant',
   1: 'Planted',
@@ -34,10 +56,9 @@ export function StreakTree({ count }: { count: number }) {
   const leaf = colors.accent2;
   const bloom = colors.accent;
 
-  // Stem grows taller with each stage. viewBox 72x84; ground at y=72.
+  // Stem grows with the days read. viewBox 72x84; ground at y=72.
   const groundY = 72;
-  const stemTopByStage = [70, 62, 50, 38, 26, 20];
-  const stemTop = stemTopByStage[stage];
+  const stemTop = stemTopFor(count);
 
   return (
     <View style={styles.wrap}>

@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { PlusCircle, HandsPraying, SealCheck, CaretRight, MoonStars } from 'phosphor-react-native';
 import { Text } from '../../../components/ui/Text';
 import { Floral } from '../../../components/ui/Floral';
@@ -36,7 +36,9 @@ export default function PrayersScreen() {
   const { user } = useAuth();
   const { couple, partner } = useCouple();
 
-  const [tab, setTab] = useState<Tab>('prayers');
+  // A tapped "your partner wrote down a dream" push lands here with tab=dreams.
+  const { tab: tabParam } = useLocalSearchParams<{ tab?: string }>();
+  const [tab, setTab] = useState<Tab>(tabParam === 'dreams' ? 'dreams' : 'prayers');
   const [active, setActive] = useState<Prayer[]>([]);
   const [answered, setAnswered] = useState<Prayer[]>([]);
   const [dreams, setDreams] = useState<Dream[]>([]);

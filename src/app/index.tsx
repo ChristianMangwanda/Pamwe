@@ -3,10 +3,12 @@ import { Redirect } from 'expo-router';
 import { useAuth } from '../providers/AuthProvider';
 import { getUserCouple } from '../lib/couples';
 import { getActiveCouPlan } from '../lib/plans';
-import { View, ActivityIndicator } from 'react-native';
+import { View } from 'react-native';
 import { useTheme } from '../providers/ThemeProvider';
 import { Text } from '../components/ui/Text';
 import { Button } from '../components/ui/Button';
+import { PamweWordmark } from '../components/PamweWordmark';
+import { hideSplashOnce } from '../lib/splash';
 
 type RouteState = 'loading' | 'auth' | 'unpaired' | 'waiting' | 'plan-select' | 'tabs' | 'error';
 
@@ -41,10 +43,20 @@ export default function Index() {
     resolveRoute(session.user.id);
   }, [session?.user?.id, resolveRoute]);
 
-  if (authLoading || (session && route === 'loading')) {
+  // The gate has landed somewhere real: safe to drop the splash. Anything that
+  // renders below this point is a destination, not a waiting state.
+  const settled = !authLoading && (!session || route !== 'loading');
+  useEffect(() => {
+    if (settled) hideSplashOnce();
+  }, [settled]);
+
+  if (!settled) {
+    // Normally invisible: the native splash is still up. This is what shows if
+    // the 3s floor in _layout fires first, so it wears the app's own mark
+    // rather than a bare spinner on a blank screen.
     return (
       <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={colors.accent} />
+        <PamweWordmark />
       </View>
     );
   }

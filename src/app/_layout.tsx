@@ -25,6 +25,7 @@ import * as Sentry from '@sentry/react-native';
 import { AuthProvider } from '../providers/AuthProvider';
 import { ThemeProvider, useTheme } from '../providers/ThemeProvider';
 import { supabase } from '../lib/supabase';
+import { hideSplashOnce } from '../lib/splash';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -72,10 +73,15 @@ function RootLayout() {
     InstrumentSans_600SemiBold,
   });
 
+  // Do NOT hide the splash the instant fonts land: the auth gate still has a
+  // token refresh plus 2-3 queries to go, and dropping the splash there is what
+  // exposed the spinner and the welcome-screen flash. src/app/index.tsx hides it
+  // when it has actually resolved a destination. This timeout is only a floor,
+  // so a hung query can never strand anyone on the splash.
   useEffect(() => {
-    if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync();
-    }
+    if (!fontsLoaded && !fontError) return;
+    const timer = setTimeout(hideSplashOnce, 3000);
+    return () => clearTimeout(timer);
   }, [fontsLoaded, fontError]);
 
   useEffect(() => {
