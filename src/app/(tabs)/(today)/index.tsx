@@ -11,7 +11,7 @@ import { ProgressBar } from '../../../components/ui/ProgressBar';
 import { StreakBar } from '../../../components/ui/StreakBar';
 import { StreakTree } from '../../../components/ui/StreakTree';
 import { MilestoneCard } from '../../../components/MilestoneCard';
-import { ThinkingFab } from '../../../components/ThinkingFab';
+import { ThinkingButton } from '../../../components/ThinkingButton';
 import { Floral } from '../../../components/ui/Floral';
 import { fonts } from '../../../constants/typography';
 import { GUTTER } from '../../../theme/tokens';
@@ -258,7 +258,12 @@ export default function HomeScreen() {
         {milestone && <MilestoneCard milestone={milestone} onDismiss={dismissMilestone} />}
 
         <View style={styles.ctaWrap}>
-          <Button title={cta.label} onPress={onCta} />
+          {/* The heart sits beside the CTA rather than floating over it: a
+              floating bubble covered "Read Day N" partway through a scroll. */}
+          <View style={styles.ctaRow}>
+            <ThinkingButton />
+            <Button title={cta.label} onPress={onCta} style={styles.ctaButton} />
+          </View>
           {canNudge && (
             <TouchableOpacity onPress={onNudge} disabled={nudging || nudged} activeOpacity={0.7}
               style={styles.nudge} accessibilityRole="button" accessibilityLabel={`Nudge ${partnerName}`}>
@@ -272,8 +277,6 @@ export default function HomeScreen() {
           </Text>
         </View>
       </ScrollView>
-
-      <ThinkingFab />
     </SafeAreaView>
   );
 }
@@ -297,8 +300,7 @@ const styles = StyleSheet.create({
   centerTitle: { textAlign: 'center' },
   centerText: { fontSize: 15, marginTop: 12, textAlign: 'center', lineHeight: 22 },
   centerCta: { marginTop: 28, alignSelf: 'stretch' },
-  // 96 clears the floating "thinking of you" bubble at the scroll end.
-  scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 96 },
+  scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 32 },
   floral: { position: 'absolute', top: -6, left: -16, width: 116, height: 116, opacity: 0.82 },
   gearRow: { flexDirection: 'row', justifyContent: 'flex-end', zIndex: 2 },
   header: { alignItems: 'center', marginTop: 4 },
@@ -331,6 +333,8 @@ const styles = StyleSheet.create({
   streakWrap: { marginTop: 18, alignItems: 'center', gap: 8 },
   streakCount: { fontFamily: fonts.sansSemiBold, fontSize: 10, letterSpacing: 1.8, textTransform: 'uppercase' },
   ctaWrap: { marginTop: 22 },
+  ctaRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  ctaButton: { flex: 1 },
   nudge: { alignItems: 'center', marginTop: 14 },
   nudgeText: { fontSize: 11, letterSpacing: 0.8 },
   readingRef: { fontFamily: fonts.sans, fontSize: 12, textAlign: 'center', marginTop: 10 },
