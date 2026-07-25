@@ -38,9 +38,22 @@ regenerated version timestamps, not the repo file prefixes (true since the
 2026-07-09 setup). Always apply via the supabase MCP; `supabase db push` would
 mismatch versions and choke on the non-idempotent `CREATE POLICY` migrations.
 
-**Still open:** redeploy the 4 notify-* functions (they now import `_shared/push.ts`,
-uncommitted until today and never deployed), seed the review accounts, then archive
-b15. `CURRENT_PROJECT_VERSION` already bumped to **15** in all 4 spots.
+**Edge functions redeployed** (all 4 now carry the `_shared/push.ts` dead-token
+cleanup, which had never been deployed): notify-partner v7, notify-new-prayer v6,
+notify-freeze v7, notify-nudge v3. **`verify_jwt` preserved exactly** (false for the
+three webhook targets, true for the user-invoked nudge). Deploy layout matters: the
+functions are uploaded with the repo's directory shape (`notify-x/index.ts` +
+`_shared/push.ts`, entrypoint `notify-x/index.ts`) so the `../_shared/push.ts`
+relative import resolves. A flat upload would break it at boot, not at deploy.
+All four smoke-tested live: each returns its safe early-return without sending push.
+
+**Review accounts seeded.** Grace + Daniel on Gospel of John day 3, day 3 has only
+Daniel's entry so the reviewer's own submit fires the reveal. 5 entries, 3 prayers,
+1 highlight, 1 note. **Password sign-in verified end to end** against the live auth
+endpoint (real access token returned), so the `@review.pamwe.app` path works.
+
+**Still open:** archive + upload b15. `CURRENT_PROJECT_VERSION` already bumped to
+**15** in all 4 spots. Screenshots remain the last store-package gap.
 
 ---
 
@@ -81,8 +94,8 @@ this session); everything hosted-bound is staged and listed below.
 **Hosted queue (in order, when MCP is back + Ammy confirms b14):**
 1. ✅ **APPLIED 2026-07-25** `20260714000002` + `20260714000003` (Christian confirmed both phones on b14)
 2. ✅ **APPLIED 2026-07-25** `20260716000001/2/3`
-3. Redeploy notify-partner, notify-new-prayer, notify-freeze, notify-nudge
-4. `scripts/seed_review_accounts.sql`
+3. ✅ **DEPLOYED 2026-07-25** notify-partner v7, notify-new-prayer v6, notify-freeze v7, notify-nudge v3
+4. ✅ **SEEDED 2026-07-25** `scripts/seed_review_accounts.sql` (sign-in verified live)
 
 ---
 
