@@ -4,6 +4,51 @@
 
 ---
 
+## ⭐⭐⭐⭐⭐⭐⭐⭐ B15 ROUND (2026-07-25): Dreams, thinking-of-you, launch + tree fixes
+
+Gate: tsc clean, **19 suites / 138 Jest**. All hosted work applied and verified.
+
+**Dreams** (new `dreams` table, Prayers tab → Dreams toggle). Couple-shared
+journal: write a dream, read your partner's, carry it into a prayer.
+**Pamwe never interprets a dream** (see the CLAUDE.md rule); Ask Pamwe is
+deliberately not wired in. RLS written in the post-hardening shape from the
+start and **verified against a live user token**: cross-couple insert 403,
+author spoofing 403, own-couple insert 201, SELECT scoped to the caller.
+`delete-account` also clears dreams, without which an account deletion would
+fail on the FK once anyone had written one (App Store 5.1.1(v)).
+
+**Dream push**: `notify-new-dream` on INSERT + its own `notification_dream`
+pref (the existing toggles are worded too narrowly to fold dreams into).
+No preview in the banner: a dream can be private in a way a prayer point is not.
+Whole chain verified end to end via `net._http_response`.
+
+**Thinking of you**: heart bubble bottom-left on Today, `notify-thinking`,
+30-minute cooldown sharing `partner_nudges` under `kind='thinking'` so it and
+the read-nudge never silence each other.
+
+**Launch fix** (Christian: "it shows a spinner for a second or two, sometimes
+flashes Get started"). Two independent causes, both fixed:
+1. `SplashScreen.hideAsync()` was keyed on **fonts alone**, dropping the branded
+   splash a token-refresh plus 2-3 queries before the gate had decided anything.
+   The gate now hides it when it has actually landed, with a 3s floor in the root
+   layout so a hung query can never strand anyone on the splash. The fallback
+   wears the Pamwe wordmark, not a bare spinner.
+2. auth-js emits `INITIAL_SESSION` with a **NULL session whenever restore
+   errors** (a slow radio on cold start suffices). AuthProvider took it at face
+   value, wiping a good session so the gate routed to welcome before the retry
+   landed. That null is now ignored when a session is already known, and `user`
+   is derived from `session` instead of racing it as a second state.
+
+**Tree fix** (Christian: "it's not growing day by day"). It was wired to
+`streak_count`, which resets to 1 on any missed day, so a couple 7 sessions deep
+still read "Planted". Now driven by **days read**, which only ever goes up, and
+the stem eases between stage heights so every day moves it instead of only the
+5 threshold days. Stage boundaries still land on exactly the old heights.
+
+**Still open:** screenshots for the store package.
+
+---
+
 ## ⭐⭐⭐⭐⭐⭐⭐ HOSTED RECONCILE (2026-07-25): 5 migrations applied, timeline reset, b15 armed
 
 Christian reported stale notifications piling up and "we're 2 days behind" on the
