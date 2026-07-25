@@ -70,6 +70,7 @@ Deno.serve(async (req) => {
   await admin.from("prayer_marks").delete().eq("user_id", userId);
   await admin.from("entries").delete().eq("user_id", userId);
   await admin.from("prayers").delete().eq("author_id", userId);
+  await admin.from("dreams").delete().eq("author_id", userId);
 
   // 4. Demote the couple — never DELETE the couples row, because
   //    couples -> couple_plans -> entries and couples -> prayers cascade would

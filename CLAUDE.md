@@ -99,7 +99,7 @@ src/app/
     ├── (today)/                   # home (tree streak, milestones, catch-up, nudge) → reading → journal → waiting → reveal → complete
     ├── bible/                     # index → [book] → [book]/[chapter] reader (6 translations, 2 sources); marks, note
     ├── plans/                     # index (Ask Pamwe card) → [id] detail; builder (Ask Pamwe)
-    ├── prayers/                   # index (swipe cards + detail sheet w/ reminders) → add → timeline (answered)
+    ├── prayers/                   # index = Prayers|Dreams toggle (swipe cards + detail sheet w/ reminders) → add · dream-add → timeline (answered)
     ├── reflect/                   # index (history + From-your-story card) → [id] detail (responses) → words (Their Words)
     └── you/                       # index (stats + dark toggle) → settings, recaps, couple, privacy, terms, delete-account
 ```
@@ -115,7 +115,7 @@ Auth gate in [src/app/index.tsx](src/app/index.tsx) sequences:
 4. Session, paired, no plan → `(onboarding)/plan-select`
 5. Session, paired, has plan → `(tabs)`
 
-### Supabase data model (12 tables, all RLS-enabled)
+### Supabase data model (13 tables, all RLS-enabled)
 
 | Table | Purpose |
 |---|---|
@@ -127,6 +127,7 @@ Auth gate in [src/app/index.tsx](src/app/index.tsx) sequences:
 | `entries` | Per-user per-day reflection. Type text or voice. `submitted_at` is the locked-reveal trigger. `transcript` (nullable) holds the on-device voice transcript. |
 | `entry_responses` | Hearts/amens/replies/kept-lines a partner leaves on a revealed reflection (`kind`: heart/amen/reply/quote). RLS mirrors locked-reveal via `can_respond_to_entry()`; in the realtime publication. |
 | `prayers` / `prayer_marks` | Shared prayer requests with "I prayed today" marks. `prayers.category` (family/health/work/guidance/thanks/other); author-only update/delete. |
+| `dreams` | Couple-shared dream journal (both partners read, author-only edit/delete). **Pamwe never interprets a dream** (see the rule below). |
 | `verse_highlights` / `verse_notes` | Per-couple shared study layer over the Bible reader (one highlight + one note per verse per couple; `user_id` = authorship). |
 | `ask_pamwe_usage` / `partner_nudges` | Service-role-only bookkeeping (RLS on, zero policies): Ask Pamwe rate limiting (20/day + cooldown via `bump_ask_pamwe_usage` RPC) and nudge cooldowns (1/hour). |
 
@@ -196,6 +197,21 @@ still claimed they were set. Never reintroduce a cancel-all here.
 ### No em dashes in user-facing copy — ever
 
 Christian's rule (2026-07-10): zero em dashes in any developer-authored user-facing text (UI strings, alerts, notification bodies, plan metadata, prompts, AI output — the ask-pamwe system prompt forbids them). Use commas, colons, or periods. Null-value placeholder glyph is `·`. Scripture text is the one exception (quoted source material). Code comments are exempt.
+
+### Dreams are recorded, never interpreted
+
+The Dreams journal (Prayers tab → Dreams toggle) is a plain written record the
+couple can talk about and pray over. **Pamwe does not tell anyone what a dream
+means**, and Ask Pamwe is deliberately not wired into it. This is the same rule
+that governs the rest of the app (the ask-pamwe system prompt: "you point, you
+never preach", no interpreting Scripture, no settling doctrine), applied to
+ground that is contested across Christian traditions and that people act on.
+Christian's call, 2026-07-25. If dream interpretation is ever revisited, it is a
+product decision for him, not a feature to add because the model can.
+
+The one connection between the two halves is `handleDreamPray`: it carries the
+dream text into the add-prayer screen, trimmed to the prayers table's 280-char
+check, for the couple to word themselves.
 
 ### Auth: getSession(), not getUser(); every sign-in success must route through the gate
 
@@ -300,6 +316,7 @@ The voice recorder, audio upload, and partner-push flow only behave correctly on
 | Reflections history + recaps + on-this-day | [src/lib/reflections.ts](src/lib/reflections.ts), [src/lib/recaps.ts](src/lib/recaps.ts) |
 | Reflection responses + kept lines | [src/lib/entryResponses.ts](src/lib/entryResponses.ts), [src/components/ReflectionResponses.tsx](src/components/ReflectionResponses.tsx) |
 | Prayers (category, edit/delete) + reminders | [src/lib/prayers.ts](src/lib/prayers.ts), [src/lib/prayerReminders.ts](src/lib/prayerReminders.ts) |
+| Dreams (couple-shared journal) | [src/lib/dreams.ts](src/lib/dreams.ts), [src/components/DreamCard.tsx](src/components/DreamCard.tsx) |
 | Push notifications + nudge | [src/lib/notifications.ts](src/lib/notifications.ts) |
 | Voice transcription (on-device) | [src/lib/transcription.ts](src/lib/transcription.ts) |
 | Shared-layer search | [src/lib/search.ts](src/lib/search.ts) |

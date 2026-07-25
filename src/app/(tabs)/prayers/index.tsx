@@ -5,12 +5,14 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { PlusCircle, HandsPraying, SealCheck, CaretRight } from 'phosphor-react-native';
+import { PlusCircle, HandsPraying, SealCheck, CaretRight, MoonStars } from 'phosphor-react-native';
 import { Text } from '../../../components/ui/Text';
 import { Floral } from '../../../components/ui/Floral';
 import { CategoryChip } from '../../../components/ui/CategoryChip';
+import { SegmentedControl } from '../../../components/ui/SegmentedControl';
 import { PrayerCard, Prayer, relativeTime } from '../../../components/PrayerCard';
 import { PrayerDetailSheet } from '../../../components/PrayerDetailSheet';
+import { DreamCard, Dream } from '../../../components/DreamCard';
 import { fonts } from '../../../constants/typography';
 import { GUTTER } from '../../../theme/tokens';
 import { useTheme } from '../../../providers/ThemeProvider';
@@ -18,10 +20,15 @@ import { useAuth } from '../../../providers/AuthProvider';
 import { useCouple } from '../../../providers/CoupleProvider';
 import { supabase } from '../../../lib/supabase';
 import { getPrayers, getAnsweredPrayers, getTodayMarks, markPrayedFor, markAnswered, deletePrayer } from '../../../lib/prayers';
+import { getDreams, deleteDream } from '../../../lib/dreams';
 import { clearReminder } from '../../../lib/prayerReminders';
 import { haptics } from '../../../lib/haptics';
 
 type Mark = { prayer_id: string; user_id: string };
+type Tab = 'prayers' | 'dreams';
+
+// A prayer seeded from a dream has to fit the prayers table's 280-char check.
+const PRAYER_MAX = 280;
 
 export default function PrayersScreen() {
   const router = useRouter();
@@ -29,8 +36,10 @@ export default function PrayersScreen() {
   const { user } = useAuth();
   const { couple, partner } = useCouple();
 
+  const [tab, setTab] = useState<Tab>('prayers');
   const [active, setActive] = useState<Prayer[]>([]);
   const [answered, setAnswered] = useState<Prayer[]>([]);
+  const [dreams, setDreams] = useState<Dream[]>([]);
   const [marks, setMarks] = useState<Mark[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -53,6 +62,7 @@ export default function PrayersScreen() {
         const cached = JSON.parse(v);
         setActive((prev) => (prev.length ? prev : cached.active ?? []));
         setAnswered((prev) => (prev.length ? prev : cached.answered ?? []));
+        setDreams((prev) => (prev.length ? prev : cached.dreams ?? []));
         // The cache is only ever written from a successful fetch, so it can
         // honestly stand in for one (a cached-empty couple sees the empty
         // state instantly instead of a blank flash).
@@ -68,10 +78,11 @@ export default function PrayersScreen() {
     if (!couple?.id) { setLoading(false); return; }
     // Three independent fetches: with the old all-or-nothing Promise.all, one
     // transient failure threw away the other two results and blanked the list.
-    const [a, ans, todayMarks] = await Promise.allSettled([
+    const [a, ans, todayMarks, drm] = await Promise.allSettled([
       getPrayers(couple.id, 'active'),
       getAnsweredPrayers(couple.id),
       getTodayMarks(couple.timezone),
+      getDreams(couple.id),
     ]);
     if (a.status === 'fulfilled') {
       setActive(a.value as Prayer[]);
@@ -79,10 +90,14 @@ export default function PrayersScreen() {
     }
     if (ans.status === 'fulfilled') setAnswered(ans.value as Prayer[]);
     if (todayMarks.status === 'fulfilled') setMarks(todayMarks.value as Mark[]);
-    if (a.status === 'fulfilled' && ans.status === 'fulfilled') {
+    if (drm.status === 'fulfilled') {
+      setDreams(drm.value as Dream[]);
+      setEverLoaded(true);
+    }
+    if (a.status === 'fulfilled' && ans.status === 'fulfilled' && drm.status === 'fulfilled') {
       AsyncStorage.setItem(
         `pamwe:prayers:${couple.id}`,
-        JSON.stringify({ active: a.value, answered: ans.value }),
+        JSON.stringify({ active: a.value, answered: ans.value, dreams: drm.value }),
       ).catch(() => {});
     }
     setLoading(false);
@@ -96,6 +111,7 @@ export default function PrayersScreen() {
         .channel('prayers-list')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'prayers', filter: `couple_id=eq.${couple.id}` }, () => load())
         .on('postgres_changes', { event: '*', schema: 'public', table: 'prayer_marks' }, () => load())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'dreams', filter: `couple_id=eq.${couple.id}` }, () => load())
         .subscribe();
       return () => { supabase.removeChannel(channel); };
     }, [couple?.id, load]),
@@ -154,7 +170,37 @@ export default function PrayersScreen() {
     ]);
   };
 
+  const handleDreamEdit = (dream: Dream) => {
+    router.push({ pathname: '/(tabs)/prayers/dream-add', params: { editId: dream.id, text: dream.text } });
+  };
+
+  const handleDreamDelete = (dream: Dream) => {
+    Alert.alert('Delete this dream?', "This removes it for both of you and can't be undone.", [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete', style: 'destructive',
+        onPress: async () => {
+          setDreams((prev) => prev.filter((d) => d.id !== dream.id));
+          try { await deleteDream(dream.id); await load(); }
+          catch (err: any) { await load(); Alert.alert("Couldn't remove it", err?.message ?? 'Try again in a moment.'); }
+        },
+      },
+    ]);
+  };
+
+  // Carry the dream into a prayer the couple can actually pray. Prayers are
+  // capped at 280 by the DB, so a long dream arrives trimmed for them to edit.
+  const handleDreamPray = (dream: Dream) => {
+    haptics.tap();
+    const seed = dream.text.length <= PRAYER_MAX
+      ? dream.text
+      : `${dream.text.slice(0, PRAYER_MAX - 1).trimEnd()}…`;
+    router.push({ pathname: '/(tabs)/prayers/add', params: { text: seed } });
+  };
+
+  const isDreams = tab === 'dreams';
   const allEmpty = !loading && everLoaded && active.length === 0 && answered.length === 0;
+  const dreamsEmpty = !loading && everLoaded && dreams.length === 0;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top']}>
@@ -163,19 +209,57 @@ export default function PrayersScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
       >
-        <Text variant="h1">Prayer requests</Text>
-        <Text variant="journal" italic color={colors.ink2} style={styles.subtitle}>What you're carrying to Him, together.</Text>
+        <Text variant="h1">{isDreams ? 'Dreams' : 'Prayer requests'}</Text>
+        <Text variant="journal" italic color={colors.ink2} style={styles.subtitle}>
+          {isDreams ? 'The ones that stayed with you.' : "What you're carrying to Him, together."}
+        </Text>
 
-        <TouchableOpacity activeOpacity={0.85} onPress={() => { haptics.tap(); router.push('/(tabs)/prayers/add'); }}
+        <SegmentedControl
+          segments={[{ key: 'prayers', label: 'PRAYERS' }, { key: 'dreams', label: 'DREAMS' }]}
+          value={tab}
+          onChange={setTab}
+          style={styles.toggle}
+        />
+
+        <TouchableOpacity activeOpacity={0.85}
+          onPress={() => { haptics.tap(); router.push(isDreams ? '/(tabs)/prayers/dream-add' : '/(tabs)/prayers/add'); }}
           style={[styles.addBtn, { backgroundColor: colors.accent }]}>
-          <PlusCircle size={18} color={colors.bg} weight="regular" />
-          <Text variant="cta" color={colors.bg} style={styles.addText}>Add a prayer point</Text>
+          {isDreams
+            ? <MoonStars size={18} color={colors.bg} weight="regular" />
+            : <PlusCircle size={18} color={colors.bg} weight="regular" />}
+          <Text variant="cta" color={colors.bg} style={styles.addText}>
+            {isDreams ? 'Write down a dream' : 'Add a prayer point'}
+          </Text>
         </TouchableOpacity>
 
         <Floral variant="divider" style={styles.divider} />
 
         {loading ? (
           <View style={styles.center}><ActivityIndicator color={colors.accent} /></View>
+        ) : isDreams ? (
+          dreamsEmpty ? (
+            <View style={styles.empty}>
+              <MoonStars size={40} color="#CBB99B" weight="regular" />
+              <Text variant="h2" italic style={styles.emptyTitle}>No dreams written down yet</Text>
+              <Text color={colors.muted} style={styles.emptyText}>
+                When one stays with you in the morning, put it here. {partnerName} can pray it with you.
+              </Text>
+            </View>
+          ) : (
+            <>
+              {dreams.map((d) => (
+                <DreamCard
+                  key={d.id}
+                  dream={d}
+                  isMine={d.author_id === user?.id}
+                  partnerName={partnerName}
+                  onPray={() => handleDreamPray(d)}
+                  onEdit={() => handleDreamEdit(d)}
+                  onDelete={() => handleDreamDelete(d)}
+                />
+              ))}
+            </>
+          )
         ) : allEmpty ? (
           <View style={styles.empty}>
             <HandsPraying size={40} color="#CBB99B" weight="regular" />
@@ -247,6 +331,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 96 },
   subtitle: { fontSize: 14, marginTop: 6 },
+  toggle: { marginTop: 16 },
   addBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, borderRadius: 14, paddingVertical: 15, marginTop: 16 },
   addText: { letterSpacing: 0.9 },
   divider: { width: 140, height: 26, alignSelf: 'center', marginVertical: 18, opacity: 0.8 },
