@@ -4,6 +4,52 @@
 
 ---
 
+## ⭐⭐⭐⭐⭐⭐⭐⭐⭐ B16 ROUND (2026-07-25): Sentry race, heart placement, paging, real recaps
+
+Gate: tsc clean, **20 suites / 143 Jest**.
+
+**Sentry PAMWE-IOS-4 fixed** (the one real issue on the board, 2026-07-18, b14).
+Title was useless ("Object captured as exception") because the code passed a raw
+Postgrest object to Sentry; the serialized context held the truth: `23505
+duplicate key value violates unique constraint
+entries_couple_plan_id_day_number_user_id_key`. Both the autosave interval and
+the Share button call `createOrUpdateDraft`, so on a day's FIRST draft, tapping
+Share during an in-flight autosave had both read "no row yet" and both insert.
+The loser surfaced raw Postgres text to the reader as "Couldn't send it", and
+`landedAnyway()` could not rescue it because nothing was submitted yet. Both
+draft paths now re-read on 23505 and take the update path; a sealed row is still
+returned untouched. 5 new tests.
+
+**Thinking-of-you heart moved inline.** Floating it bottom-left was wrong for
+Today: the primary action is a full-width bottom button on a scrolling page, so
+the bubble sat on "Read Day N" partway through any scroll. (Ask Pamwe gets away
+with a bubble precisely because it is absent from these screens.) Now a 56pt
+button in a row with the CTA.
+
+**Reflections paged**, 12 per page, newest first, Newer/Older + "Page X of Y".
+Client-side on purpose: `getRevealedReflections` groups entries into mutual
+pairs in JS, so a server-side `range()` would cut pairs in half.
+
+**Weekly recap actually sends now.** It never had: the "Your week together is
+ready" banner was a decorative `NotificationPreview` mock rendered INSIDE the
+recaps screen under the caption "Sent to you both", with no notify-recap
+function, no cron (pg_cron is not enabled), and the token WEEKLY appearing
+nowhere in the repo. This file recorded it at the time as "delivery still
+APNs-blocked, mock only"; APNs went live 2026-07-11 and it was never picked back
+up. Now a local WEEKLY trigger (Sunday 9am, device timezone, no cron and no
+service-role port of the aggregation), scheduled only once the couple has read a
+day. New `notification_recap` pref + Settings toggle + `recap` push route. The
+mock banner now shows only for the week period, since month and quarter still
+are not sent.
+
+**Known dead code:** `notify-freeze` is deployed but ORPHANED. Its header claims
+the streak trigger fires it, but `update_streak_on_mutual_submit()` contains no
+freeze logic and no `net.http_post`. Nothing can call it. Either wire up the
+freeze feature or delete the function; do not use it as a reference template
+(use notify-new-prayer).
+
+---
+
 ## ⭐⭐⭐⭐⭐⭐⭐⭐ B15 ROUND (2026-07-25): Dreams, thinking-of-you, launch + tree fixes
 
 Gate: tsc clean, **19 suites / 138 Jest**. All hosted work applied and verified.
