@@ -3,6 +3,7 @@
 // notifiers. Sends one warm push, at most once per hour per sender.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sendExpoPush } from "../_shared/push.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -95,24 +96,14 @@ Deno.serve(async (req) => {
   }
 
   const myName = (me.display_name ?? "Your partner").trim() || "Your partner";
-  const resp = await fetch("https://exp.host/--/api/v2/push/send", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      to: partner.expo_push_token,
-      sound: "default",
-      title: `${myName} is thinking of you`,
-      body: "Ready to read together today?",
-      data: { type: "nudge" },
-    }),
-  });
-  // Expo answers 200 with a per-message ticket, so a failed push (an expired
-  // token, DeviceNotRegistered) looks like success unless the ticket is read.
-  const result = await resp.json();
-  const ticket = result?.data;
-  if (!resp.ok || ticket?.status === "error") {
-    console.error("notify-nudge: expo push rejected", result);
-    return json({ ok: true, delivered: false, reason: "push_failed" }, 200);
-  }
+  // sendExpoPush logs rejected tickets and clears DeviceNotRegistered tokens.
+  const { ok } = await sendExpoPush(admin, "notify-nudge", [{
+    to: partner.expo_push_token,
+    sound: "default",
+    title: `${myName} is thinking of you`,
+    body: "Ready to read together today?",
+    data: { type: "nudge" },
+  }]);
+  if (!ok) return json({ ok: true, delivered: false, reason: "push_failed" }, 200);
   return json({ ok: true, delivered: true }, 200);
 });

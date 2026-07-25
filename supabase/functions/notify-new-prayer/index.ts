@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sendExpoPush } from "../_shared/push.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -59,24 +60,14 @@ Deno.serve(async (req) => {
 
   const preview = text.length > 80 ? text.slice(0, 77) + "…" : text;
 
-  const response = await fetch("https://exp.host/--/api/v2/push/send", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      to: partner.expo_push_token,
-      sound: "default",
-      title: "Your partner added a prayer",
-      body: preview,
-      data: { type: "prayer" },
-    }),
-  });
-
-  // Expo answers 200 with a per-message ticket, so log a rejected push instead
-  // of letting an error ticket read as a delivered banner.
-  const result = await response.json();
-  if (!response.ok || result?.data?.status === "error") {
-    console.error("notify-new-prayer: expo push rejected", result);
-  }
+  // sendExpoPush logs rejected tickets and clears DeviceNotRegistered tokens.
+  const { result } = await sendExpoPush(supabase, "notify-new-prayer", [{
+    to: partner.expo_push_token,
+    sound: "default",
+    title: "Your partner added a prayer",
+    body: preview,
+    data: { type: "prayer" },
+  }]);
   return new Response(JSON.stringify(result), {
     headers: { "Content-Type": "application/json" },
   });

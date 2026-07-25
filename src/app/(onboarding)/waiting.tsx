@@ -6,7 +6,7 @@ import { Button } from '../../components/ui/Button';
 import { PamweWordmark } from '../../components/PamweWordmark';
 import { TwineDivider } from '../../components/ui/TwineDivider';
 import { Avatar } from '../../components/ui/Avatar';
-import { colors } from '../../constants/colors';
+import { useTheme } from '../../providers/ThemeProvider';
 import { getUserCouple } from '../../lib/couples';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../providers/AuthProvider';
@@ -15,6 +15,7 @@ const FALLBACK_POLL_MS = 30000;
 
 export default function WaitingScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const { user } = useAuth();
   const [inviteCode, setInviteCode] = useState('');
   const [coupleId, setCoupleId] = useState<string | null>(null);
@@ -67,7 +68,7 @@ export default function WaitingScreen() {
   const initial = user?.email?.[0]?.toUpperCase() ?? '?';
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.bg }]}>
       <View style={styles.header}>
         <PamweWordmark size={24} />
       </View>
@@ -82,13 +83,13 @@ export default function WaitingScreen() {
         <Text variant="heading" style={styles.title}>
           Waiting for your partner
         </Text>
-        <Text variant="body" color={colors.textMuted} style={styles.subtitle}>
+        <Text variant="body" color={colors.ink2} style={styles.subtitle}>
           Share your invite code and we'll connect you as soon as they join.
         </Text>
 
         {inviteCode ? (
           <View style={styles.codeContainer}>
-            <Text variant="label" color={colors.textLight}>Your code</Text>
+            <Text variant="label" color={colors.muted}>Your code</Text>
             <Text variant="hero" style={styles.code}>{inviteCode}</Text>
           </View>
         ) : null}

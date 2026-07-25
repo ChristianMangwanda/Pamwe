@@ -17,6 +17,7 @@ import { supabase } from '../../../lib/supabase';
 import { getReflectionDetail } from '../../../lib/reflections';
 import { getResponsesForDay, EntryResponse } from '../../../lib/entryResponses';
 import { fetchPassage } from '../../../lib/bible';
+import { savePlanDayPassage } from '../../../lib/plans';
 
 export default function ReflectionDetailScreen() {
   const router = useRouter();
@@ -62,12 +63,17 @@ export default function ReflectionDetailScreen() {
   }, [couplePlanId, dayNumber]);
 
   const reference: string | undefined = data?.planDay?.passage_reference;
+  const planDayId: string | undefined = data?.planDay?.id;
   const loadPassage = useCallback(async () => {
     if (!reference) return;
     setPassageErr(false);
-    try { setPassage(await fetchPassage(reference)); }
-    catch { setPassageErr(true); }
-  }, [reference]);
+    try {
+      const text = await fetchPassage(reference);
+      setPassage(text);
+      // #23: persist so this custom-plan day never re-fetches.
+      if (planDayId) savePlanDayPassage(planDayId, text).catch(() => {});
+    } catch { setPassageErr(true); }
+  }, [reference, planDayId]);
 
   // Live-fetch when the plan day has no seeded text (custom plans).
   useEffect(() => {

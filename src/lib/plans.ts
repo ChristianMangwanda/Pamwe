@@ -213,6 +213,20 @@ export async function getPlanDay(planId: string, dayNumber: number) {
   }
 }
 
+// #23: custom-plan days ship with passage_text NULL and live-fetch it. Write
+// the fetched text back so the day never hits bible-api.com again (their ~15
+// request budget made repeat fetches surface as random failures). The NULL
+// guard means seeded curated text can never be overwritten; RLS
+// (plan_days_update_custom) additionally restricts writes to the couple's own
+// custom plans. Best-effort: callers fire and forget.
+export async function savePlanDayPassage(planDayId: string, passageText: string) {
+  await supabase
+    .from('plan_days')
+    .update({ passage_text: passageText })
+    .eq('id', planDayId)
+    .is('passage_text', null);
+}
+
 // Change the rhythm mid-plan. Only the pace changes: the day they're on, their
 // entries and their streak all stand.
 export async function setPlanCadence(couplePlanId: string, cadenceDays: Cadence) {

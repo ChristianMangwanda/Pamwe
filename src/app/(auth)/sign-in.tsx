@@ -13,14 +13,35 @@ import { GUTTER } from '../../theme/tokens';
 import { useTheme } from '../../providers/ThemeProvider';
 import { supabase } from '../../lib/supabase';
 
+// App Review accounts (guideline 2.1: reviewers need full access without a
+// partner of their own). Emails on this domain sign in with a password instead
+// of a magic link; the accounts are pre-paired on the hosted project by
+// scripts/seed_review_accounts.sql. Invisible unless you type one.
+const REVIEWER_DOMAIN = '@review.pamwe.app';
+
 export default function SignInScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const isReviewer = email.trim().toLowerCase().endsWith(REVIEWER_DOMAIN);
 
   const handleEmailSignIn = async () => {
     if (!email.trim()) return;
+    if (isReviewer) {
+      if (!password) return;
+      setLoading(true);
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
+      setLoading(false);
+      if (error) Alert.alert("Couldn't sign you in", error.message);
+      else router.replace('/');
+      return;
+    }
     setLoading(true);
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
@@ -107,7 +128,19 @@ export default function SignInScreen() {
               autoCapitalize="none"
               autoCorrect={false}
             />
-            <Button title="Continue with email" onPress={handleEmailSignIn} loading={loading} />
+            {isReviewer && (
+              <TextInput
+                style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.line, color: colors.ink }]}
+                placeholder="Password"
+                placeholderTextColor={colors.muted}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            )}
+            <Button title={isReviewer ? 'Sign in with password' : 'Continue with email'} onPress={handleEmailSignIn} loading={loading} />
           </View>
 
           <View style={styles.divider}>

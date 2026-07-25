@@ -44,6 +44,33 @@ export async function createCouple() {
   return data;
 }
 
+export function inviteExpired(couple: { invite_expires_at?: string | null }): boolean {
+  if (!couple.invite_expires_at) return true;
+  return new Date(couple.invite_expires_at).getTime() <= Date.now();
+}
+
+// #18: a lapsed code used to brick the couple (no path ever refreshed it).
+// Only valid while unpaired; RLS (couples_update_regenerate_invite) enforces
+// that the caller is partner A and the couple has no partner B.
+export async function regenerateInviteCode(coupleId: string) {
+  const inviteCode = generateCode();
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 7);
+
+  const { data, error } = await supabase
+    .from('couples')
+    .update({
+      invite_code: inviteCode,
+      invite_expires_at: expiresAt.toISOString(),
+    })
+    .eq('id', coupleId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
 export async function joinCouple(inviteCode: string) {
   const { data: { session } } = await supabase.auth.getSession();
   const user = session?.user;

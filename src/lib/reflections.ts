@@ -124,7 +124,7 @@ export async function getReflectionDetail(couplePlanId: string, dayNumber: numbe
 
   const [pdRes, eRes, pRes] = await Promise.all([
     planId
-      ? supabase.from('plan_days').select('passage_reference, passage_title, passage_text, reflection_prompt').eq('plan_id', planId).eq('day_number', dayNumber).single()
+      ? supabase.from('plan_days').select('id, passage_reference, passage_title, passage_text, reflection_prompt').eq('plan_id', planId).eq('day_number', dayNumber).single()
       : Promise.resolve({ data: null }),
     supabase.from('entries').select(ENTRY_COLS).eq('couple_plan_id', couplePlanId).eq('day_number', dayNumber).not('submitted_at', 'is', null),
     planId ? supabase.from('plans').select('title').eq('id', planId).single() : Promise.resolve({ data: null }),

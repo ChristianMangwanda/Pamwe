@@ -1,5 +1,5 @@
 import { Text } from './ui/Text';
-import { colors } from '../constants/colors';
+import { useTheme } from '../providers/ThemeProvider';
 
 export interface PamweWordmarkProps {
   size?: number;
@@ -8,17 +8,18 @@ export interface PamweWordmarkProps {
   capital?: boolean;
 }
 
-export function PamweWordmark({ 
-  size = 32, 
-  color = colors.accent, 
-  italic = true, 
-  capital = false 
+export function PamweWordmark({
+  size = 32,
+  color,
+  italic = true,
+  capital = false
 }: PamweWordmarkProps) {
+  const { colors } = useTheme();
   const text = capital ? 'Pamwe' : 'pamwe';
-  
+
   return (
     <Text
-      color={color}
+      color={color ?? colors.accent}
       italic={italic}
       style={{
         fontSize: size,

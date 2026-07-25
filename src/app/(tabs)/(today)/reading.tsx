@@ -12,6 +12,7 @@ import { GUTTER } from '../../../theme/tokens';
 import { useTheme } from '../../../providers/ThemeProvider';
 import { useTodayEntry } from '../../../hooks/useTodayEntry';
 import { fetchPassage } from '../../../lib/bible';
+import { savePlanDayPassage } from '../../../lib/plans';
 
 export default function ReadingScreen() {
   const router = useRouter();
@@ -31,13 +32,17 @@ export default function ReadingScreen() {
     setFetching(true);
     setFetchError(false);
     try {
-      setFetchedText(await fetchPassage(reference));
+      const text = await fetchPassage(reference);
+      setFetchedText(text);
+      // #23: persist so this day never re-fetches (custom plans only; the
+      // update is a no-op on rows that already have text).
+      if (planDay?.id) savePlanDayPassage(planDay.id, text).catch(() => {});
     } catch {
       setFetchError(true);
     } finally {
       setFetching(false);
     }
-  }, [seededText, reference]);
+  }, [seededText, reference, planDay?.id]);
 
   useEffect(() => { loadPassage(); }, [loadPassage]);
 

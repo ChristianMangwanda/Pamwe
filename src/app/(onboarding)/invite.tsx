@@ -12,7 +12,7 @@ import { GUTTER } from '../../theme/tokens';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useCouple } from '../../providers/CoupleProvider';
 import { haptics } from '../../lib/haptics';
-import { createCouple, getUserCouple } from '../../lib/couples';
+import { createCouple, getUserCouple, inviteExpired, regenerateInviteCode } from '../../lib/couples';
 import { supabase } from '../../lib/supabase';
 
 const FALLBACK_POLL_MS = 30000;
@@ -35,6 +35,14 @@ export default function InviteScreen() {
         const existing = await getUserCouple();
         if (existing?.invite_code) {
           if (existing.paired_at) return router.replace('/');
+          // #18: a code older than 7 days no longer joins anyone. Swap in a
+          // fresh one so a slow start never bricks the pairing.
+          if (inviteExpired(existing)) {
+            const renewed = await regenerateInviteCode(existing.id);
+            setCode(renewed.invite_code);
+            setCoupleId(renewed.id);
+            return;
+          }
           setCode(existing.invite_code);
           setCoupleId(existing.id);
           return;

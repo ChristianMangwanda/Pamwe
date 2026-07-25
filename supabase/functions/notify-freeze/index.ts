@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sendExpoPush } from "../_shared/push.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -47,13 +48,8 @@ Deno.serve(async (req) => {
     data: { type: "freeze" },
   }));
 
-  const response = await fetch("https://exp.host/--/api/v2/push/send", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(messages),
-  });
-
-  const result = await response.json();
+  // sendExpoPush logs rejected tickets and clears DeviceNotRegistered tokens.
+  const { result } = await sendExpoPush(supabase, "notify-freeze", messages);
   return new Response(JSON.stringify(result), {
     headers: { "Content-Type": "application/json" },
   });

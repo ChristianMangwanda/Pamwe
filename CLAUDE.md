@@ -199,7 +199,7 @@ Christian's rule (2026-07-10): zero em dashes in any developer-authored user-fac
 
 ### Auth: getSession(), not getUser(); every sign-in success must route through the gate
 
-All of src/lib reads identity via `supabase.auth.getSession()` (local) — `getUser()` is a network call that hangs after fresh sign-ins. Any new sign-in path must end with `router.replace('/')` (see `sign-in.test.tsx`). CoupleProvider stays live via realtime + explicit `refresh()` at onboarding transitions — screens must clear their loading state when `couple` is null.
+All of src/lib reads identity via `supabase.auth.getSession()` (local) — `getUser()` is a network call that hangs after fresh sign-ins. Any new sign-in path must end with `router.replace('/')` (see `sign-in.test.tsx`). CoupleProvider stays live via realtime + explicit `refresh()` at onboarding transitions — screens must clear their loading state when `couple` is null. **App Review path:** emails ending `@review.pamwe.app` get a password field on the sign-in screen (production, for Apple reviewers; demo couple seeded by `scripts/seed_review_accounts.sql`) — don't remove it thinking it's dev-only.
 
 ### Beta feedback loop
 
