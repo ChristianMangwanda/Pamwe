@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { Feather, CaretRight, BookmarkSimple } from 'phosphor-react-native';
+import { Feather, CaretRight, CaretLeft, BookmarkSimple } from 'phosphor-react-native';
 import { Text } from '../../../components/ui/Text';
 import { Floral } from '../../../components/ui/Floral';
 import { fonts } from '../../../constants/typography';
@@ -19,6 +19,10 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+// A year of reading is 300+ cards. Read in pages, newest first, so the history
+// stays something you can move around in instead of one endless scroll.
+const PAGE_SIZE = 12;
+
 export default function ReflectScreen() {
   const router = useRouter();
   const { colors } = useTheme();
@@ -29,6 +33,8 @@ export default function ReflectScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<string>('all');
+  const [rawPage, setRawPage] = useState(0);
+  const scrollRef = useRef<ScrollView>(null);
 
   // Stale-while-revalidate: the last-seen history (or its emptiness) paints
   // instantly on cold launch while `load` refreshes it below.
@@ -67,7 +73,25 @@ export default function ReflectScreen() {
     return seen;
   }, [items]);
 
-  const visible = filter === 'all' ? items : items.filter((it) => it.book === filter);
+  const filtered = filter === 'all' ? items : items.filter((it) => it.book === filter);
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  // Clamp rather than trust the stored page: a refresh that drops rows, or a
+  // narrower filter, can leave `page` past the end.
+  const page = Math.min(rawPage, pageCount - 1);
+  const visible = filtered.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
+
+  const goToPage = (next: number) => {
+    haptics.tap();
+    setRawPage(next);
+    // Turning a page should start you at the top of it, not wherever you were.
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  };
+
+  const changeFilter = (next: string) => {
+    setFilter(next);
+    setRawPage(0);
+  };
+
   const onThisDay = useMemo(() => pickOnThisDay(items), [items]);
 
   const myInitial = (user?.user_metadata?.full_name || user?.email || 'Y')[0]?.toUpperCase() ?? 'Y';
@@ -81,6 +105,7 @@ export default function ReflectScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top']}>
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
@@ -120,9 +145,9 @@ export default function ReflectScreen() {
 
             {books.length > 1 && (
               <View style={styles.filters}>
-                <FilterChip label="All" active={filter === 'all'} onPress={() => setFilter('all')} colors={colors} />
+                <FilterChip label="All" active={filter === 'all'} onPress={() => changeFilter('all')} colors={colors} />
                 {books.map((b) => (
-                  <FilterChip key={b} label={b} active={filter === b} onPress={() => setFilter(b)} colors={colors} />
+                  <FilterChip key={b} label={b} active={filter === b} onPress={() => changeFilter(b)} colors={colors} />
                 ))}
               </View>
             )}
@@ -153,6 +178,22 @@ export default function ReflectScreen() {
                 </TouchableOpacity>
               ))}
             </View>
+
+            {pageCount > 1 && (
+              <View style={styles.pager}>
+                <PagerButton
+                  label="Newer" direction="prev" disabled={page === 0}
+                  onPress={() => goToPage(page - 1)} colors={colors}
+                />
+                <Text style={[styles.pagerLabel, { color: colors.muted }]}>
+                  Page {page + 1} of {pageCount}
+                </Text>
+                <PagerButton
+                  label="Older" direction="next" disabled={page >= pageCount - 1}
+                  onPress={() => goToPage(page + 1)} colors={colors}
+                />
+              </View>
+            )}
           </>
         )}
       </ScrollView>
@@ -169,6 +210,26 @@ function FilterChip({ label, active, onPress, colors }: { label: string; active:
         borderColor: active ? colors.accent : colors.lineAccent,
       }]}>
       <Text style={[styles.filterText, { color: active ? colors.bg : colors.accent2 }]}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
+function PagerButton({
+  label, direction, disabled, onPress, colors,
+}: { label: string; direction: 'prev' | 'next'; disabled: boolean; onPress: () => void; colors: any }) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      disabled={disabled}
+      activeOpacity={0.8}
+      accessibilityRole="button"
+      accessibilityLabel={direction === 'prev' ? 'Newer reflections' : 'Older reflections'}
+      accessibilityState={{ disabled }}
+      style={[styles.pagerBtn, { borderColor: colors.lineAccent }, disabled && styles.pagerBtnOff]}
+    >
+      {direction === 'prev' && <CaretLeft size={12} color={colors.accent2} weight="bold" />}
+      <Text style={[styles.pagerBtnText, { color: colors.accent2 }]}>{label}</Text>
+      {direction === 'next' && <CaretRight size={12} color={colors.accent2} weight="bold" />}
     </TouchableOpacity>
   );
 }
@@ -211,4 +272,12 @@ const styles = StyleSheet.create({
   topicText: { fontFamily: fonts.sansSemiBold, fontSize: 9, letterSpacing: 0.7, textTransform: 'uppercase' },
   read: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   readText: { fontFamily: fonts.sansSemiBold, fontSize: 9, letterSpacing: 0.7, textTransform: 'uppercase' },
+  pager: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 },
+  pagerBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    borderWidth: 1.2, borderRadius: 999, paddingHorizontal: 13, paddingVertical: 8,
+  },
+  pagerBtnOff: { opacity: 0.35 },
+  pagerBtnText: { fontFamily: fonts.sansMedium, fontSize: 11 },
+  pagerLabel: { fontFamily: fonts.sansSemiBold, fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase' },
 });
