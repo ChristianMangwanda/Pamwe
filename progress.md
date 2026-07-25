@@ -1,6 +1,88 @@
 # Pamwe Build Progress Summary
 
-**Last Updated:** July 12, 2026
+**Last Updated:** July 25, 2026
+
+---
+
+## ⭐⭐⭐⭐⭐⭐⭐ HOSTED RECONCILE (2026-07-25): 5 migrations applied, timeline reset, b15 armed
+
+Christian reported stale notifications piling up and "we're 2 days behind" on the
+real couple's plan. Both traced to real causes, both fixed. Gate: tsc clean,
+**18 suites / 126 Jest**.
+
+**Root cause: hosted was 5 migrations behind the repo**, so the shipped b14 client
+and the database disagreed. Worst of it: hosted still had the OLD
+`advance_plan_day_if_mutual_submit`, which bumped `current_day` the instant both
+partners submitted, **skipping the reveal** (the exact bug `20260714000002` was
+written to kill). That is what "out of sync" actually was.
+
+**Applied to hosted** (`jcyhhxgomhopkoqesbkb`, via MCP, verified after each):
+`20260714000002` advance-on-Amen · `20260714000003` plan_cadence (the
+`cadence_days` column was missing entirely, so `setPlanCadence` would have
+errored) · `20260716000001/2/3`.
+
+**Data fix:** the couple's `start_date` re-anchored `2026-07-13 → 2026-07-18` so
+today lands exactly on `current_day` 8. No readings skipped, no entries touched.
+The streak of 1 was **already correct** (genuine gaps: nothing sealed Jul 16, 17,
+20), so nothing was restored, it was not a midnight-straddle victim.
+
+**Code (ships with b15):** delivered push banners now clear on launch and on every
+foreground (`clearDeliveredNotifications` in `src/lib/notifications.ts`, called
+from AuthProvider). iOS keeps delivered notifications in Notification Center until
+dismissed, so days-old partner/prayer pushes greeted the user every unlock. Only
+DELIVERED notifications are cleared; scheduled reminders are untouched (never
+swap this for a cancel-all, see the cadence rule in CLAUDE.md).
+
+**Migration bookkeeping (non-obvious):** hosted records migrations by NAME with
+regenerated version timestamps, not the repo file prefixes (true since the
+2026-07-09 setup). Always apply via the supabase MCP; `supabase db push` would
+mismatch versions and choke on the non-idempotent `CREATE POLICY` migrations.
+
+**Still open:** redeploy the 4 notify-* functions (they now import `_shared/push.ts`,
+uncommitted until today and never deployed), seed the review accounts, then archive
+b15. `CURRENT_PROJECT_VERSION` already bumped to **15** in all 4 spots.
+
+---
+
+## ⭐⭐⭐⭐⭐⭐ LAUNCH-PREP ROUND (2026-07-16): store package + P2 sweep, code-complete
+
+Section C of launch-checklist.md plus the E-list P2s, in one pass. Gate: tsc
+clean, **18 suites / 126 Jest**. Nothing deployed to hosted yet (MCP unauthorized
+this session); everything hosted-bound is staged and listed below.
+
+**Live now:**
+- **Privacy + support + terms pages** on GitHub Pages (public repo
+  `ChristianMangwanda/pamwe-site`, styled to the app palette, light + dark):
+  https://christianmangwanda.github.io/pamwe-site/ (+`privacy.html`, `terms.html`).
+- **[`store-package.md`](store-package.md)** — full ASC submission kit: description/
+  promo/keywords in the copy voice, nutrition-label table, age-rating answers,
+  6-shot 6.9" screenshot list, App Review notes, Anthropic spend-alert steps.
+
+**Code (committed to the app, ships with b15):**
+- **Reviewer sign-in path**: `@review.pamwe.app` emails get a password field on
+  sign-in (production, not `__DEV__`); demo couple Grace + Daniel seeded by
+  `scripts/seed_review_accounts.sql` (John day 3, reveal armed, password in
+  store-package.md). +2 sign-in tests.
+- **#18** expired invite code auto-regenerates on the invite screen
+  (`regenerateInviteCode` + migration `20260716000001` policy: partner A may
+  refresh an unpaired couple's code; RLS previously made this impossible).
+- **#23** custom-plan passages persist on first fetch (`savePlanDayPassage`,
+  fire-and-forget from reading + reflect detail; migration `20260716000002`
+  adds the plan_days UPDATE policy, NULL-guard keeps curated text untouchable).
+- **#25** streak now dates a session by the FIRST partner's submit (migration
+  `20260716000003`), so a reveal straddling midnight no longer resets a daily
+  streak. Product call for Christian to bless; cadence windows unchanged.
+- **#30** AudioPlayer re-signs the voice URL on play after 50 min (1h TTL).
+- **#45** waiting.tsx / PamweWordmark / TwineDivider now theme via `useTheme()`
+  (light values identical, dark finally correct).
+- **Dead-token cleanup**: new `_shared/push.ts` used by all four notify-*
+  functions; a DeviceNotRegistered ticket nulls that user's push token.
+
+**Hosted queue (in order, when MCP is back + Ammy confirms b14):**
+1. ✅ **APPLIED 2026-07-25** `20260714000002` + `20260714000003` (Christian confirmed both phones on b14)
+2. ✅ **APPLIED 2026-07-25** `20260716000001/2/3`
+3. Redeploy notify-partner, notify-new-prayer, notify-freeze, notify-nudge
+4. `scripts/seed_review_accounts.sql`
 
 ---
 
