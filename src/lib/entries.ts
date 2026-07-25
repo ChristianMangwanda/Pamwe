@@ -45,6 +45,18 @@ export async function getPartnerEntry(couplePlanId: string, dayNumber: number) {
   return data;
 }
 
+// entries has UNIQUE (couple_plan_id, day_number, user_id), so the
+// read-then-insert below is a race: the journal autosaves on an interval AND
+// the Share button saves before submitting, so tapping Share while the first
+// autosave is still in flight had both calls see "no row yet" and both insert.
+// The loser got Postgres 23505, and because nothing was submitted yet the
+// landedAnyway() check couldn't rescue it, so the raw constraint text was shown
+// to the user as "Couldn't send it" (Sentry PAMWE-IOS-4, build 14).
+//
+// Losing that race is not a failure: the row the other call created is exactly
+// the row we wanted. Re-read and take the update path.
+const UNIQUE_VIOLATION = '23505';
+
 export async function createOrUpdateDraft(
   couplePlanId: string,
   dayNumber: number,
@@ -54,10 +66,9 @@ export async function createOrUpdateDraft(
   const user = session?.user;
   if (!user) throw new Error('Not authenticated');
 
-  const existing = await getMyEntry(couplePlanId, dayNumber);
-
-  if (existing) {
-    if (existing.submitted_at) return existing;
+  const writeText = async (entry: any) => {
+    // A sealed entry is final; never let a late autosave reopen it.
+    if (entry.submitted_at) return entry;
 
     const { data, error } = await supabase
       .from('entries')
@@ -65,13 +76,16 @@ export async function createOrUpdateDraft(
         text_content: textContent,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', existing.id)
+      .eq('id', entry.id)
       .select()
       .single();
 
     if (error) throw error;
     return data;
-  }
+  };
+
+  const existing = await getMyEntry(couplePlanId, dayNumber);
+  if (existing) return writeText(existing);
 
   const { data, error } = await supabase
     .from('entries')
@@ -85,7 +99,13 @@ export async function createOrUpdateDraft(
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    if ((error as { code?: string }).code === UNIQUE_VIOLATION) {
+      const raced = await getMyEntry(couplePlanId, dayNumber);
+      if (raced) return writeText(raced);
+    }
+    throw error;
+  }
   return data;
 }
 
@@ -123,21 +143,22 @@ export async function ensureVoiceDraft(couplePlanId: string, dayNumber: number) 
   const user = session?.user;
   if (!user) throw new Error('Not authenticated');
 
-  const existing = await getMyEntry(couplePlanId, dayNumber);
-
-  if (existing) {
-    if (existing.submitted_at) return existing;
-    if (existing.entry_type === 'voice') return existing;
+  const asVoice = async (entry: any) => {
+    if (entry.submitted_at) return entry;
+    if (entry.entry_type === 'voice') return entry;
 
     const { data, error } = await supabase
       .from('entries')
       .update({ entry_type: 'voice', updated_at: new Date().toISOString() })
-      .eq('id', existing.id)
+      .eq('id', entry.id)
       .select()
       .single();
     if (error) throw error;
     return data;
-  }
+  };
+
+  const existing = await getMyEntry(couplePlanId, dayNumber);
+  if (existing) return asVoice(existing);
 
   const { data, error } = await supabase
     .from('entries')
@@ -150,7 +171,15 @@ export async function ensureVoiceDraft(couplePlanId: string, dayNumber: number) 
     .select()
     .single();
 
-  if (error) throw error;
+  // Same race as createOrUpdateDraft: switching to voice while a text autosave
+  // is in flight can lose the insert. The row is the one we wanted.
+  if (error) {
+    if ((error as { code?: string }).code === UNIQUE_VIOLATION) {
+      const raced = await getMyEntry(couplePlanId, dayNumber);
+      if (raced) return asVoice(raced);
+    }
+    throw error;
+  }
   return data;
 }
 
