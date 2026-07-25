@@ -17,7 +17,7 @@ import { setPlanCadence, CADENCE_OPTIONS, type Cadence } from '../../../lib/plan
 import { haptics } from '../../../lib/haptics';
 import {
   getNotificationPrefs, updateNotificationPrefs, getNotificationPermissionStatus,
-  scheduleMorningNotification, NotificationPrefs,
+  scheduleMorningNotification, scheduleWeeklyRecap, cancelWeeklyRecap, NotificationPrefs,
 } from '../../../lib/notifications';
 
 const MORNING_PRESETS = ['06:00', '06:30', '07:00', '07:30', '08:00'];
@@ -140,6 +140,14 @@ export default function SettingsScreen() {
           <ToggleRow label="New prayers" description="When your partner adds a prayer point." value={prefs?.notification_prayer ?? true} onChange={(v) => savePref({ notification_prayer: v })} colors={colors} />
           <View style={[styles.divider, { backgroundColor: colors.line }]} />
           <ToggleRow label="New dreams" description="When your partner writes down a dream." value={prefs?.notification_dream ?? true} onChange={(v) => savePref({ notification_dream: v })} colors={colors} />
+          <View style={[styles.divider, { backgroundColor: colors.line }]} />
+          <ToggleRow
+            label="Weekly recap"
+            description="Sunday morning, a look back at your week."
+            value={prefs?.notification_recap ?? true}
+            onChange={(v) => { savePref({ notification_recap: v }); if (v) scheduleWeeklyRecap(); else cancelWeeklyRecap(); }}
+            colors={colors}
+          />
         </Card>
 
         <Text variant="eyebrow" color={colors.muted} style={styles.sectionLabel}>Plan</Text>

@@ -31,6 +31,9 @@ export function usePushRouting() {
         // Dreams live behind the toggle on the prayers tab; the param opens it.
         router.push({ pathname: '/(tabs)/prayers', params: { tab: 'dreams' } } as any);
         break;
+      case 'recap':
+        router.push('/(tabs)/you/recaps' as any);
+        break;
       case 'freeze':
       case 'morning':
       case 'thinking':

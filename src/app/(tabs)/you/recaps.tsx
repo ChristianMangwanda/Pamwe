@@ -68,12 +68,19 @@ export default function RecapsScreen() {
             <RecapCard title="What you learned" body={recap.learned} colors={colors} />
             <RecapCard title="What you prayed for" body={recap.pray} colors={colors} />
 
-            <Text variant="eyebrow" color={colors.muted} style={styles.sent}>Sent to you both</Text>
-            <NotificationPreview
-              icon={<ChartLineUp size={20} color={colors.bg} weight="fill" />}
-              line={`Your ${recap.period} together is ready 🌿`}
-              subline={recap.headline}
-            />
+            {/* Only the week is actually delivered (a Sunday-morning local
+                reminder). Month and quarter are views you come here for, so
+                don't show them a banner claiming they were sent. */}
+            {recap.period === 'week' && (
+              <>
+                <Text variant="eyebrow" color={colors.muted} style={styles.sent}>Sent to you both on Sundays</Text>
+                <NotificationPreview
+                  icon={<ChartLineUp size={20} color={colors.bg} weight="fill" />}
+                  line="Your week together is ready 🌿"
+                  subline="Look back on what you read and prayed for."
+                />
+              </>
+            )}
           </>
         )}
       </ScrollView>

@@ -5,6 +5,7 @@ import Constants from 'expo-constants';
 import { supabase } from './supabase';
 import { getUserCouple } from './couples';
 import { getActiveCouPlan } from './plans';
+import { countMyTotalSubmitted } from './entries';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -158,11 +159,82 @@ export async function scheduleMorningFromPrefs() {
   }
 }
 
+// The weekly recap reminder. The recaps screen has always shown a mock banner
+// saying "Your week together is ready" under the caption "Sent to you both",
+// but nothing ever sent it: no notify-recap function, no cron, no weekly
+// trigger. It was built when APNs wasn't set up yet and recorded as "mock
+// only", then never picked back up once push went live.
+//
+// It is scheduled ON DEVICE rather than server-side, for the same reason the
+// morning reminder is: a local weekly trigger fires at 9am in whatever
+// timezone the phone is actually in, with no cron job, no service-role port of
+// the recap aggregation, and no per-couple timezone maths. The tradeoff is
+// that the banner body is fixed when scheduled, so it can't carry that week's
+// headline; it says a recap is ready, and the screen shows the real thing.
+const RECAP_ID = 'pamwe-recap';
+// expo-notifications weekday is 1-7 with 1 = Sunday.
+const RECAP_WEEKDAY = 1;
+const RECAP_HOUR = 9;
+
+export async function cancelWeeklyRecap() {
+  await Notifications.cancelScheduledNotificationAsync(RECAP_ID).catch(() => {});
+}
+
+// Schedule (or re-schedule) the Sunday recap nudge. Cancels by id only, never
+// cancel-all: that once silently killed every prayer reminder on launch.
+export async function scheduleWeeklyRecap() {
+  await cancelWeeklyRecap();
+  await Notifications.scheduleNotificationAsync({
+    identifier: RECAP_ID,
+    content: {
+      title: 'Your week together is ready',
+      body: 'Look back on what you read and prayed for.',
+      sound: true,
+      data: { type: 'recap' },
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+      weekday: RECAP_WEEKDAY,
+      hour: RECAP_HOUR,
+      minute: 0,
+    },
+  });
+}
+
+// Runs on sign-in beside scheduleMorningFromPrefs. Only schedules once the
+// couple has actually read something: telling a couple who have never opened a
+// day that "your week together is ready" is worse than staying quiet.
+export async function scheduleRecapFromPrefs() {
+  try {
+    const status = await getNotificationPermissionStatus();
+    if (status !== 'granted') return;
+
+    const prefs = await getNotificationPrefs();
+    if (prefs?.notification_recap === false) {
+      await cancelWeeklyRecap();
+      return;
+    }
+
+    const couple = await getUserCouple().catch(() => null);
+    if (!couple?.id) return;
+    const daysRead = await countMyTotalSubmitted(couple.id).catch(() => 0);
+    if (daysRead < 1) {
+      await cancelWeeklyRecap();
+      return;
+    }
+
+    await scheduleWeeklyRecap();
+  } catch {
+    // best-effort — Settings re-schedules whenever the toggle changes
+  }
+}
+
 export type NotificationPrefs = {
   notification_morning_time: string; // 'HH:MM:SS'
   notification_partner: boolean;
   notification_prayer: boolean;
   notification_dream: boolean;
+  notification_recap: boolean;
 };
 
 export async function getNotificationPrefs(): Promise<NotificationPrefs | null> {
@@ -172,7 +244,7 @@ export async function getNotificationPrefs(): Promise<NotificationPrefs | null> 
 
   const { data, error } = await supabase
     .from('users')
-    .select('notification_morning_time, notification_partner, notification_prayer, notification_dream')
+    .select('notification_morning_time, notification_partner, notification_prayer, notification_dream, notification_recap')
     .eq('id', user.id)
     .single();
 
