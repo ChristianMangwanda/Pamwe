@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "declarationMap": false,
+    "sourceMap": false,
+    "outDir": "../.cache/web-dist/types",
+    "rootDir": "../..",
+    "skipLibCheck": true
+  },
+  "include": ["entry.ts"],
+  "exclude": []
+}

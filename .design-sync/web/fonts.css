@@ -1,0 +1,55 @@
+/* The 10 families src/constants/typography.ts names, mapped to the exact
+ * font-family strings React Native uses, so react-native-web text renders in
+ * the real brand fonts. TTFs come from the @expo-google-fonts packages the
+ * app already ships. Consumed by design-sync via cfg.extraFonts. */
+
+@font-face {
+  font-family: 'Fraunces_300Light';
+  src: url('../../node_modules/@expo-google-fonts/fraunces/300Light/Fraunces_300Light.ttf') format('truetype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Fraunces_300Light_Italic';
+  src: url('../../node_modules/@expo-google-fonts/fraunces/300Light_Italic/Fraunces_300Light_Italic.ttf') format('truetype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Fraunces_400Regular';
+  src: url('../../node_modules/@expo-google-fonts/fraunces/400Regular/Fraunces_400Regular.ttf') format('truetype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Fraunces_400Regular_Italic';
+  src: url('../../node_modules/@expo-google-fonts/fraunces/400Regular_Italic/Fraunces_400Regular_Italic.ttf') format('truetype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Fraunces_500Medium';
+  src: url('../../node_modules/@expo-google-fonts/fraunces/500Medium/Fraunces_500Medium.ttf') format('truetype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Fraunces_500Medium_Italic';
+  src: url('../../node_modules/@expo-google-fonts/fraunces/500Medium_Italic/Fraunces_500Medium_Italic.ttf') format('truetype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Fraunces_600SemiBold';
+  src: url('../../node_modules/@expo-google-fonts/fraunces/600SemiBold/Fraunces_600SemiBold.ttf') format('truetype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'InstrumentSans_400Regular';
+  src: url('../../node_modules/@expo-google-fonts/instrument-sans/400Regular/InstrumentSans_400Regular.ttf') format('truetype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'InstrumentSans_500Medium';
+  src: url('../../node_modules/@expo-google-fonts/instrument-sans/500Medium/InstrumentSans_500Medium.ttf') format('truetype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'InstrumentSans_600SemiBold';
+  src: url('../../node_modules/@expo-google-fonts/instrument-sans/600SemiBold/InstrumentSans_600SemiBold.ttf') format('truetype');
+  font-display: swap;
+}

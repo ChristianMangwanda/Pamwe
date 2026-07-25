@@ -1,0 +1,23 @@
+{
+  "projectId": "5163ca4a-d2ce-4f9a-999a-4be76903e06e",
+  "shape": "package",
+  "pkg": "pamwe",
+  "globalName": "Pamwe",
+  "entry": ".design-sync/.cache/web-dist/index.js",
+  "buildCmd": "node .design-sync/web/prebundle.mjs",
+  "readmeHeader": ".design-sync/conventions.md",
+  "srcDir": "../../../src",
+  "cssEntry": "tokens.css",
+  "extraFonts": ["../../web/fonts.css"],
+  "provider": {
+    "component": "ThemeProvider",
+    "inner": { "component": "SafeAreaProvider" }
+  },
+  "overrides": {
+    "BottomSheet": { "cardMode": "single", "viewport": "390x560" }
+  },
+  "componentSrcMap": {
+    "ThemeProvider": null,
+    "SafeAreaProvider": null
+  }
+}
