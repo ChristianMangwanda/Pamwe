@@ -91,6 +91,21 @@ export async function clearPushToken() {
   lastSavedTokenKey = null;
 }
 
+// Clear the banners this device has ALREADY delivered. iOS keeps delivered
+// notifications in Notification Center until they're dismissed, so old "partner
+// submitted"/"new prayer" pushes stack up and read as if they keep arriving.
+// This only clears DELIVERED notifications: SCHEDULED ones (the prayer and
+// morning reminders live as scheduled notifications) are left intact, so it is
+// safe to call on every foreground. Never swap this for a cancel-all.
+export async function clearDeliveredNotifications() {
+  try {
+    await Notifications.dismissAllNotificationsAsync();
+    await Notifications.setBadgeCountAsync(0);
+  } catch {
+    // best-effort — a stale banner is a cosmetic annoyance, not a failure
+  }
+}
+
 // iOS can rotate the underlying APNs token; re-derive and persist the Expo
 // token when that happens so pushes keep flowing. The listener only reacts to
 // a genuinely NEW native token: re-deriving calls getExpoPushTokenAsync, which

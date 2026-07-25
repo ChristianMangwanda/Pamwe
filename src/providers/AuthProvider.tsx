@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { AppState } from 'react-native';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import {
@@ -7,6 +8,7 @@ import {
   clearPushToken,
   watchPushTokenRotation,
   scheduleMorningFromPrefs,
+  clearDeliveredNotifications,
 } from '../lib/notifications';
 
 type AuthContextType = {
@@ -57,6 +59,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
     const rotationSub = watchPushTokenRotation();
     return () => rotationSub.remove();
+  }, [session?.user?.id]);
+
+  // Delivered banners linger in Notification Center until dismissed, so a
+  // signed-in user gets greeted by a stack of days-old partner/prayer pushes.
+  // Clear them on launch and whenever the app returns to the foreground. This
+  // only clears DELIVERED notifications; scheduled reminders are untouched.
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    clearDeliveredNotifications();
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') clearDeliveredNotifications();
+    });
+    return () => sub.remove();
   }, [session?.user?.id]);
 
   const signOut = async () => {
