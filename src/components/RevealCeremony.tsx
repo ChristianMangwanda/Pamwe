@@ -124,7 +124,7 @@ export function RevealCeremony({
           </Animated.View>
 
           <Animated.View style={dividerStyle}>
-            <Text italic color={colors.ink2} style={styles.line}>You both showed up.</Text>
+            <Text italic color={colors.ink2} style={styles.line}>Amen</Text>
           </Animated.View>
         </View>
       </Pressable>
