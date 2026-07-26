@@ -179,9 +179,18 @@ doesn't call it will freeze the plan.
 enrollment, since M'Cheyne is dated and inherently daily. It feeds three things,
 which must stay in step: `expectedDay`/`daysBehind` ([catchup.ts](src/lib/catchup.ts)),
 the streak trigger, and the morning reminder. **A streak counts plan days
-completed in a row on the couple's own rhythm**, not calendar days: the trigger
-increments when the gap since `streak_last_date` fits inside the cadence window.
-At cadence 1 that is identical to the old consecutive-days rule.
+completed**, not calendar days, and since 2026-07-26 it is **derived, never
+incremented**: `compute_streak()` replays the couple's sealed days from `entries`
+on every seal, so it is idempotent and self-healing. The old trigger nudged a
+stored counter, which meant a missed fire or an out-of-order seal left it wrong
+permanently with no way back.
+
+The window is **`cadence_days + 4`**: miss up to four days in a row and the streak
+survives, a fifth breaks it. Two readings sealed on the same day count **twice**,
+so catching up is credited (the old same-date guard silently skipped the second).
+Christian's call, after a couple who had read 9 days across 15 calendar days saw
+a streak of 1. Widening or narrowing forgiveness is the `+ 4` in that function,
+and re-running the same function backfills every couple.
 
 The morning reminder uses a DAILY trigger at cadence 1 and individually **dated**
 reminders otherwise (no repeating trigger honours both a rhythm and a chosen
