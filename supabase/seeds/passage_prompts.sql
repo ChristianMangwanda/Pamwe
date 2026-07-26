@@ -4,17 +4,31 @@
 
 insert into public.passage_prompts (book, chapter, prompt) values ('1 Chronicles', 1, 'This chapter traces long lines of descent, showing how one generation connected to the next. As you both reflect on your own family lines and histories, what patterns or legacies do you each see being passed down to you, and which ones do you want to carry forward together?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Chronicles', 2, 'Looking at how these families grew and spread across the land, what part of your own family story, the places you''ve come from or are building toward together, feels most important for you both to remember right now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('1 Chronicles', 3, 'As you look at the long line of descendants that stretches through this chapter, what legacy do you hope your own children and grandchildren will carry forward from your marriage?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Chronicles', 4, 'Jabez asked God to bless him, enlarge his territory, keep his hand near, and protect him from causing pain, and God granted what he asked. When you each think about what you''re asking God for in your life right now, what specific requests would matter most to you both?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('1 Chronicles', 5, 'When you look at how these tribes prospered when they cried to God in battle and trusted him, yet later faced captivity when they turned away, where do you each see trust or drift happening in your own life right now?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Chronicles', 6, 'Looking at how these families were assigned their specific cities and roles in serving God''s house, what particular service or responsibility has God given to each of you in your marriage and life, and how do you see yourselves working together in those roles?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('1 Chronicles', 7, 'As you look at how Ephraim''s family continued and grew even after tragedy struck them, what hardship in your own life or marriage has eventually led to something unexpected or new?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Chronicles', 8, 'Looking at these generations and families living together in their towns and Jerusalem, what does it make you wonder about your own family relationships and how you''re building something together?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('1 Chronicles', 9, 'In this chapter, people return from exile and take up specific roles, priests, gatekeepers, singers, caretakers of sacred things, each with their own responsibility in God''s house. What role or responsibility has God given each of you in your marriage and home, and how do you work together to serve it faithfully?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Chronicles', 10, 'When you face a moment that feels like failure or defeat, how do you each tend to respond, and what would it look like to turn toward each other instead of away?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('1 Chronicles', 11, 'When you read about the three mighty men risking their lives to bring David water, and David choosing not to drink it out of honor for their sacrifice, what sacrifice or gift from each other have you hesitated to receive or use, and what would it mean to accept it?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Chronicles', 12, 'When people came to David with their whole hearts to help him, their families and neighbors pitched in to support them, bringing food, supplies, and celebration. Where do you each see that kind of wholehearted commitment showing up in your own lives right now, and how are you supporting each other through it?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('1 Chronicles', 13, 'When you set out together to do something good, how do you both handle it when things go unexpectedly wrong or not according to plan?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Chronicles', 14, 'When you both face a challenge this week, how might you check with each other the way David checked with God before each battle, rather than assuming you know what to do?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('1 Chronicles', 15, 'David gathered all these people together and prepared carefully to do something he had tried before and gotten wrong. What''s something you''ve both been preparing to do differently, or to do right this time, and how is that preparation going between you?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
@@ -26,6 +40,8 @@ insert into public.passage_prompts (book, chapter, prompt) values ('1 Chronicles
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('1 Chronicles', 19, 'David''s initial kindness to Hanun was misread and rejected, but he didn''t let that misreading stop him from doing what he believed was right. Where in your marriage or this week have you chosen to do something good even when you weren''t sure how it would be received?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Chronicles', 20, 'As you read about David staying back while his armies went to war, what patterns do you notice in your own life about when you step back from something and when you step in, and how do you talk to each other about those choices?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('1 Chronicles', 21, 'When David wanted to make things right with God, he wouldn''t accept a gift but instead paid full price for the altar. What matters most to each of you when you''re trying to set something right between yourselves or with God: that it''s resolved quickly, or that you give something of real cost?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('1 Chronicles', 22, 'David prepared abundantly for a work he wouldn''t live to see completed, then passed both the task and his gathered resources to Solomon. What is something important you each want to invest in or build toward together, even if you can''t finish it yourselves?')
@@ -34,13 +50,57 @@ insert into public.passage_prompts (book, chapter, prompt) values ('1 Chronicles
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('1 Chronicles', 24, 'When you look at how these priestly families were assigned their roles by casting lots, leaving no room for favoritism or competition, what responsibilities in your own life do you wish you could settle the same way, with fairness rather than struggle?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Chronicles', 25, 'When you both serve together, like these musicians did with their harps and harps, how do you decide who does what, and do you feel that each role is equally valued?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('1 Chronicles', 26, 'As you look at how each person here was given specific work to do, where do you both feel most needed or useful right now, and how does that shape what you''re each pouring yourselves into?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Chronicles', 27, 'Looking at all these people David assigned to specific responsibilities throughout the year and across the kingdom, where do each of you feel most trusted or needed right now, and how is that shaping your sense of purpose?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('1 Chronicles', 28, 'David passes on to Solomon both detailed plans and the assurance that God will be with him in the work ahead. What is something one of you has inherited or been entrusted with that you''re still figuring out how to steward together?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('1 Chronicles', 29, 'When you saw the people and princes give so freely to something bigger than themselves, what stirred in your own heart about what you might offer together as a couple?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Corinthians', 1, 'Paul says the Corinthians were dividing into groups following different leaders. Where do you each notice yourselves drawn to follow someone or something other than Christ, and how might that show up in how you treat each other?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Corinthians', 2, 'When you think about how Paul came in weakness and fear rather than impressive words, what''s something in your own life or marriage where you''ve had to trust God''s power instead of relying on your own strength or convincing?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Corinthians', 3, 'When you notice yourselves drawn to follow someone''s way of thinking or leading, what do you each think it might cost you to remember that God is the one who gives the increase?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Corinthians', 4, 'Paul describes apostles as enduring hunger, beatings, and dishonor while the Corinthians seem secure and content. What hardship or sacrifice has either of you faced recently, and how might that be shaping your faith in a way comfort cannot?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Corinthians', 5, 'When you think about the people closest to you in faith, how do you each balance loving someone with being honest about ways they may be hurting themselves or others?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Corinthians', 6, 'When you''ve disagreed with each other or felt wronged lately, have you found yourself wanting to prove your point to others rather than seeking to make things right between you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Corinthians', 7, 'Paul writes about how married people care for each other''s needs and unmarried people have freedom to focus on the Lord. Where do you each feel pulled between caring for your marriage and caring for your faith right now, and how might you help each other with both?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Corinthians', 8, 'Where do you each feel the tension between what you know is permissible and what might actually serve the other person''s wellbeing, both in your marriage and in your lives beyond it?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Corinthians', 9, 'Paul chose to give up his rights so others wouldn''t stumble in their faith. Where might you each be holding too tightly to something you''re entitled to, when letting it go could draw someone closer to Jesus?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Corinthians', 10, 'When you each think about the choices you make together, where do you find yourselves choosing what''s good for both of you over what''s simply allowed or easier?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Corinthians', 11, 'When you come together, even in small ways, are you mindful of how your choices affect those around you, or do you sometimes act as though your own comfort matters more than the other person''s needs?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Corinthians', 12, 'When you think about how different you each are from one another, what strength do you see in your marriage that comes from those differences rather than despite them?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('1 Corinthians', 13, 'When you look at how love is described here, patient, kind, not keeping score of wrongs, which of these qualities do you most want to grow into together this week, and what would that look like between you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Corinthians', 14, 'When you gather with others, do you find yourselves more focused on impressing one another or on building each other up, and how might that shift this week?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Corinthians', 15, 'Paul speaks of working hard, yet insisting it was God''s grace working through him, not taking credit, but also not sitting idle. How do you each experience the difference between striving on your own and trusting that God is at work in what you''re building together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Corinthians', 16, 'As you read about Paul''s specific plans to visit and his requests for Timothy and Apollos, when do you find yourselves delaying time together, and what might it look like to actually show up for each other rather than just passing through?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 John', 1, 'When you think about walking in the light together this week, what''s one thing you''ve each been hiding in the darkness that you might confess to God, and to each other?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 John', 2, 'When you notice yourself drawn toward the things of this world, comfort, status, possessions, what do you each feel is calling you back toward what lasts?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 John', 3, 'When you see someone in need this week, what makes you pause or hold back, and how might you move toward them anyway?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 John', 4, 'When you think about the people and voices you both listen to most, what makes you trust them as coming from God rather than just from the world''s way of thinking?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 John', 5, 'When John writes that keeping God''s commandments is not grievous, what feels hardest to obey between you right now, and what might make it feel lighter?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('1 Kings', 1, 'As you watch David finally act on his longstanding promise about Solomon, where do you see unclear expectations or unspoken commitments creating trouble between you two, and what would it take to clarify them now?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
@@ -49,6 +109,8 @@ insert into public.passage_prompts (book, chapter, prompt) values ('1 Kings', 2,
 insert into public.passage_prompts (book, chapter, prompt) values ('1 Kings', 3, 'When you face a hard decision together, what matters more to you both: getting what you want, or doing what''s right for someone else?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('1 Kings', 4, 'As you think about Solomon''s well-organized team, each person trusted with a specific responsibility, how are you dividing the work and care in your own household, and where might you need to trust each other more?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Kings', 5, 'Solomon waited until he had peace and rest before building the temple, and he brought in help from others rather than doing it alone. What project or dream have you both been putting off, and what would change if you tackled it together right now?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('1 Kings', 6, 'As you both think about the temple Solomon built with such precision and care over seven years, what is something in your own life or marriage that you''re building slowly and steadily, trusting God to complete it?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
@@ -84,7 +146,15 @@ insert into public.passage_prompts (book, chapter, prompt) values ('1 Kings', 21
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('1 Kings', 22, 'When you both face a decision together, how do you handle it if one of you senses something the other wants to ignore?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Peter', 1, 'Peter tells his readers they are living as foreigners, yet they have an inheritance reserved in Heaven and are guarded by God''s power. Where do you each feel most like foreigners in your daily life right now, and how might that shape what you''re hoping for together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Peter', 2, 'When you consider Peter''s call to put away deceit and evil speaking while living well before others, where do you each find it hardest to be honest and genuine this week, and what might change if you brought that struggle to God together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('1 Peter', 3, 'When you think about the ''gentle and quiet spirit'' this passage calls beautiful, what does that actually look like in how you two speak to each other during an ordinary week?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Peter', 4, 'When you look at how you spend your time and energy as a couple, where are you living for God''s will and where might you still be pulled toward the desires Peter warns against?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Peter', 5, 'Peter talks about casting all your worries on God because he cares for you. What worry have you each been carrying that you haven''t yet fully laid down together?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('1 Samuel', 1, 'Hannah poured out her heart to God about what she was longing for, and Elkanah loved her deeply even when he couldn''t give her what she wanted. What longings have you each been carrying quietly, and how might you share them more fully with one another?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
@@ -96,7 +166,11 @@ insert into public.passage_prompts (book, chapter, prompt) values ('1 Samuel', 4
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('1 Samuel', 5, 'When you see something going wrong in your life, how do you typically respond, do you try to fix it yourself first, or do you pause to consider what might be calling you to change direction?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Samuel', 6, 'The Philistines had to figure out how to make things right after harm came their way, offering gifts along with returning what wasn''t theirs. As you each reflect, what broken relationship or situation in your life might be asking you to take a first step, even if you''re uncertain it will work?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('1 Samuel', 7, 'Samuel marks their turning point with a stone called Ebenezer, meaning ''the Lord helped us until now.'' What moment or decision in your own life marks a time when you turned back toward God together, and how do you remember it?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Samuel', 8, 'When you look at how Samuel''s sons failed their father''s example, and how the people then wanted to change everything rather than address what was broken, what are you each avoiding talking about in your own life right now?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('1 Samuel', 9, 'When you started out this week, what small thing were you really focused on, and what did you discover mattered far more than you expected?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
@@ -124,6 +198,8 @@ insert into public.passage_prompts (book, chapter, prompt) values ('1 Samuel', 2
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('1 Samuel', 21, 'When you''ve felt afraid or unsure, have you found yourself hiding the truth from others or changing how you present yourself, and what did that cost you both?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Samuel', 22, 'When David learns that his choices have brought suffering on innocent people, he takes responsibility and offers Abiathar his protection. How do you each handle it when your decisions affect those you love, and what does asking for forgiveness or offering reassurance look like between you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('1 Samuel', 23, 'David kept asking God for clarity before each decision, even when he felt trapped, while others around him either turned against him or betrayed his location. When you both face pressure or uncertainty this week, how might you differently seek God''s guidance together rather than just reacting to what''s threatening you?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('1 Samuel', 24, 'When you each face a moment where you could harm someone who''s hurt you, or take what''s easy when no one would know, what makes you choose mercy instead?')
@@ -138,13 +214,39 @@ insert into public.passage_prompts (book, chapter, prompt) values ('1 Samuel', 2
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('1 Samuel', 29, 'David was trusted by Achish but rejected by his own people''s allies, leaving him caught between two worlds. When have you both felt pulled in conflicting directions, and what did you learn about where you truly belong?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Samuel', 30, 'When everything fell apart at Ziklag, David pushed forward while others wanted to blame him, and later he made sure those too weak to fight got an equal share of the recovery. Where do you each see a need in your own life right now to either keep going when it''s hard, or to extend generosity to someone who couldn''t do their part?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('1 Samuel', 31, 'When you think about the people closest to you, like Saul''s armor bearer, how do you want them to remember the way you faced difficulty together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Thessalonians', 1, 'When you look at your own marriage, where do you see faith that''s active, love that''s expressed through work, and hope that keeps you steady, and what would it look like to share that more openly with others around you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Thessalonians', 2, 'Paul describes working night and day and living among the Thessalonians with gentleness, affection, and no hidden motives. When you think about how you show up for each other this week, what does vulnerability and honest effort look like between you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Thessalonians', 3, 'Paul sent Timothy to check on the Thessalonians because he couldn''t bear not knowing how they were doing through their suffering. When is it hard for you both to trust that the other is holding steady in faith, and what would reassure you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Thessalonians', 4, 'As you read about living a quiet life, doing your own work, and building your reputation with those around you, what is one way you could tend to your own responsibilities more faithfully this week?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Thessalonians', 5, 'Paul urges you to stay alert and sober, to build each other up, and to be patient and good toward one another. When you look at this past week together, where did you actually do this, and where did you drift into sleep?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Timothy', 1, 'Paul tells Timothy that the goal of all this instruction is love, flowing from a pure heart, good conscience, and sincere faith. When you look at your conversations this week, where did love guide your words and where did something else take over?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Timothy', 2, 'When you pray for others, your leaders, your neighbors, your challenges, does it shift how you approach the day together, or does it feel separate from your actual life this week?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Timothy', 3, 'As you read about managing a household and gaining the respect of those around you, what''s one area where you each feel you''re doing this well, and where one of you might need the other''s support?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Timothy', 4, 'When you read that God''s gifts are meant to be received with thanksgiving rather than rejected or forbidden, what good thing in your life together have you been treating as if it''s not quite allowed?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Timothy', 5, 'When you think about how you care for aging parents or older people in your lives, are you doing it out of real devotion to them, or have other concerns sometimes gotten in the way?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('1 Timothy', 6, 'Paul keeps returning to the difference between chasing riches and being content with what you have, how does that tension show up between you two right now, in your actual decisions about money?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('2 Chronicles', 1, 'When you each think about the requests you bring to God in your own life, what do you notice about whether you''re asking mainly for wisdom to handle what''s in front of you, or for other kinds of security and comfort?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('2 Chronicles', 2, 'As you both look at Solomon asking for skilled workers and resources from a neighboring king, what''s something you''re currently building together in your marriage or life that requires you to humbly ask others for help?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('2 Chronicles', 3, 'As you read about Solomon laying these careful foundations and adorning every detail of the temple, what are you building or tending to together as a couple, and how much care are you actually giving it?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('2 Chronicles', 4, 'What in your home or life together feels unfinished, and what would it take to see it brought to completion the way Solomon brought all these temple vessels together?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('2 Chronicles', 5, 'When you both gather to worship or pray together, what would it look like for you to set aside your usual roles and concerns, the way all these priests and leaders did, to focus wholly on praising God as one?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
@@ -160,9 +262,13 @@ insert into public.passage_prompts (book, chapter, prompt) values ('2 Chronicles
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('2 Chronicles', 11, 'When you felt called to step back from something you were ready to fight for, what helped you accept that decision, and how did you rebuild afterward together?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('2 Chronicles', 12, 'When have you both found that something you thought made you secure actually pulled you away from what matters most, the way Rehoboam''s strength led him to abandon God''s law?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('2 Chronicles', 13, 'When you faced a difficult situation this week, did you turn toward God first, or did you rely on other resources before remembering to cry out to him like Judah did?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('2 Chronicles', 14, 'When Asa faced overwhelming odds, he cried out for help rather than relying only on his army. Where in your marriage or life right now are you trying to handle something largely on your own that might be worth bringing to God together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('2 Chronicles', 15, 'When you each read about Asa removing what was pulling him away from God, what in your own lives or marriage came to mind as something that might need the same kind of courage?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('2 Chronicles', 16, 'When you face a problem, where do you naturally turn first, and what would it look like for each of you to seek help differently together?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
@@ -172,9 +278,13 @@ insert into public.passage_prompts (book, chapter, prompt) values ('2 Chronicles
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('2 Chronicles', 19, 'When you each consider the mistakes Jehoshaphat made and how he responded to being corrected, what''s something in your own life right now where you might need to hear hard truth from someone you trust?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('2 Chronicles', 20, 'When you face something that feels overwhelming, do you and your spouse turn toward help together, or do you tend to figure it out on your own first?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('2 Chronicles', 21, 'When Jehoram received everything his father had worked for, he used his power to harm the very people closest to him. As you think about what you''ve been given together in your marriage, what tempts each of you to move away from what''s good rather than toward it?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('2 Chronicles', 22, 'Ahaziah chose counselors who led him away from what was right, while Jehoshabeath risked everything to protect what mattered most. Who influences the decisions you each make, and are they pointing you toward what builds your marriage or away from it?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('2 Chronicles', 23, 'Jehoiada gathered leaders from all over, made a covenant, and they moved together with clear purpose and protection for the king. When have you both felt most united around something that mattered, and what made that unity possible?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('2 Chronicles', 24, 'Joash did right as long as Jehoiada guided him, but once that influence was gone, he quickly turned away and even turned against what he''d learned. Who or what helps keep each of you faithful when you''re tempted to drift, and how might you be that for one another?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
@@ -183,6 +293,8 @@ insert into public.passage_prompts (book, chapter, prompt) values ('2 Chronicles
 insert into public.passage_prompts (book, chapter, prompt) values ('2 Chronicles', 26, 'Uzziah prospered greatly as long as he sought God''s guidance, but when he grew strong, he overstepped into territory that wasn''t his and refused correction. Where in your own life or marriage do you sense the pull to take control of something that isn''t yours to control?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('2 Chronicles', 27, 'Jotham became mighty by ordering his ways before God, yet the people around him still acted corruptly. Where do you each see yourself trying to live faithfully while those close to you move differently, and how is that working out between you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('2 Chronicles', 28, 'When Ahaz faced crisis after crisis, he kept reaching for new solutions that pulled him further from what he knew was right, yet you both have moments when trouble tempts you the same way. What situation in your life right now is testing whether you''ll lean into what''s true or chase something that merely promises relief?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('2 Chronicles', 29, 'When you each look at the mess that needs cleaning in your own life or marriage, what holds you back from calling on your people to help you tackle it together, the way Hezekiah did?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
@@ -199,6 +311,34 @@ insert into public.passage_prompts (book, chapter, prompt) values ('2 Chronicles
 insert into public.passage_prompts (book, chapter, prompt) values ('2 Chronicles', 35, 'Josiah prepared everyone carefully for the Passover, enlisting people across different roles and even having others serve so no one had to leave their post. Where in your own life together do you need that kind of purposeful preparation and coordination, rather than hoping things will just work out?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('2 Chronicles', 36, 'In this chapter, Zedekiah refused to humble himself when the prophet spoke, and stiffened his neck against turning back to God. When you both face a hard truth or difficult correction, what makes it easier or harder for each of you to stay open rather than close off?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('2 Corinthians', 1, 'When you''ve been through hard times together, has comforting each other drawn you closer to God, or has it felt more like you were just getting through it on your own?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('2 Corinthians', 2, 'When you''ve written something hard to your spouse, or when they''ve written something hard to you, what did you most need to know about their heart behind those words?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('2 Corinthians', 3, 'When Paul says the Corinthians themselves are his letter of recommendation, written on hearts rather than stone, what would it mean for each of you to be that kind of letter to the people around you this week?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('2 Corinthians', 4, 'Paul describes being pressed, perplexed, pursued, and struck down, yet not destroyed. When you face difficulty together this week, what does it look like for you both to hold onto something eternal rather than just what you can see right now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('2 Corinthians', 5, 'Paul says that knowing Christ has changed how he sees people and himself, that old ways of thinking have passed away and all things have become new. What''s one way you''ve each noticed yourselves changing since you became Christians, or since you committed to following Jesus more closely?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('2 Corinthians', 6, 'As you look at your week ahead, where might you each need to receive God''s grace ''now'' rather than waiting for a better time, and how could you open your hearts to each other about those places?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('2 Corinthians', 7, 'Paul writes of how a difficult letter he sent actually brought about real change and deeper care between him and this community. When have you each needed to address something hard between you, and what made the difference between that conversation pushing you apart or drawing you closer?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('2 Corinthians', 8, 'The Macedonians gave ''beyond their power'' and gave themselves first to the Lord before their money. As you think about what you give together, each of you, what does it look like when you put yourselves before your gifts?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('2 Corinthians', 9, 'When you think about something you''ve promised to give, time, money, help, what keeps you from following through, and how might you each name that to the other?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('2 Corinthians', 10, 'When you''re apart during the day, do either of you find yourself thinking or acting differently than when you''re together, and what might that reveal to you both about where you''re seeking approval?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('2 Corinthians', 11, 'Paul speaks of keeping himself from being a burden on those he served, and of his deep concern for the wellbeing of others. Where do you each feel the tension between caring for others and taking care of your own needs in your life together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('2 Corinthians', 12, 'Paul talks about a painful struggle that kept him humble despite his extraordinary experiences, what thorn or difficulty in your life together, even one you''ve prayed hard to remove, might be shaping you in ways you''re only beginning to see?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('2 Corinthians', 13, 'Paul writes that he rejoices when he is weak and others are strong, how do you both handle moments when one of you is struggling while the other feels capable and steady?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('2 John', 1, 'When you read about loving someone ''in truth,'' what does that kind of honest, grounded love look like in how you treat each other this week?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('2 Kings', 1, 'When you''re facing uncertainty or illness, where do you each naturally turn first for help or answers, and what does that reveal about what you''re trusting in that moment?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
@@ -219,6 +359,8 @@ insert into public.passage_prompts (book, chapter, prompt) values ('2 Kings', 8,
 insert into public.passage_prompts (book, chapter, prompt) values ('2 Kings', 9, 'When you each consider a time you''ve had to act on something you believed was true but couldn''t fully prove to others yet, what made you move forward, and what made you hesitate?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('2 Kings', 10, 'As you watch Jehu do the right thing in one way but hold back in another, what area of your own faith or your marriage calls you to full commitment rather than partial obedience?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('2 Kings', 11, 'Jehosheba risked everything to protect a child in secret for six years, and then others gathered in courage to restore what was lost. When have you each recently felt called to do something hard together, or to support each other through a difficult choice?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('2 Kings', 12, 'When you both think about something you''ve committed to fixing or improving together, what gets in the way of actually doing it, and what would help you get unstuck like Jehoash eventually did?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
@@ -248,6 +390,12 @@ insert into public.passage_prompts (book, chapter, prompt) values ('2 Kings', 24
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('2 Kings', 25, 'After a season of destruction and loss, Gedaliah offers the frightened survivors a way to stay and rebuild, yet fear drives them to flee anyway. Where do you both tend to run when you''re afraid, and what would it take for you to trust and stay?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('2 Peter', 1, 'As you read Peter''s list of qualities to add to your faith, moral excellence, knowledge, self-control, perseverance, godliness, affection, love, which one feels most distant from where you each are right now, and what might be keeping it at arm''s length?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('2 Peter', 2, 'When you look at the people or voices that have shaped how you think and live, how do you tell the difference between those who are truly guiding you toward freedom and those whose words might be drawing you somewhere else?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('2 Peter', 3, 'Peter asks what kind of people you ought to be if all things will be destroyed, and then tells you to be found in peace, without defect and blameless. Between the two of you, where do you feel most at peace, and where do you most struggle to live without defect?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('2 Samuel', 1, 'When you each learned this news about Saul and Jonathan, what moved David more, the loss of a rival, or the loss of someone he loved, and how does that distinction speak to what you each value in your own relationships?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('2 Samuel', 2, 'When you each read about David seeking direction from God before moving to Hebron, and then about how quickly things turned violent between his forces and Saul''s, what does it stir in you about asking for guidance together in moments when the path ahead feels uncertain?')
@@ -256,11 +404,15 @@ insert into public.passage_prompts (book, chapter, prompt) values ('2 Samuel', 3
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('2 Samuel', 4, 'When Rechab and Baanah brought David what they thought he wanted, he rejected it and punished them for it. What have you each ever done for your spouse thinking you were helping, only to discover they didn''t want it that way at all?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('2 Samuel', 5, 'As you''ve read about David''s rise to power and his repeated victories, where do you each see yourselves being tested to trust God''s guidance rather than relying on what feels obvious or familiar?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('2 Samuel', 6, 'When David danced unselfconsciously before God while Michal watched and judged him, what does that reveal about where each of you finds freedom, and where you might feel more concerned with how others see you than with what matters most?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('2 Samuel', 7, 'David had rested from his enemies and wanted to build something grand for God, but God redirected his plans toward a different kind of legacy. When have you both felt called to do something good, only to discover God had something else in mind for you?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('2 Samuel', 8, 'As you each read how David dedicated all the plunder and treasures from his victories to the Lord, what are you holding onto right now that might be asking to be given back to him?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('2 Samuel', 9, 'David sought out Mephibosheth not because he owed him anything, but to honor his promise to Jonathan. Is there someone in your life right now that you''ve lost touch with, where you could reach across distance or awkwardness to show them kindness?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('2 Samuel', 10, 'When have you each misjudged someone''s kindness or good intentions, and how did you find your way back to trust?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
@@ -292,11 +444,127 @@ insert into public.passage_prompts (book, chapter, prompt) values ('2 Samuel', 2
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('2 Samuel', 24, 'When you recognize a mistake, like David did, do you tend to make things right on your own, or do you wait for someone else to point the way, and how does that show up between you two?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('2 Thessalonians', 1, 'Paul tells the Thessalonians he boasts about their faith and love to others, even in the midst of their suffering. When you each think about what you admire most in the other right now, is there something you''ve never actually told them or anyone else?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('2 Thessalonians', 2, 'When Paul tells them not to be easily shaken or troubled, what''s something you''ve been anxious or uncertain about lately, and how might you support each other to stay grounded together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('2 Thessalonians', 3, 'Paul worked to support himself rather than burden the church, and he calls others to do the same. Where might you each be carrying a load you could share, or letting the other carry alone?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('2 Timothy', 1, 'Paul writes about faith passed down through generations, from Lois to Eunice to Timothy, and about Onesiphorus refusing to be ashamed of Paul''s suffering. What inherited faith or example do you each carry into your marriage, and where might you need courage to stand by someone you love?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('2 Timothy', 2, 'When you look at how you spend your focus and energy as a couple this week, what counts as staying entangled in needless affairs, and what would it mean for you both to stay more focused on what matters?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('2 Timothy', 3, 'When you look at the distractions and hollow pursuits Paul describes, what are the things each of you has noticed creeping into your own lives or your marriage that look right on the surface but lack real substance?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('2 Timothy', 4, 'Paul writes near the end of his life about being abandoned by some and strengthened by the Lord, and names those who stood by him and those who didn''t. When you each look back on this season of your marriage, who has truly shown up for you both, and where have you felt the Lord''s presence sustaining you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('3 John', 1, 'The letter opens by naming Gaius and expressing real love for him. When you think about how you address each other, do you speak with this kind of warmth and specificity, or could you be more intentional about naming what you love in one another?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Acts', 1, 'When you think about the apostles waiting in Jerusalem before Pentecost, what is the Lord asking you both to wait for right now, and how are you waiting together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Acts', 2, 'When the believers in this chapter shared what they had with whoever needed it, they did so with gladness and singleness of heart. What would need to change between you both for generosity like that to flow more freely through your marriage and your home?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Acts', 3, 'When you think about what Peter offered the beggar, what do you have that money cannot buy that you might be holding back from giving to each other?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Acts', 4, 'When you face pressure or disapproval for something you believe matters, what does Peter and John''s refusal to stay silent make you wonder about in your own life together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Acts', 5, 'Ananias and Sapphira agreed together on their deception, but Peter names it as something between them and God. Where do you each sense honesty slipping in your marriage, and what would it mean to bring those things into the light between you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Acts', 6, 'When the apostles realized they couldn''t do everything themselves, they trusted others with important work. What responsibilities in your life together might you be carrying alone when you could ask for help from people around you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Acts', 7, 'When have you each felt called to step into something hard, and how did the other person respond when you struggled or doubted?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Acts', 8, 'When you each read about Philip stopping for the Ethiopian stranger on the road, or Simon wanting to buy what he couldn''t earn, what draws your attention about how you both seek or offer help to each other?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Acts', 9, 'When you look at how Ananias trusted God enough to help Saul, and how Barnabas believed in him when others wouldn''t, where do you each see yourselves: as the ones needing someone to take a risk on you, or as the ones called to take that risk for someone else?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Acts', 10, 'Both of you had to cross something hard to be together, just as Peter had to set aside what he''d always believed about who was unclean. What old conviction or habit has each of you had to question for the sake of your marriage?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Acts', 11, 'Peter had to be shown the same vision three times before he could accept what God was doing. Where do you each find yourselves hesitant to follow, and what might help you move forward together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Acts', 12, 'When you''re facing something that frightens you, how do you each tend to respond: by waiting for rescue, by taking action yourself, or some mix of both? What did Peter''s story stir in you about that?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Acts', 13, 'When you each read about the Holy Spirit separating Barnabas and Paul for a specific work, and then later sending them out, what calling or task has God been nudging the two of you toward together that you''ve been hesitant to actually begin?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Acts', 14, 'Paul and Barnabas returned to the cities where they''d been driven out and persecuted, to strengthen believers there. What keeps you both from going back to hard conversations or difficult relationships that need tending?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Acts', 15, 'When you both read about the apostles working through disagreement to find unity, where do you each see that same struggle playing out in your own life together right now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Acts', 16, 'When have you each felt pressed to change your approach or direction, not because you wanted to, but because you sensed God closing one door and opening another, the way Paul and his companions kept adjusting their path through the cities?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Acts', 17, 'When you each think about the people around you this week, where did you see someone searching for truth, even if they didn''t use those words, and how did you respond?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Acts', 18, 'Paul and Silas and Timothy worked as tent makers while sharing their faith, and Aquila and Priscilla did the same. How do you both see your daily work, whether inside or outside your home, as a place where faith naturally shows up?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Acts', 19, 'When something you believe in deeply threatens others'' livelihoods or way of life, how do you both think about the cost of standing firm, and what does it mean for your marriage when one or both of you face that kind of pressure?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Acts', 20, 'Paul speaks to the Ephesian elders knowing he may never see them again, yet spends the whole night with his people before leaving. When you each think about the goodbyes and transitions ahead in your own lives, what would you most want to make sure you say or do before it''s too late?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Acts', 21, 'Paul received urgent warnings that danger awaited him in Jerusalem, yet he chose to go anyway, saying he was ready to die for Jesus'' name. When you both face a difficult choice this week, how will you decide between playing it safe and moving forward with what you believe matters most?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Acts', 22, 'Paul tells of a time when everything about him changed in a moment, and yet he still had to explain himself to people who had known his old life. What part of your story, as a couple, might be hard for others to understand or accept?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Acts', 23, 'When you each read how Paul''s nephew heard about the ambush and spoke up to help him, what situation came to mind where one of you noticed something the other missed, and speaking up made a real difference?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Acts', 24, 'When Paul spoke to Felix about righteousness and what''s to come, Felix felt afraid but then put it aside, hoping for money instead, have you each ever felt conviction about something important, only to let other desires pull you away from it?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Acts', 25, 'Paul stays steady in his defense even when powerful people want him gone, while Festus keeps shifting to please whoever he''s trying to impress. When have you each felt pressure to abandon what you believed was right, and did you handle it differently than you wish you had?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Acts', 26, 'Paul describes a complete turn from his old life to his new one, from persecuting others to serving them. Where is each of you currently being called to turn from something familiar, and how might you support one another through that shift?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Acts', 27, 'When Paul spoke up with a warning that everyone else dismissed, and then again when the crew wanted to abandon ship, he remained calm and acted to help save lives. Where do you each see yourselves in this story: are you the voice being ignored, the one dismissing it, or someone caught in between?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Acts', 28, 'You both saw Paul shaken up by the viper, then welcomed warmly by strangers, then finally met by friends who came out to greet him on the road to Rome. When have each of you needed that kind of encouragement from others to keep going?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Amos', 1, 'Amos speaks of nations punished for cruelty that went unchecked, anger that raged continually, pity cast off, captives taken, the vulnerable harmed. Where do you each see bitterness or hardness growing in your own hearts that you''d want to name together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Amos', 2, 'When you think about how Israel mistreated the poor and silenced those who spoke for God, what patterns do you notice in your own life or community where people with less power are overlooked or dismissed?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Amos', 3, 'When you read about people who hoard wealth while ignoring injustice around them, what does that stir in you both about how you actually spend your money and time together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Amos', 4, 'When you look back at your week, have there been small difficulties or frustrations that might be inviting you to turn toward each other or toward God, rather than away?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Amos', 5, 'When you hear God calling to ''seek me and live'' rather than turn to empty religious practices, where do each of you sense that invitation most clearly right now, in your own choices and habits?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Amos', 6, 'When you think about comfort and security in your own life right now, where might you both be turning away from suffering you could actually help ease?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Amos', 7, 'When Amos stands firm despite pressure to stay silent, you both might ask yourselves: where do you need courage to speak truth to each other, even when it would be easier to keep quiet?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Amos', 8, 'When you think about how you spend your time together, are there ways you''ve drifted from what matters most, or areas where you sense you need to turn back toward each other and toward God?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Amos', 9, 'You both heard judgment described in this chapter, but it ends with restoration, rebuilding, and return to the land. When have you or your marriage faced a time that felt like breaking, and what kept you hoping for renewal?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Colossians', 1, 'Paul thanks God for the faith and love he''s heard about in this church, and prays that they''ll stay grounded and steadfast. What is one way you''ve each noticed the other''s faith or love growing, and how could you tell them this week?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Colossians', 2, 'Paul speaks of people being drawn away by empty philosophies and strict rules that look wise but don''t actually change the heart. Where do you each feel most tempted to follow rules or ideas that leave you feeling empty rather than drawing you closer to Christ and each other?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Colossians', 3, 'When you think about what you''re angry about or holding against each other this week, what would it look like to forgive the way the chapter describes, and what''s making that hard for you both right now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Colossians', 4, 'When you think about how Paul describes his companions, faithful, beloved, zealous in prayer, a comfort to one another, which of those qualities do you see most in each other, and where might you grow together in showing them?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Daniel', 1, 'When you''ve had to choose something that matters to you in a situation where it felt risky or costly, how did you handle it, and did your spouse know what you were deciding?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Daniel', 2, 'When you face a problem that feels too big or complicated to solve on your own, what do you do first, and how does that compare to what Daniel did when his life depended on finding an answer?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Daniel', 3, 'When have you each felt pressure to go along with something that conflicted with what matters most to you, and how did you handle it together or separately?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Daniel', 4, 'When Nebuchadnezzar ignored the warning and spoke of his greatness the next year anyway, what makes you each wonder about times you''ve dismissed counsel or advice from someone close to you?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Daniel', 5, 'Belshazzar knew what happened to his father when pride took over, yet he didn''t change course. Where do each of you see yourselves repeating patterns you''ve watched others experience, and how might you help each other break that cycle?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Daniel', 6, 'When have you each faced a moment where doing what was right conflicted with what was easier or safer, and how did you handle it together or separately?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Daniel', 7, 'Daniel was deeply disturbed by his vision, yet he kept seeking understanding and held onto what he''d learned in his heart. When you both face something confusing or frightening in your lives right now, how do you each tend to respond, and where do you turn for clarity?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Daniel', 8, 'When you see power being used to destroy and deceive in the world around you, how does it affect each of you, and what helps you hold onto hope?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Daniel', 9, 'Daniel prayed and confessed not just his own sins but the sins of his whole people, speaking as though he shared in their wrongs. When you think about your marriage and faith, where do you carry responsibility for something broken between you, even if it wasn''t entirely your doing?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Daniel', 10, 'When Daniel spent those three weeks in mourning and fasting, something shifted in how he was able to receive what God had for him. What are you each carrying right now that might need space and quietness before you can hear what God wants to say to you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Daniel', 11, 'As you both read about kingdoms rising and falling through deception, broken alliances, and people swayed by flattery, where do you each see those patterns playing out in your own lives or relationships this week?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Daniel', 12, 'When you read about those who are wise shining like stars and those who turn others to righteousness being remembered forever, what kind of lasting impact do you each hope to have on the people around you?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Deuteronomy', 1, 'When you both look back at times you''ve faced something that frightened you, how did fear shape what you actually did, and where do you wish you had trusted more?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
@@ -323,6 +591,8 @@ insert into public.passage_prompts (book, chapter, prompt) values ('Deuteronomy'
 insert into public.passage_prompts (book, chapter, prompt) values ('Deuteronomy', 12, 'This chapter calls the people together to worship and celebrate at one chosen place, and emphasizes eating, rejoicing, and including others in that celebration. Where do you both find yourselves gathering and sharing as a couple, and who else do you invite into those times?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Deuteronomy', 13, 'When someone close to you, a family member, friend, or trusted voice, has pulled you away from what you know to be true, how did you each respond, and what brought you back?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Deuteronomy', 14, 'When you look at how this chapter describes caring for those without resources, the Levite, the foreigner, the fatherless, the widow, where do you each see opportunities to practice that kind of generosity in your own lives right now?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Deuteronomy', 15, 'When you think about money and help in your own life right now, where do you find yourself holding back, and what would it look like to open your hand instead?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
@@ -362,6 +632,8 @@ insert into public.passage_prompts (book, chapter, prompt) values ('Deuteronomy'
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Deuteronomy', 33, 'As you hear Moses blessing each tribe for their different strengths and paths, what particular gifts or callings do you each see in the other that you want to speak out loud?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Deuteronomy', 34, 'Moses saw the promised land but couldn''t enter it, yet he remained faithful to lead others there. As you think about your own hopes and responsibilities, what promises or goals in your marriage might look different than you imagined, and how are you both walking toward them anyway?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Ecclesiastes', 1, 'When you look at your own week, what have you been pouring energy into that hasn''t quite filled the emptiness you hoped it would?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Ecclesiastes', 2, 'When you look at what you''ve built together, your home, your routines, your accomplishments, do you find yourself enjoying them as gifts, or does anxiety about losing them or leaving them behind creep in?')
@@ -386,9 +658,37 @@ insert into public.passage_prompts (book, chapter, prompt) values ('Ecclesiastes
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Ecclesiastes', 12, 'As you both think about remembering your Creator while you''re young and able, what are one or two things you want to make sure matter most between now and then?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ephesians', 1, 'Paul keeps mentioning what you have already been given, redemption, forgiveness, the Holy Spirit, as things that are already yours. What spiritual blessings in your shared life together do you tend to forget you already have?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ephesians', 2, 'Paul describes how Christ broke down the wall between those who were far off and those who were near, making peace between groups that were separated. Where do you each see walls in your own lives or in your relationship, and what would it look like for Christ''s peace to break one down?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ephesians', 3, 'Paul speaks of a mystery that was hidden for ages but is now revealed, and he prays that you might be strengthened to comprehend it together, what is something about Christ or faith that has become clearer to you both over the course of your relationship?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Ephesians', 4, 'When the passage describes putting away the old way and being renewed in mind, where do you each see that renewal happening, or being resisted, in your own life together this week?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Ephesians', 5, 'Where in your daily life together do you each need to ''watch carefully how you walk,'' and what would it look like for you both to help each other stay awake to what matters most?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ephesians', 6, 'When you read about standing firm with the armor God provides, what feels most unprotected or vulnerable in your marriage or daily life right now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Esther', 1, 'When you each think about times you''ve refused to do what the other wanted, what made you take that stand, and what were you really protecting?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Esther', 2, 'When you think about Mordecai''s daily concern for Esther, or the way he guided her choices even from a distance, where do each of you give or receive that kind of watchful care in your relationship?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Esther', 3, 'Mordecai refuses to bow to Haman even when his refusal puts his entire people in danger, while others around him do what the king demands. When have you each felt caught between what you believe is right and what you''re pressured to do, and how did your spouse respond?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Esther', 4, 'When you each read about Esther''s fear and Mordecai''s push back, what felt more familiar to you in your own life right now, the hesitation or the call to act?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Esther', 5, 'When you each have something you want to ask of each other, how do you tend to bring it up, directly, or do you find yourself waiting for the right moment or setting it up gradually like Esther does here?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Esther', 6, 'When you think about what Haman wanted and what actually happened to him that day, where do you sense God redirecting your own plans right now, either between you or in your separate lives?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Esther', 7, 'Esther waited for the right moment to speak her truth to the king, even when she had his ear and his promise. When have you each needed to wait for the right time to name something hard between you, rather than seizing the first chance to speak?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Esther', 8, 'When you each read how Esther risked everything by speaking up for her people, and how her courage led to protection for everyone she loved, what situation in your own life right now calls you to speak up, even if it feels risky?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Esther', 9, 'When danger passed and the Jews turned their sorrow into feasting, they made it a practice to remember together every year. What hardship or fear has you both grown through recently, and how might you mark or celebrate that survival together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Esther', 10, 'Mordecai used his position of power to seek the good of his people and speak peace around him. In your own life right now, where do you have influence, and what are you doing with it between the two of you and beyond?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Exodus', 1, 'When have you each felt caught between an unjust demand and your own conscience, and how did you support each other through that choice?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
@@ -470,6 +770,134 @@ insert into public.passage_prompts (book, chapter, prompt) values ('Exodus', 39,
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Exodus', 40, 'As you look at how carefully Moses set up each piece according to God''s instructions, what routines or rhythms in your own life together help you sense God''s presence, and where might you need to be more intentional?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 1, 'Ezekiel sees these creatures moving with perfect coordination, their wings and the wheels beneath them all responding together to one spirit. When you think about your own life right now, where do you each sense the Spirit moving you, and how are you following or resisting that movement together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 2, 'When you''re sent to speak truth in a situation where you expect resistance, what helps each of you find the courage to say what needs to be said anyway?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 3, 'Ezekiel is given a hard calling but also made strong for it, given a forehead like diamond, warned what to expect, and assured of God''s presence. Where do you each feel called to speak truth or take a stand right now, and what strength or support do you need from each other to do it?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 4, 'In this chapter, Ezekiel is asked to do things that feel wrong to him, and he objects, and God adjusts but doesn''t change the core call. Where in your own lives right now do you each sense being asked to do something difficult or uncomfortable, and how are you responding to that?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 5, 'When you look at how Jerusalem had turned away despite being set in a position of privilege and blessing, what are you noticing about your own lives right now, where might you be drifting from what you know to be true?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 6, 'In this chapter, those who survive and are scattered remember God and become ashamed of how they turned away. What patterns or habits have each of you noticed drifting in your own life, and what might help you notice and turn back before crisis forces the lesson?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 7, 'When you hear this chapter''s repeated warnings about judgment coming on those who ignore God''s way, what patterns in your own life or marriage make you pause, and what might need to change between now and your next conversation?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 8, 'As you both reflect on this chapter about hidden worship and broken trust, where do each of you sense that you might be turning away from God''s presence in your own life, even in small or private ways?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 9, 'When you read about those who sighed and cried over the city''s wrongs being marked for protection, what troubles do you each see in your own life or community that stir that same kind of sorrow in you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 10, 'As you watch God''s presence move through this vision, going exactly where it needs to go without hesitation or detour, where do you each sense God calling you to move forward in your life right now, even if the path isn''t fully clear?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 11, 'After hearing about leaders whose confidence in their own security blinded them to their need for God, and then learning that God promises to give his people a new heart to follow him, where do you each sense you might be relying on your own understanding instead of seeking God''s guidance together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 12, 'Ezekiel acts out a prophecy of exile while his neighbors watch and question him, yet he obeys without explanation. When have you each stood firm in something difficult while others wondered why, and how did that test your trust in each other?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 13, 'When you think about the people in your lives who influence you most, how do you tell the difference between those who offer you real truth and those offering you easy comfort instead?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 14, 'What idols or stumbling blocks have you each placed in front of your own face this week, things that might keep you from seeking God or from hearing each other clearly?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 15, 'When you look at your own life right now, where do you feel less useful or productive than you once were, and what do you think God might be inviting you to understand through that experience?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 16, 'When you both consider what you''ve been given in your marriage and life, where might you each be tempted to seek from other sources what was already offered to you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 17, 'When you look at your own commitments, both to God and to each other, where are you tempted to turn toward a different source for help or security instead of staying faithful to what you''ve promised?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 18, 'Where in your own lives do you find yourselves thinking that the past has locked you in, and how might you each need to believe differently about the choices before you now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 19, 'As you listen to this lamentation about what was lost, where do you each see loss or broken hopes in your own lives right now, and what helps you keep trusting through it?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 20, 'When you look at the pattern in this chapter, how each generation struggled to turn away from what their parents clung to, what habits or patterns are you each most aware of repeating from your own families, and how do you want to break that cycle together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 21, 'When you read about Ezekiel being called to grieve before the people, to show his sorrow openly for what was coming, what kind of suffering or hard truth do you each feel called to acknowledge more honestly in your own life right now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 22, 'When you read about how people in the city had forgotten God while going about their daily lives, what habits or priorities in your own week might be quietly pushing Him out, and how do you want to change that together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 23, 'When you each think about what attracts you away from your marriage or your faith, what patterns do you notice repeating in your own lives?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 24, 'Ezekiel is told to stop mourning his wife''s death as a sign to others, turning his private grief into a public message. When you both face real loss or hardship, how do you each want to grieve, and where might your pain serve or confuse the people around you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 25, 'As you read about nations taking joy in others'' suffering and seeking revenge, where do you each notice contempt or triumph creeping into your own hearts when someone you disagree with faces hardship?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 26, 'Tyre thought Jerusalem''s fall meant opportunity for itself. Where might you both be mistaken about what someone else''s loss could mean for you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 27, 'Tyre built something magnificent through countless connections and trades, yet it all crumbled, and those who once celebrated with it mourned its loss. Where do you both feel most tempted to build your security or identity on things that could be taken away, and what might you be trusting in instead of something more lasting?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 28, 'When you each look at what you''ve built together, your home, your work, your life, what might it feel like to ask whether you''re trusting in those things more than in what matters most?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 29, 'When you think about what you''re relying on to feel secure, your job, your home, your abilities, where do you each see yourselves holding on too tightly, the way Pharaoh claimed the river as his own?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 30, 'When you each think about the things you''ve built confidence in or relied on this week, what has proven fragile or in need of strengthening?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 31, 'As you think about Pharaoh''s greatness and how it all fell away, where do you each see yourselves building things in your own lives or marriage that might need to be held more lightly?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 32, 'Looking at how Pharaoh''s pride and power ultimately come to nothing in this chapter, where do you each see pride or the desire to control things showing up in your own lives right now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 33, 'When you each examine your own lives right now, where do you sense God calling you to turn from something, and what would it actually look like for you to turn, rather than stay the same?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 34, 'When you think about the shepherds described here, who feeds themselves while others go hungry, where do you see that pattern showing up in your own life or marriage, even in small ways?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 35, 'When have you each felt envious of what belongs to another, and how did that envy shape what you said or did about them?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 36, 'When you think about the shame that others have spoken about you, or the damage you''ve caused that you can''t undo, what would it mean for you both to receive and believe that you''re being made new anyway?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 37, 'In this vision, separated bones are brought back together and given new breath and life. Where do you each sense deadness or disconnection in your own lives right now, and what would it look like for new life to come there?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 38, 'When you read about people dwelling securely, without walls or gates, what comes to mind about the safety you each feel in your own life right now, and what would it take for that to change?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 39, 'After reading about Israel''s long restoration and God''s commitment to never hide his face from them again, what feels unresolved or stuck between you two that you''d like to see made right?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 40, 'After watching Ezekiel receive such specific, detailed instruction about the temple''s layout, each of you consider: where in your own life right now do you sense God calling you to pay close attention to details, and what might change if you did?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 41, 'As you listen to this detailed description of how carefully and precisely the temple was built and arranged, where do you each notice God calling you to greater intention and order in your home or your life together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 42, 'As you both think about the purpose of these rooms, to keep what is holy separate and protected, where do you sense God calling you to create boundaries in your marriage or your home?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 43, 'After Ezekiel describes God''s glory returning to dwell in the house, there''s a long focus on the altar''s exact measurements and the careful steps needed to cleanse and consecrate it before God will fully accept the people''s offerings. What does the setup and preparation for something in your lives right now require of you both, and are you willing to do that work patiently?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 44, 'This chapter is full of rules about what belongs in sacred space and what doesn''t, about who can draw near and under what conditions. What have you each noticed this week about the boundaries you need to protect in your marriage, or the kinds of faithfulness that matter most to both of you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 45, 'As you look at how carefully this passage describes fair measures, honest dealings, and the prince''s responsibility to serve rather than exploit the people, where do you each see fairness, or its absence, showing up in your own decisions this week?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 46, 'This chapter describes regular rhythms of worship and offering, with specific times set apart and routines observed daily. What practices or rhythms have you each found help you draw close to God together, and are there any you''ve let slip that you miss?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 47, 'As you watch these healing waters grow deeper and more powerful, flowing outward to bring life wherever they go, where do you each sense God calling you both to step deeper into something together right now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezekiel', 48, 'In this vision, each tribe has a specific place, and the sanctuary sits in the center where all can access it, what role does the sacred play in holding you both together as a couple?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezra', 1, 'When you read about people being stirred to leave everything and rebuild something sacred, what has God been stirring in each of you lately, and how are you supporting one another in it?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezra', 2, 'After being away for so long, these people returned home and immediately gave to rebuild what mattered most to them. What draws the two of you back when you drift, and what are you rebuilding together right now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezra', 3, 'What are you rebuilding in your marriage right now, and how does that feel different when you do it together rather than alone?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezra', 4, 'When you each face opposition to something you''re building together, what makes you more likely to hold firm or to give in?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezra', 5, 'When you both face a question or obstacle about something you''re building together, do you find yourselves explaining your purpose to each other, or assuming you already know why the other is committed to it?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezra', 6, 'When you faced obstacles to something that mattered to you, how did you move forward, and did support from unexpected places help you stay faithful to what you were trying to build together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezra', 7, 'What is something one of you feels called to pursue or learn more deeply, and how might the other encourage you in that as Ezra was encouraged in his journey?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezra', 8, 'Ezra fasted and prayed rather than ask the king for soldiers, because he had told the king that God protects those who seek him. When have you each chosen to trust God''s protection in a way that cost you something, and how did that choice affect your marriage?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezra', 9, 'Ezra grieves deeply when he learns that God''s people have joined themselves to those around them instead of staying separate. Where do you each see ways that the values or habits of your broader world are pulling at your marriage, and what matters most to you to protect together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ezra', 10, 'When you see how seriously the people took their need to make things right, even when it was painful and costly, what broken thing between you or in your own life have you been avoiding, hoping it might somehow fix itself?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Galatians', 1, 'When Paul says he didn''t immediately ask others but went away to process his calling, what''s something you''ve each felt pulled to do differently, and did you check it against what you actually believe before talking it through together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Galatians', 2, 'When you see someone you respect acting differently around certain people, how does that affect what you believe about them, and what might that reveal about where you''re looking for approval in your own life?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Galatians', 3, 'When you first trusted Jesus, what changed in how you experienced God''s presence or power in your life, and has that sense shifted since then?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Galatians', 4, 'What rules or expectations have you each found yourself following out of habit rather than genuine conviction, and how might that be different from the freedom you actually want to live in together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Galatians', 5, 'Where do you each see freedom playing out in your own life right now, and is there a place where one of you might be pulling the other back toward old patterns instead of forward together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Galatians', 6, 'When you catch each other stumbling or falling short, does the thought of your own weakness make you gentler with one another, or does something else get in the way?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Genesis', 1, 'As you look at how God saw each part of creation as good, and then blessed the creatures to multiply and fill their spaces, what in your own life together feels like it''s still taking shape, waiting to be blessed and made fruitful?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Genesis', 2, 'After reading about God resting on the seventh day and setting apart that time as holy, when do you each genuinely stop working and rest together, and what would change if you did?')
@@ -487,6 +915,8 @@ insert into public.passage_prompts (book, chapter, prompt) values ('Genesis', 7,
 insert into public.passage_prompts (book, chapter, prompt) values ('Genesis', 8, 'After being confined together for so long, Noah waited and watched for signs before stepping out into the new world. What are you both waiting to see right now, and how are you sensing when it might be time to move forward?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Genesis', 9, 'You both have seen God''s covenant promise in the rainbow, yet you also see Noah''s failure and shame at the chapter''s end. When have each of you needed grace from your spouse after stumbling or being vulnerable?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Genesis', 10, 'As you look at how Noah''s descendants spread out and built their own families and lands, what are you each building together in your marriage, and where do you sense God calling you to grow?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Genesis', 11, 'When you both work toward something together, like the people building Babel, how do you make sure you''re building something that actually brings you closer rather than pulling you apart?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
@@ -538,6 +968,8 @@ insert into public.passage_prompts (book, chapter, prompt) values ('Genesis', 34
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Genesis', 35, 'When Jacob gathered his household to go to Bethel, he asked them to put away foreign gods and purify themselves. What are you both holding onto right now that might need to be released before you can move toward what God is calling you toward?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Genesis', 36, 'When have you and your household needed to separate or make space from others to flourish, and how did you navigate that decision together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Genesis', 37, 'When have you each felt jealousy or favoritism, either witnessing it between siblings, or feeling it in your own marriage, and what did it cost you?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Genesis', 38, 'When have you each felt trapped by someone else''s broken promises or half-truths, and how did that shape what you did next?')
@@ -566,9 +998,405 @@ insert into public.passage_prompts (book, chapter, prompt) values ('Genesis', 49
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Genesis', 50, 'Joseph grieves his father deeply, and later his brothers fear he will punish them now that their father is gone. When loss or change happens in your relationship, what old hurts sometimes surface that you thought were settled between you?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Habakkuk', 1, 'When you look at the injustice and pain around you, what questions do you find yourself asking God, and how does your partner''s faith speak into your doubt?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Habakkuk', 2, 'When you each think about what you''re building right now, in your home, your work, your future together, what are you hoping will last, and what might you be chasing that won''t?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Habakkuk', 3, 'When Habakkuk says he will rejoice even if his crops fail and his animals disappear, what''s one area of your life right now where you''re being asked to trust without seeing the outcome you want?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Haggai', 1, 'When you look at what you''re each investing your time and energy into right now, do you sense you''re building something together, or are you mostly tending to your own separate concerns?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Haggai', 2, 'Looking back at your own efforts together, where have you been discouraged by what feels small or incomplete, and what might it mean to keep working anyway?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Hebrews', 1, 'This chapter describes God speaking to us through his Son, who loved righteousness and hated iniquity. When you each think about what righteousness looks like in your daily life together, what comes to mind first, and does it match what your spouse would say?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Hebrews', 2, 'Where might each of you be drifting in your attention or faith right now, and what would help you both pay closer attention together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Hebrews', 3, 'When this chapter warns about hardening your hearts and encourages you to exhort one another day by day, what is one way you could speak truth to each other this week when one of you might be drifting away?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Hebrews', 4, 'When you think about entering God''s rest, what are you still striving or pushing hard at that maybe you''re meant to release, and how might you talk about that together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Hebrews', 5, 'When you look at how Christ learned obedience through suffering, what is something hard you''re both walking through right now that might be teaching you something about trust?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Hebrews', 6, 'When you each think about your work and service together, where do you see growth happening, and where might you be settling into a pattern rather than pressing forward?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Hebrews', 7, 'When you think about what lasts versus what changes in your life together, what have you built on something temporary that might need rebuilding on something stronger?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Hebrews', 8, 'What is one way God''s law has moved from something external you follow to something written on your heart, between the two of you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Hebrews', 9, 'What in your life feels like it''s still waiting to be made new, the way this chapter says Christ''s sacrifice changed everything that the old rituals couldn''t?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Hebrews', 10, 'When you remember a time you stood by each other through something hard, what kept you from stepping back, and what does that tell you about what you''re building together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Hebrews', 11, 'When you each think about what you''re hoping for but can''t yet see in your life together, what''s one step either of you has been afraid to take, and what might change if you took it?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Hebrews', 12, 'When you look at the weights and sins the passage says entangle us, what is one thing each of you feels is slowing down your stride right now, and how might naming it together make a difference?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Hebrews', 13, 'Where do you each feel the pull this week between holding lightly to what you have and the anxiety that comes with letting go, and how might that be showing up in your marriage?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Hosea', 1, 'Hosea is called to marry someone unfaithful, and their children''s names announce judgment to come. What feels hard or confusing to you right now about staying faithful to each other, and how might you support one another through it?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Hosea', 2, 'Looking at how the woman here sought satisfaction from her lovers before returning to her first husband, where do you each tend to look for what you''re really needing, and how does that affect your marriage?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Hosea', 3, 'As you read about Hosea being called to love Gomer again despite her unfaithfulness, what does it stir in you both about how you show up for each other when trust has been broken?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Hosea', 4, 'Where do you each notice knowledge of God slipping away in your own lives, and how might that be showing up in ways you haven''t named yet?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Hosea', 5, 'When you both feel wounded or troubled, do you turn first toward each other and your faith, or do you find yourselves reaching outward for other solutions?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Hosea', 6, 'When you each think about returning to God after you''ve hurt each other, what would it look like for you both to move past the quick apologies or routines and actually press on to know each other again?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Hosea', 7, 'When you both face a problem that needs healing, where do you actually turn first, and what would it look like to turn toward each other and God instead?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Hosea', 8, 'When you look at what Israel kept building and multiplying, altars, palaces, fortified cities, instead of returning to God, what are you each tending to or building up in your own life that might be pulling you away from what matters most?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Hosea', 9, 'When you look at the unfaithfulness Hosea describes, what are the smaller ways you each drift from God during your ordinary weeks, and how might that affect your marriage?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Hosea', 10, 'When you look at what you''ve built together, your routines, your choices, your trust, where might you each be relying on something other than seeking God together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Hosea', 11, 'God describes teaching Ephraim to walk, lifting the yoke, bending down to feed him, drawing him with cords of love, yet they turned away and refused to return. Where do you each see love being offered and refused, either in your own hearts or between you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Hosea', 12, 'When you look at how Ephraim confused wealth with innocence, mistaking riches for righteousness, where do you each see that same confusion creeping into your own life or marriage?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Hosea', 13, 'When you each think about what you''ve depended on this week instead of leaning on God, what comes to mind?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Hosea', 14, 'When you think about what the passage says you''re offering to God, your words, your lips, what are you actually bringing to him right now in your life together, and what might you need to let go of first?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 1, 'When you look at what Isaiah says God actually wants, justice for the oppressed, care for the fatherless and widow, where do you each see yourselves living that out, or falling short of it, in your life together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 2, 'The chapter contrasts those drawn toward God''s mountain with those filled with wealth, possessions, and idols they''ve made themselves. What have each of you been building up or collecting lately, and how do those things compare with what actually draws you closer together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 3, 'As you look at the choices and priorities each of you are making this week, where do you sense the pull to display or acquire things outwardly rather than invest in what truly matters?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 4, 'When you imagine wanting to be called by someone''s name, what does that longing reveal about how you each seek belonging or identity, and is there anything of that in your marriage right now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 5, 'Looking at how the vineyard owner prepared everything carefully but the vines still bore wild grapes instead of what he hoped for, where in your own life or marriage have you invested care and attention but gotten unexpected or disappointing results?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 6, 'When Isaiah encounters the holiness of God and offers himself to be sent, he''s told his message will be hard and people won''t listen. What difficult truth or message do each of you sense God might be calling you to share with someone close to you, even if you''re afraid they won''t understand?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 7, 'When you both face something that feels threatening or overwhelming, do you find yourselves more likely to ask God for help and reassurance, or more likely to hesitate and handle it on your own?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 8, 'When you face fearful news or when others around you seem panicked, where do you naturally turn first, and is that the same place Isaiah is pointing you toward?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 9, 'This chapter moves between visions of great light and peace, and warnings about people who refuse to turn back even when struck by trouble. When you each reflect, consider: where in your life right now are you tempted to stay proud or defensive rather than turn toward help, toward each other, or toward God?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 10, 'The Assyrian king boasts that his own strength and wisdom won him his victories, yet Isaiah shows his power is really just a tool in God''s hands. When you each look at your own life this week, where have you been tempted to take credit for something, and how might you both see God''s hand in it instead?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 11, 'Where do you each see conflict, between you, in your families, in the world around you, that feels impossible to resolve, and what would it take for you to imagine peace there like the chapter describes?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 12, 'When you''ve felt God turn his anger away and comfort you, what did that comfort actually look like between you, and is there someone you need to tell about it?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 13, 'When you read about Babylon''s pride being brought so low that even shepherds won''t return to it, what comes to mind about any pride or false security you''re each holding onto, either together or separately?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 14, 'When you think about the people and situations in your life where you''ve felt powerless or crushed, how does it change things to know that God promises rest and reversal, not just for Israel but for you both?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 15, 'When you both read about Moab''s sudden collapse and how their grief spread from city to city, what losses in your own lives have shifted something between you, or changed how you see your security together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 16, 'When you read about those called to hide the outcasts and shelter the fugitive, who comes to mind as someone vulnerable or displaced in your own circles, and what might it cost each of you to make space for them?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 17, 'When you look at what you''ve built or planted in your life this week, what do you each think you''ve been tending to, and is it something that would still matter if everything suddenly changed?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 18, 'When you read about God watching quietly and letting pruning happen in its time, what situation in your life right now feels like it needs your patience instead of your action?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 19, 'When you hear Isaiah describe a land where confusion spreads and people can no longer find wise counsel, where do you each recognize that pattern in your own life right now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 20, 'Isaiah walked through his city for three years in a way that made him vulnerable and ashamed, to warn people about something they didn''t yet believe. Have you each ever had to do something costly or uncomfortable to show someone you love something important, and what did it cost you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 21, 'When you read about the watchman standing at his post, staying alert through the day and night, what vigilance or attentiveness does your marriage need right now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 22, 'When crisis or pressure closes in on you both, what do you naturally reach for first to feel secure or in control, and have you noticed whether that draws you closer to each other or away from trusting together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 23, 'As you read about Tyre''s fall from power and eventual restoration, what seasons of decline or loss have you each experienced, and do you believe recovery is possible in those areas right now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 24, 'When you read about everything being turned upside down, all joy darkening, and people caught between fear and danger with no escape, what situation in your own life or marriage right now feels like it has no good way out?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 25, 'In this chapter, the speaker finds stronghold and refuge in God during distress and fear. When have you each felt that kind of protection from him lately, and what made the difference?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 26, 'When you think about the struggles you''re facing right now, where are you trusting God to be your unshakeable foundation, and where do you find yourselves still leaning on something else?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 27, 'As you read about God tending a vineyard and restoring a scattered people, what feels broken or neglected in your life together that needs faithful, patient care?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 28, 'The chapter describes people who have built their refuge on lies and falsehood, unable to hear the message of rest being offered to them. What lies, if any, do each of you sometimes reach for instead of bringing your real worries to each other?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 29, 'When you read about people who draw near with their mouth but whose hearts are far away, what parts of your own life together do you recognize in that description?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 30, 'Looking at how the people rejected wise counsel and sought quick fixes elsewhere, where do each of you turn first when facing trouble, to each other and God''s guidance, or to something that promises faster relief?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 31, 'When you''re facing something that worries you both, where do you naturally turn first for help, and how might that reveal where your deepest trust actually lies?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 32, 'When you think about the kind of shelter and refuge this chapter describes, a hiding place, streams in a dry land, shade in weariness, where do you each find that in your marriage, and where might you need to offer it more to one another?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 33, 'When you look at how this chapter describes someone who ''walks righteously and speaks blamelessly,'' refusing bribes and turning away from harm, what does that kind of integrity look like in your own week together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 34, 'This chapter speaks of a land so completely destroyed that it becomes a place where wild animals and desolation reign, while the work of rebuilding seems impossible. What situations in your own lives feel irreversible or beyond repair, and how do you face them together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 35, 'What feels most barren or exhausted in your life right now, and where might you both look for signs of renewal this week?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 36, 'When you face pressure to doubt what you trust in, how do you each tend to respond, by defending your faith out loud, or by holding it quietly while you think?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 37, 'When Hezekiah received that threatening letter, he brought it straight to God''s house and laid it out before him. What weighs on each of you right now that you haven''t yet brought fully to God together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 38, 'When you''ve faced a moment where everything felt suddenly fragile or uncertain, what did you find yourself turning toward, and did that draw you closer or further from each other?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 39, 'When have you been eager to show someone what you have, and did that impulse come from pride or from genuine joy in sharing?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 40, 'When you each read that God carries his flock gently and gives power to the weak, what weariness or struggle in your own life came to mind?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 41, 'When you face something that feels impossible or overwhelming this week, where do you each tend to look first for strength, and how might you turn toward each other the way the craftsmen in this chapter encourage one another?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 42, 'As you read about a servant who brings justice quietly, without breaking what''s already fragile, where do you each see gentleness being asked of you this week, and what might make it hard?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 43, 'God speaks here of doing a new thing and making a way in the wilderness, yet also names how Israel grew weary and stopped calling on him. Where do you each sense God might be inviting something new in your lives right now, and what''s keeping you from moving toward it?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 44, 'As you both think about the carpenter using the same wood for warmth and comfort, then bowing to the rest as a god, where do you find yourselves doing something similar, investing your time and heart in things that serve you in the moment but that you also expect to save you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 45, 'When you read about God calling Cyrus by name and making a path before him, even though Cyrus didn''t know God, what work in your own life feels too stuck or blocked for you to move forward, and where might you need to trust that God is already making a way?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 46, 'What burden have you each been carrying that might actually belong to God to bear, and how might naming it together change how you face what''s ahead?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 47, 'Babylon trusted that nothing could touch her and that her own wisdom would protect her forever. Where do each of you tend to feel most secure or certain about the future, and is there anything in that certainty worth examining together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 48, 'When you look back at this past week, where have you each sensed God leading you in a direction different from what you expected, and how did you respond?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 49, 'Zion felt forgotten and alone, yet God asked if a mother could forget her child, and said he had engraved her on his palms. In your own life together, when have you doubted you were remembered or cared for, and what helped you believe again?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 50, 'The passage speaks of someone whose ear has been opened to listen and who has set his face like flint through suffering, yet still trusts that the Lord will help him. When you think about hardships each of you has faced recently, how willing have you each been to stay open and listen, rather than turning back or hiding away?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 51, 'When you look back at your own story as a couple, where do you see God''s comfort showing up in the hard places you''ve walked through together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 52, 'When you hear the call to awake and shake off the dust, what feels heavy or stuck in your life right now that you might need help releasing together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 53, 'This chapter speaks of someone bearing suffering that wasn''t his own. What suffering or burden in your life right now feels like it belongs to someone else, and how do you each carry that?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 54, 'When you read about being enlarged and expanded after a season of loss or waiting, what area of your marriage or life together feels ready to grow right now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 55, 'When you think about what you''re spending your energy on this week, is there something you''re laboring over that doesn''t really satisfy either of you, and what might you be missing by doing so?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 56, 'When you read about those who felt excluded or thought they had no place in God''s family, what situation in your own lives or marriage came to mind where either of you has felt that way?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 57, 'When you find yourselves chasing something that feels reviving in the moment, how do you each recognize whether it''s drawing you closer to peace or further into weariness?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 58, 'When you think about what you do or don''t do for each other and those around you during your week, what comes to mind when Isaiah asks whether your righteous acts match what you say you believe?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 59, 'When you look at the ways this chapter describes people turning from God, through lies, violence, injustice, and turning away, where do you each see those patterns showing up in your own lives or choices this week?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 60, 'As you read about restoration and gathering in this chapter, what feels broken or scattered in your own life or marriage right now that you long to see brought together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 61, 'The passage speaks of trading ashes for garlands, mourning for joy, and shame for double honor. Where do you each see that kind of exchange happening, or needing to happen, in your own life right now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 62, 'The speaker here refuses to rest or be silent until things are restored and made right. When you look at your own life together, what is something you''re unwilling to give up on, even when it feels distant or hard?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 63, 'As you think about the contrast between God''s fierce judgment and his tender compassion for his people in this chapter, where do you each see yourself bringing both strength and gentleness into your marriage right now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 64, 'When you read about God meeting those who rejoice and do righteousness and remember his ways, what does that kind of attentiveness to God look like in your own week, and where has it been missing?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 65, 'When you look at the contrast Isaiah draws between those who reject God''s call and those who seek him, what are the ways you each experience God''s presence or distance in your own lives right now, and do you see that reflected in how you respond to him?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Isaiah', 66, 'When you read that God looks toward those with a humble and trembling heart rather than those who go through outward religious motions, what does that stir up in you both about how you approach faith together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('James', 1, 'When you face a difficult situation this week, where do you find yourselves most tempted to doubt that God will actually help, and how might asking him together change that?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('James', 2, 'When you think about how you treat people this week, whose needs might you have overlooked or given less attention to because of who they are or what they have?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('James', 3, 'When you think about how you speak to each other this week, and the feelings underneath those words, what does that reveal about what''s really going on in your hearts?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('James', 4, 'When you disagree about something you both want, where do you feel that conflict coming from, and what would it look like to ask God about it together instead of just pushing harder?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('James', 5, 'When you think about how you speak to each other, your promises, complaints, and everyday words, do you find yourselves speaking with the kind of honesty James calls for, where your yes is yes and your no is no?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 1, 'Jeremiah hesitated, saying he didn''t know how to speak and was too young, but God told him not to use his limitations as an excuse. What is something each of you feels unequipped to do right now, and how might you support each other in attempting it anyway?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 2, 'The opening verses remember when you both followed God through wilderness and difficulty, yet the chapter describes turning toward other things that don''t satisfy. When do each of you find yourselves chasing after something that promises more than it delivers, and how might that affect the path you''re walking together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 3, 'When you''ve drifted from each other or from what you promised, what would it take for you both to turn back, and what does returning actually look like in your marriage?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 4, 'When you read God''s call to break up the fallow ground and wash your heart, what needs turning over or cleaning in your own life right now, and can you tell each other what that looks like?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 5, 'When you notice each other, or yourselves, hardening against correction or refusing to admit something needs to change, what do you think would help you turn back toward each other and toward truth?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 6, 'When you hear Jeremiah say people refused to listen even when warned, where do you recognize that same refusal in your own life right now, and what might it be costing you both?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 7, 'When you look at what you do day to day, where might you be trusting in something that won''t actually protect or sustain you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 8, 'When you each hear about people who keep doing the same harmful thing and refuse to change, even when they can see the consequences coming, what patterns do you notice in yourselves or in how you treat each other?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 9, 'Jeremiah describes people speaking peace to their neighbors while secretly waiting to harm them, and says everyone deceives everyone else. In your own relationship and friendships, where do you feel most tempted to say one thing while thinking another, and what would it look like to choose truthfulness instead?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 10, 'What in your life right now feels solid and lasting to you, and what feels fragile or temporary, the way Jeremiah describes the difference between idols and God?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 11, 'When you hear about a covenant or commitment, what makes you stay faithful to it even when keeping it feels costly or when others around you have abandoned theirs?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 12, 'When you see people around you who seem to prosper through dishonesty or harm, while you''re trying to live with integrity, what questions does that raise for each of you about fairness or faith?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 13, 'When you''ve turned away from something or someone important to you, what brought you back, and what did you find had changed in that time apart?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 14, 'When you each look at the hardship described in this chapter, where do you see yourselves turning for answers or comfort right now, and are those sources actually delivering what you hoped for?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 15, 'When you find yourselves caught between what feels right and what feels costly, as Jeremiah was, do you turn toward each other or away, and what would it look like to turn toward God together in that moment?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 16, 'When you read about the breaking of celebrations and the inability to comfort one another in times of loss, what are the ways you each try to be present for each other in hard seasons, and where might you be holding back?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 17, 'When you look at how you each spend your time and energy this week, where are you truly rooted, in trust that holds firm, or in things that leave you parched?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 18, 'When you think about the potter reshaping the clay, where do you each see evidence in your own lives this week that God is still working with you, even when things feel broken or need to change?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 19, 'Jeremiah publicly proclaimed hard words about what happens when people turn away, then delivered them anyway, knowing it would be painful to hear. Where do you each see yourself needing to speak truth to someone you love, even though it might damage things in the short term?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 20, 'When Jeremiah felt trapped between his calling and the mockery of those around him, he couldn''t stay silent even though it brought him suffering. Where do you each feel caught between your convictions and the pressure to keep quiet, and how might you support each other through that tension?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 21, 'When you both face a hard choice between what feels safer and what might actually lead somewhere better, how do you decide which path to trust?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 22, 'As you look at your own home and choices this week, where have you each been building with what''s honest and what''s not, and how might that be shaping your life together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 23, 'In this chapter, God contrasts those who speak what they''ve actually heard from him with those who speak what comes from their own hearts and call it his truth. Where do you each see this happening in your own lives, and how might it affect the way you lead together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 24, 'When you look back at a difficult season you''ve walked through together, has anything in it turned out to be more valuable or transformative than you expected at the time?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 25, 'After hearing Jeremiah describe twenty-three years of messages that people refused to listen to, what message or concern has each of you been hesitant to bring up with the other, and what would change if you spoke it now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 26, 'When you each think about speaking difficult truths, where do you find the courage to do it, and where do fear or silence creep in instead?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 27, 'When you both face a hard choice, how do you tell the difference between the voices telling you what you want to hear and the one telling you what you actually need to do?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 28, 'When you hear something you desperately want to believe, how do you each tell the difference between hope and truth?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 29, 'When you''re in a season that feels long or uncertain, do you find yourselves building a life where you are, or waiting for things to change before you fully invest in home, relationships, and daily rhythms?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 30, 'As you each read of Jacob''s trouble and the promise that he will be saved and restored, what burden between you two has felt too heavy to carry lately, and how might you help each other believe it won''t always be this way?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 31, 'When you read about how God keeps gathering and rebuilding even after people wander away, what does that stir in you both about times you''ve felt far from each other or from where you wanted to be together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 32, 'Jeremiah buys land during a siege, betting on a future that looks impossible right now, where do you each see yourselves making a commitment or investment in something you believe in, even though the circumstances seem stacked against it?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 33, 'Jeremiah receives this message while locked in prison, during the darkest time for his people, yet it''s full of promises about joy and restoration returning to the wasteland. When have you each noticed hope or new life emerging in a situation that felt completely broken, and what did that teach you about trusting God''s timing together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 34, 'When you both made a commitment together, even recently, have you kept it when circumstances changed or it became harder than you expected?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 35, 'The Rechabites kept their ancestor''s commands for generations, while Judah ignored God''s repeated messages, what commitments matter most to you both, and are you actually living by them?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 36, 'When have you each tried to share something important with someone who didn''t want to hear it, and what did you learn about speaking truth when it''s not welcome?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 37, 'When you''re afraid and things feel uncertain, do you find yourselves drawn to hear hard truths, or do you prefer words of comfort and hope, and how does that shape what you''re willing to listen to from each other?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 38, 'Jeremiah twice refuses to speak freely because he fears for his life, yet he speaks anyway, and Ebedmelech, a man with little power, acts while the king wavers. When have each of you faced a moment where fear made you hesitate to do what you believed was right, and what helped you move forward?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 39, 'In this chapter, Jerusalem falls and most people are carried away, but Jeremiah is protected, the poor are given land, and Ebedmelech is promised safety because he trusted God. When has one of you felt afraid about what was coming, and what helped you hold on?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 40, 'When someone offers you a warning about danger, how do you decide whether to trust it or dismiss it, and have you and your spouse ever disagreed on when to be cautious versus when to trust?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 41, 'When you see someone act with kindness or tears on the surface, like Ishmael did with the travelers, how do you both guard against being deceived by what seems true instead of what is actually true?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 42, 'The people promised Jeremiah they would obey God''s word no matter what, yet he warns they''ve already decided to flee to Egypt anyway. Where do you each feel most tempted to ignore what you''ve already decided to trust, because you''re afraid of what might happen if you stay?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 43, 'When the leaders insisted they knew better and moved forward anyway, Jeremiah and Baruch went along. Where do you each feel most tempted to follow someone else''s choice, even when you sense it might not be the way forward?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 44, 'The people in this chapter say their lives were better when they followed a practice they knew was wrong, and they refused to stop even when warned repeatedly. Where do you each see that pattern in your own lives, and how might you gently help each other notice it?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 45, 'Baruch was worn down from the weight of his work, grieving as he watched everything he knew being dismantled. When has each of you felt overwhelmed by circumstances beyond your control, and how did you carry that together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 46, 'As you watch powerful Egypt prepare for battle, convinced of its own strength, where do you each see that kind of confidence at work in your own lives this week, and what might that require of you both?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 47, 'When you read about a flood of destruction that overwhelms people and scatters fathers from their children, what situation in your own lives came to mind, and how are you each walking through it?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 48, 'Moab trusted in what they had built and stayed comfortable for so long that they couldn''t see danger coming, until it was too late. What are you each holding onto or staying settled in that might be keeping you from noticing something important in your marriage or life right now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 49, 'This chapter shows nations that trusted in their strength, their wealth, or their isolation, only to find those things couldn''t protect them. Where do you each tend to feel most secure or confident right now, and is there anything about that confidence worth examining together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 50, 'The chapter describes Israel as sheep who were lost and led astray, then promises their return and restoration. When you think about the paths you''ve wandered from together, or the places you''ve gotten lost in your marriage or faith, what does it look like for you both to turn back toward God?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 51, 'This chapter speaks of Babylon as a golden cup that made the nations drunk on her wealth and power, yet her abundance became the measure of her covetousness. What has drawn you both toward something in your own lives, comfort, security, success, in a way that might need examining together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jeremiah', 52, 'After reading about how Zedekiah ignored warnings and made choices that led to devastating loss, what decision are you both facing right now where you need to listen to each other''s voice before moving forward?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 1, 'As you read about Job''s quick succession of losses and his faithfulness through them, what is something you''ve lost or grieved that tested how you saw God, and how did you find your way through it together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 2, 'When you''re facing real pain or loss, how do you each tend to respond to your spouse''s faith, and what does it look like to stay honest with each other instead of pulling away?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 3, 'Job wishes he had never been born, imagining the peace of rest he might have found. When you each think about hard seasons you''ve walked through together, what has sustained you when rest and peace felt far away?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 4, 'Eliphaz confidently tells Job that the innocent don''t perish and the upright aren''t cut off, yet Job knows his own innocence and suffering. When you face hardship, do you find yourselves assuming you must have done something wrong, or can you hold onto your integrity even when life doesn''t seem fair?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 5, 'When you look at the troubles you''re facing right now, do either of you tend toward resentment and worry, or toward bringing your cause to God and trusting what he might do?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 6, 'When you''re both in pain or despair, how do you show up for each other, and where do you sometimes fall short like Job''s friends did?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 7, 'When you''re exhausted or things feel hopeless, how do you each tend to express that pain, and do you make space for the other person to voice their anguish without trying to fix it right away?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 8, 'When you think about the hard seasons you''ve walked through together, how much have you turned to what others have learned from their own struggles, and where might you need each other''s wisdom more?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 9, 'When you each read Job''s feeling that no one will listen to him and that his words won''t matter, where do you recognize that same hopelessness in your own life or marriage right now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 10, 'When you each read Job pouring out his raw despair and confusion to God, what made you want to hold back from your partner, and what might it feel like to speak that freely instead?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 11, 'Zophar suggests that Job has been defending himself too much, and that what''s needed instead is to set his heart right and turn toward God, a shift from talking about himself to reorienting toward something beyond himself. Where in your own life or marriage do you find yourselves stuck in defending your position rather than changing direction?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 12, 'When you look at your own situation right now, where do you find yourself being dismissed or misunderstood by others, and how does it sit with you that Job insists he knows things too?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 13, 'Job insists he wants to speak directly to God rather than listen to his friends'' explanations, even though he''s terrified of what God might do. When have each of you felt like you needed to go straight to God about something instead of accepting someone else''s version of what was happening?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 14, 'Job speaks here about the brevity of life and the weight of our failures, wondering if anything we do lasts. When you think about your shared life together, what matters most to you both, and how does that shape what you''re actually spending your time on?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 15, 'Eliphaz accuses Job of filling himself with empty words and letting his heart carry him away in anger toward God. When have you each noticed yourselves doing the same, and how did it affect your closeness with each other?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 16, 'When has suffering or hardship made it harder for you to listen to each other, and what might it take to be the strengthening presence the other person actually needs right now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 17, 'Job feels utterly alone in his suffering, even calling out to his friends for support but finding them useless. When have each of you felt most isolated in a struggle, and did you reach toward your partner or away?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 18, 'As you listen to Bildad''s harsh certainty about the wicked, what situation in your own life or marriage tempts you to assume you know exactly what God is doing?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 19, 'When you''ve felt isolated or misunderstood, even by those close to you, what has helped you hold onto hope or trust, the way Job does near the end of this passage?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 20, 'Zophar speaks of a man who clutches tightly to what he''s gained through wrongdoing, unable to let it go even as it poisons him from within. When you each think about what you''re holding onto in your own lives right now, is there anything you''re gripping too hard, and what might it cost you to keep it?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 21, 'Job sees people prosper and flourish without faith, while he himself suffers in faithfulness. When you look at your own life, where do you see things working out differently than you''d expect, and how does that sit with each of you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 22, 'Eliphaz accuses Job of withholding water from the weary and bread from the hungry, of leaving widows and orphans empty-handed. When you each think about the last week, where did you turn away from someone in need, and what was really going on in your heart in that moment?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 23, 'Job wrestles with feeling abandoned by God while also knowing God sees him and has a purpose for his suffering. When have you both felt distant from God or each other while still believing he was working something good?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 24, 'Job describes people who exploit the poor and vulnerable, taking what little they have, and those who suffer in hunger and cold, stripped of dignity. Where do you each see injustice or hardship in your own community, and what might it look like for you both to respond?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 25, 'When you think about how small or flawed you feel compared to God''s vastness, how does that shape the way you each approach him together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 26, 'When you read about God''s power stretching across the earth and heavens while remaining largely beyond human understanding, what situation in your own life right now feels like you''re only hearing a whisper of what God might be doing?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 27, 'Job says he will not let go of his integrity even as he suffers, but your lives together probably feel less dramatic, where do you find yourself compromising what matters to you, and what would it cost to hold fast?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 28, 'What have you been working hard to find or figure out lately, and how might stepping back to seek wisdom about it change what you''re actually looking for?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 29, 'Job remembers a season when his life brought him influence, purpose, and respect because of how he helped others. What season or role in your life has made you both feel most useful and alive together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 30, 'Job grieves that those he once helped now mock him, and that his cries to God go unanswered. When have each of you felt unseen or unheard by the other, and what would it take to reach toward each other in that moment?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 31, 'Job calls to mind all the ways he has tried to live with integrity, from guarding his eyes to caring for the vulnerable to welcoming strangers. Where do you each feel that integrity is hardest for you to hold onto in your daily life, and what makes it difficult?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 32, 'When you both see something that needs to be said but hold back out of respect or uncertainty, how do you each decide whether to speak?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 33, 'When you hear Elihu say that God speaks through dreams and suffering to redirect us from our pride, does that spark any memory of a time when a difficult season or unexpected circumstance shifted how you saw yourself or each other?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 34, 'When you''ve felt unfairly treated or misunderstood, have you found yourselves withdrawing from God, or turning toward him? What does that reveal about what you each really believe about his character?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 35, 'When you face hardship this week, what difference does it make whether you''re asking God for help or simply complaining about your circumstances?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 36, 'When Elihu speaks of God opening ears to instruction and showing people their wrongs so they might return, where do you each see that happening in your own life right now, and how is your marriage affected by how you''re hearing it?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 37, 'When you encounter something in nature or life that feels beyond your understanding or control, how do you each tend to respond, and what might it look like for you both to pause and consider it together rather than rush past it?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 38, 'When you face something in your week that feels beyond your control or understanding, what would it mean for each of you to release that to God rather than exhausting yourselves trying to manage it?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 39, 'Each of you has instincts and desires that feel wild and hard to tame, whether it''s how you react when hurt, what you want to control, or how you show strength. Where do you sense God made you untameable, and what does your partner need to know about loving that part of you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 40, 'In this chapter, Job stops arguing and puts his hand on his mouth, but God goes on speaking anyway. When have you both sensed that continuing to defend your position, or convince someone, wasn''t going to help, and what did silence or surrender look like for each of you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 41, 'In this chapter, God describes a creature so powerful that nothing can control it or make it submit, yet God remains sovereign over all. Where do you each feel most powerless or out of control in your life right now, and how does that weigh on your marriage?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Job', 42, 'After all Job endured, what shifts between the moment he says ''now my eye sees you'' and when his friends and family come to sit with him and eat bread together, and what do you each notice about how you need to see God differently when you''ve hurt each other?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Joel', 1, 'When something significant has been lost or taken away in your life, whether a joy, a routine, or something you relied on, how do you each tend to respond, and what might it take for you both to turn that loss toward God rather than away?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Joel', 2, 'When you read about what was devastated and then restored, the land eating itself up, then grain and wine and oil coming back, what felt like it might be getting restored in your own life right now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Joel', 3, 'As you think about what nations and peoples have wronged Judah, and how God promises to be their refuge while executing judgment, where do you each see God as your stronghold right now, in the conflicts or injustices you''re facing?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('John', 1, 'When you read about Andrew finding his brother Simon, or Philip finding Nathanael, who is someone in your life right now that you sense God inviting you both to point toward him?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
@@ -612,6 +1440,14 @@ insert into public.passage_prompts (book, chapter, prompt) values ('John', 20, '
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('John', 21, 'When Jesus asks Peter three times about his love, and then calls him to follow, Peter''s first instinct is to look over at another disciple and ask about him instead. Where do you each feel the pull to compare your calling or path with someone else''s, and what might it cost you both?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jonah', 1, 'When you read about Jonah running from what God asked him to do, what assignment or conversation have you each been avoiding or putting off, and what would it take to turn back toward it?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jonah', 2, 'When have you each felt trapped or in over your head, and what helped you remember to turn toward God in that moment?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jonah', 3, 'When you both heard God''s call on your life, or on this marriage, did you go willingly the first time, or did it take a second asking, like it did for Jonah?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jonah', 4, 'When have you both felt angry about something you couldn''t control, and what did that anger cost you in your relationship that week?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Joshua', 1, 'Joshua steps into leadership after Moses, and the people commit to following him into an uncertain crossing. Where do each of you feel called to lead or follow in this season of your life together, and what would courage look like for you both?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Joshua', 2, 'Rahab risked everything to protect these strangers based on what she''d heard about God''s faithfulness. When have each of you taken a risk for someone else, and what gave you the courage to do it?')
@@ -636,19 +1472,31 @@ insert into public.passage_prompts (book, chapter, prompt) values ('Joshua', 11,
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Joshua', 12, 'As you look at this long list of conquered cities and kings, what''s one area of your life where you and your husband are still waiting to see God''s promised victory come through?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Joshua', 13, 'Joshua is old and there''s still much land ahead, yet God tells him to divide what remains among the tribes rather than conquer it all himself. When you look at your own life together, what are you being called to distribute or hand over rather than control or complete?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Joshua', 14, 'Caleb waited forty-five years to claim what God had promised him, and at eighty-five he still felt strong enough to fight for it. When you look at a promise or dream in your marriage that has been waiting a long time, do you still have the courage and energy to pursue it together, or has doubt worn that away?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Joshua', 15, 'When Achsah asked her father Caleb for springs of water instead of just accepting the land he gave her, what are you each overlooking or reluctant to ask for in your own life together?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Joshua', 16, 'Where in your lives together do you settle for less than complete victory, accepting compromise instead of pushing through to what God promised you?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Joshua', 17, 'When you both look at what the children of Joseph received and what they felt they needed, where do you find yourselves wanting more than what''s already been given to you together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Joshua', 18, 'Joshua grew impatient with the delay, asking the seven tribes how long they would put off claiming what had been promised to them. What promises or plans in your own life have you been slow to step into, and what might be holding each of you back?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Joshua', 19, 'As each tribe received their inheritance and settled into their own territory, what boundaries or limits do you both need to establish in your own life right now to live well together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Joshua', 20, 'When you''ve made a serious mistake, do each of you tend to hide or to speak up and explain what really happened, knowing the difference between an accident and neglect?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Joshua', 21, 'As you both think about how the Levites were given cities scattered throughout all the tribes, where do you each need to be more intentionally present or rooted in your own community this week?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Joshua', 22, 'The eastern tribes built an altar not to worship differently, but to prove to future generations that they belonged to God''s people. When you each think about your marriage and your separate lives, where do you worry that distance or misunderstanding might make the other question your commitment to the things you share?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Joshua', 23, 'Joshua reminds Israel that what God promised has come true, and warns them that what they do next matters just as much. What promises have you each seen God keep in your marriage or life, and how does that shape what you''re choosing to hold onto right now?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Joshua', 24, 'When Joshua asks the people to choose whom they will serve, and they promise they will serve God, what choice or commitment are you both facing right now where you need to be honest about what you actually intend to do?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Jude', 1, 'Jude writes to people who are called, set apart, and kept safe by God. How do you each experience that sense of being held or protected in your marriage, and where do you most need to feel it right now?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Judges', 1, 'When you look at the tribes who completed their task versus those who settled for living alongside their enemies, what are you currently choosing to finish rather than compromise on in your life together?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
@@ -692,9 +1540,21 @@ insert into public.passage_prompts (book, chapter, prompt) values ('Judges', 20,
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Judges', 21, 'Both of you have made promises that created real problems between you or with others, and then scrambled to fix the mess in ways you''re not proud of. When have each of you done that, and what would you do differently now?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Lamentations', 1, 'When you read about Jerusalem''s loneliness and abandoned state, what relationships in your own life have felt strained or distant lately, and is there someone between you who needs comfort right now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Lamentations', 2, 'When you read about people crying out in the midst of overwhelming loss and destruction, what hardship in your own life or marriage feels too big to put into words?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Lamentations', 3, 'When you read about the speaker moving from despair to hope, from feeling abandoned to remembering God''s faithfulness, what shifts between you two when one of you is struggling, do you find new mercies in each other, or do you tend to withdraw?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Lamentations', 4, 'This chapter describes a people who have lost everything they once treasured, watching their former leaders and protectors become unrecognizable. Where do each of you look for help or security when life feels like it''s falling apart, and has that ever shifted between you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Lamentations', 5, 'When you both face a season of loss or hardship, what keeps you from believing that God has truly forgotten you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Leviticus', 1, 'When you think about giving something to God, what does it cost you, and how do each of you experience that cost differently?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Leviticus', 2, 'When you bring something to God, what details matter most to you, the ingredients themselves, the way you prepare them, or something else entirely?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Leviticus', 3, 'When you both bring something before God, whether in prayer or surrender, what do you each find yourself holding back, and what would it look like to offer the whole thing?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Leviticus', 4, 'When you sin without meaning to, how do you actually know you''ve been forgiven, and what does that look like in your marriage?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
@@ -711,6 +1571,8 @@ insert into public.passage_prompts (book, chapter, prompt) values ('Leviticus', 
 insert into public.passage_prompts (book, chapter, prompt) values ('Leviticus', 10, 'Aaron stayed silent when his sons died, then later spoke up to Moses about whether he should have eaten the sin offering that day. When have you each found it hard to know whether to stay quiet or to speak in a moment of grief or confusion?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Leviticus', 11, 'As you both think about the careful distinctions God draws in this chapter between what is clean and unclean, where do you find yourselves making similar distinctions in how you spend time together, and do those choices feel purposeful or do they drift?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Leviticus', 12, 'When you consider the care and time this passage describes for a new mother''s recovery, what does it make you notice about how you and your spouse have marked or supported each other through significant physical changes?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Leviticus', 13, 'When you''ve both faced something uncertain or uncomfortable about your health or body, how did you decide when to seek help, and how did waiting or knowing change things between you?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
@@ -742,11 +1604,195 @@ insert into public.passage_prompts (book, chapter, prompt) values ('Leviticus', 
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Leviticus', 27, 'When you think about what you''ve dedicated to God, your time, resources, or commitments, how do you each handle the temptation to take some of it back or swap it for something easier?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Luke', 1, 'When you both face something that seems impossible in your life right now, how do you tend to respond: more like Zacharias asking ''How can this be?'' or more like Mary saying ''Let it be done to me''?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Luke', 2, 'When have you each felt caught off guard by something unexpected in your life together, and how did you handle not understanding what was happening at first?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Luke', 3, 'When John tells tax collectors and soldiers exactly what their jobs require of them, to be honest, to be fair, to be content, where in your own work or daily routines are you being called to the same kind of integrity?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Luke', 4, 'When you face a choice between what you want and what you sense you''re called to do, how do you usually respond, and what helps you stay true to what matters most?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Luke', 5, 'When Jesus asked Simon to try the nets again after a night of failure, Simon obeyed even though he had nothing to show for his work. Where is each of you being asked to trust and act right now, even when you can''t see how it will turn out?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Luke', 6, 'When you think about loving enemies and doing good to those who mistreat you, where do you each find this hardest to practice in your own life right now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Luke', 7, 'When you think of the centurion''s quiet trust or the sinful woman''s extravagant love, which comes closer to how you show up for each other in your own marriage?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Luke', 8, 'When you look at the people in this chapter, the women who traveled with Jesus, the man healed in the tombs, the woman in the crowd, what holds you back from sharing what God has done in your own lives the way they did?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Luke', 9, 'When Jesus asked his disciples who they say he is, they had walked with him, seen him heal and feed thousands, and yet they were still arguing about who was the greatest among them. What does that reveal to each of you about how you live out your own faith, even in areas where you feel most sure?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Luke', 10, 'The Samaritan crosses distances to care for a stranger, while Martha worries that her service isn''t shared equally. Where in your own life do you find yourselves choosing presence over productivity, or struggling to let that choice be enough?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Luke', 11, 'Jesus teaches about asking persistently and receiving from a loving Father, yet he also warns about hearts that look clean on the outside while harboring harm within. Where do you each sense that gap in your own life right now, between what you show and what''s actually going on inside?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Luke', 12, 'When you hear Jesus say that life doesn''t consist of possessions, what money or thing are each of you most reluctant to let go of, and what would it take to loosen your grip?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Luke', 13, 'Jesus speaks of the fig tree given one more year to bear fruit, and of the woman freed from eighteen years of infirmity. Where in your own life right now do you sense God giving you, or asking you to give each other, more time and care rather than judgment or dismissal?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Luke', 14, 'As you think about the guests who made excuses when the feast was ready, what commitments or routines in your own lives might sometimes keep you from showing up fully for each other?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Luke', 15, 'When you each think about the father''s welcome or the older son''s anger in this story, whose response feels more like where you are right now in your faith or your marriage?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Luke', 16, 'As you both think about how you use money and what you own, where do you find yourselves choosing comfort and security over generosity toward those around you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Luke', 17, 'When you''ve had to forgive each other this week, or seen forgiveness offered seven times over, did it feel like a small thing or an enormous one?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Luke', 18, 'The widow, the tax collector, and the blind man all kept asking despite being pushed away or overlooked. Where in your life together do you find it hard to keep asking, keep seeking, or keep showing up?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Luke', 19, 'Zacchaeus went to great lengths to see Jesus, climbing a tree despite his position and the crowd, what obstacle is keeping each of you from drawing closer to God right now, and what might it look like to push past it together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Luke', 20, 'When you each think about the ways you give your loyalty and allegiance, to work, to what others think, to security, where do you find yourselves holding back from giving your full selves to God?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Luke', 21, 'When you think about giving or holding back in your marriage and life, what weighs on you more: what you already have or what you''re afraid of losing?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Luke', 22, 'When you each read about Jesus'' deep desire to share this meal with his disciples, and then later find them asleep in his moment of greatest need, what does that stir in you about how present you each are for one another when it matters most?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Luke', 23, 'You both watched how people pressured Pilate to do what they wanted, even though he said he found no fault. When have you felt pressure from others to act against what you believed was right, and how did you handle it together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Luke', 24, 'What have you each been slow to believe about God lately, and how might you help each other see what you''re missing?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Malachi', 1, 'When you give your time, energy, or best efforts to what matters most in your marriage and faith, are you offering your whole heart or just what''s left over?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Malachi', 2, 'This chapter speaks of people breaking covenant with each other, and names marriage as a sacred covenant God witnesses. When you each think about the covenants in your own life, where do you sense you''re keeping them well, and where might one of you need the other''s help to stay true?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Malachi', 3, 'When you look at what you''ve given your time and money to this week, what does that reveal about what you actually believe will make your lives better?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Malachi', 4, 'When you read that judgment comes for the proud but healing comes for those who fear God''s name, what does it stir up in each of you about where your own hearts are turning these days?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Mark', 1, 'When Jesus called Simon, Andrew, James, and John away from their work and their families to follow him, they left immediately without hesitation. What would it cost each of you to say yes to something you sensed God was calling you toward right now, and would you be willing to pay it?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Mark', 2, 'When the four friends broke through the roof to reach Jesus, they didn''t let obstacles stop them, what is something between you both right now that feels like a crowd or a barrier, and how might you help each other push through it?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Mark', 3, 'When you each read that Jesus'' own family thought he was insane, what came to mind about how the people closest to you understand what you''re called to do?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Mark', 4, 'When you think about what''s been planted in your marriage this week, words, attention, worries, hopes, what''s actually taking root and growing between you?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Mark', 5, 'In this chapter, people who witness healing either beg Jesus to leave or rush to tell others what they''ve seen. When you each encounter something that changes your perspective, do you tend toward silence or toward sharing it with those around you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Mark', 6, 'As you think about this chapter, where in your own life right now do you need to pause and truly rest, the way Jesus invited his exhausted disciples to a deserted place?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Mark', 7, 'What rules or habits do you each hold onto in your marriage or daily life that might be getting in the way of what actually matters between you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Mark', 8, 'Jesus asks his disciples,')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Mark', 9, 'When the father of the suffering boy cried out, ''I believe. Help my unbelief,'' he spoke both his trust and his doubt at once. Where do you each find yourselves doing the same in your marriage, holding both confidence and hesitation together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Mark', 10, 'When Jesus teaches about what it means to become great, by serving others, where do you each see opportunities to serve each other this week that might feel sacrificial or uncomfortable?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Mark', 11, 'In this chapter, Jesus tells his followers to ask for what they need with faith and then forgive anyone they hold something against. What''s one thing you''ve been hesitant to ask God for together, and what might change if you addressed any unforgiveness between you first?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Mark', 12, 'When you each think about what you give, your time, money, attention, are you giving from what''s left over, or from something that costs you both?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Mark', 13, 'Jesus tells his followers to watch and stay alert, but also says no one knows when these things will happen. How do you both balance readiness with the ordinary rhythms of your life together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Mark', 14, 'When you each read about the woman who poured out the costly ointment, and later about the disciples falling asleep when Jesus needed them to stay awake, what comes to mind about how you show up for each other in the moments that matter?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Mark', 15, 'When have you each faced a moment where staying silent or stepping forward cost you something, and how did you handle it differently than you might have expected?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Mark', 16, 'The women and disciples all hesitated or disbelieved when they first heard the news, yet they eventually went out and proclaimed it. Where do you each find the courage to share something you believe in, even when you''re afraid or unsure others will receive it?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Matthew', 1, 'This chapter traces the line of fathers passing life forward through generations, including through hardship and exile, and ends with Joseph choosing to accept Mary and her child. When you look at your own marriage, what are you building or protecting together that you hope will matter beyond just the two of you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Matthew', 2, 'The wise men recognized something worth traveling far to see and worship, yet Herod, who had every advantage of knowledge and position, responded with fear and violence instead. When each of you encounters something sacred or important in your life together, do you move toward it like the wise men, or do you find yourself pulling back?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Matthew', 3, 'John called people to produce fruit worthy of repentance, to show real change in how they lived, when have each of you noticed the other actually changing something in how you act or respond, rather than just saying they would?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Matthew', 4, 'When the devil tempted Jesus with shortcuts, bread for hunger, safety from a fall, power without struggle, Jesus held firm to what God had said. Where do you each feel most tempted to bypass what you know is true or right because the easier path is right in front of you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Matthew', 5, 'When you read that anger at a brother deserves judgment, or that lust in the heart is already adultery, where do you each feel most convicted in your own life or in how you treat each other?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Matthew', 6, 'When you think about what you''re trying to prove to others this week, either in how you give or help or pray, what would it look like to let go of that and act only where no one but God would see?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Matthew', 7, 'When you look at each other''s faults this week, which of you tends to notice the speck in the other''s eye while missing the beam in your own, and what might change if you asked each other about it first?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Matthew', 8, 'In this chapter, people reach out to Jesus with different kinds of need and trust, while others turn away from him out of fear. What needs are you both carrying into this week, and how are you inviting each other to face them together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Matthew', 9, 'In this chapter, Jesus welcomes tax collectors and sinners to his table, while others criticize him for it. Where do each of you see yourself reaching toward people others might overlook, and how might your marriage be a place where that happens?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Matthew', 10, 'When Jesus tells his disciples not to worry about what to say when they face opposition, and reminds them that every sparrow matters to God, what small act of faithfulness is he calling you both toward right now, even if it feels uncertain?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Matthew', 11, 'When you read about people rejecting Jesus despite witnessing his works, or about the cities that saw miracles yet didn''t turn toward him, what comes to mind about the ways you both might be resistant or closed off right now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Matthew', 12, 'When you look at the choices you made this past week, where did you show mercy over judgment, and where might you have chosen differently?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Matthew', 13, 'When you hear something important together, what keeps it rooted and growing in your life together, and what tends to choke it out?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Matthew', 14, 'When you face an overwhelming need, like Jesus'' disciples with thousands to feed, what do you each tend to reach for first: what you''re afraid you lack, or what you already have in your hands?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Matthew', 15, 'What do you each notice about what comes out of your own hearts this week, and where might you be hiding behind rules or appearances instead of dealing with what''s really there?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Matthew', 16, 'When you look back on your week together, where have you been mistaken about something small while missing what was actually important, the way the disciples worried about bread when Jesus was teaching about something deeper?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Matthew', 17, 'When you''ve witnessed something meaningful together, how do you decide what to keep close and what to share with others around you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Matthew', 18, 'When someone wrongs you, how quickly do you move to address it, and does your own experience of being forgiven shape how you handle that conversation?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Matthew', 19, 'When Jesus says the two become one flesh, what does that unity actually look like in your marriage right now, and where might you each still be holding back?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Matthew', 20, 'Where do you see comparison or resentment creeping into your marriage, and what would it look like for you both to choose generosity toward each other instead?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Matthew', 21, 'When you notice yourself saying yes to something but not following through, or saying no and then changing your mind, what does that tell each of you about where your heart actually is?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Matthew', 22, 'When Jesus says to love God with all your heart and to love your neighbor as yourself, which of these feels easier for you both right now, and why might that be?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Matthew', 23, 'Where do you each feel most tempted to do things to be seen by others rather than to serve, and how might you help each other notice when that''s happening?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Matthew', 24, 'Jesus keeps saying no one knows the day or hour, yet warns to stay alert and ready, how are you both actually living that out in your week, between the ordinary routines and staying watchful?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Matthew', 25, 'Where do you each see yourself living out these chapters this week, whether in how you prepare and stay faithful, use what you''ve been given, or show up for someone in need?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Matthew', 26, 'The woman in Bethany gave Jesus something costly and immediate, while the disciples calculated its usefulness for the future. When have you each felt pulled between doing something sacrificial for your marriage now and worrying about what you might need later?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Matthew', 27, 'When you read about those who knew Jesus was innocent yet stayed silent, persuaded others against him, or simply washed their hands of the matter, what did you each feel, and is there a place in your own life right now where you''re tempted to do the same?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Matthew', 28, 'The women leave the tomb with both fear and great joy at the same time, and some of the disciples even doubt when they see Jesus. Where do you each feel both faith and doubt, or hope and uncertainty, in your life right now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Micah', 1, 'As you hear Micah grieve deeply over the coming destruction, bringing his whole self to lament, what sorrow or concern in your own life or marriage have you been holding back from fully expressing to each other?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Micah', 2, 'When you think about the people in this chapter who took what wasn''t theirs and then refused to hear warning, where do you see that same pattern of taking and dismissing in your own life or relationship?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Micah', 3, 'When you look at the leaders in this chapter who claim to seek God''s guidance but only listen to those who benefit them, where do you each feel that temptation in your own lives: to favor those who affirm you and dismiss those who challenge you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Micah', 4, 'Micah shows us a vision of peace where nations stop fighting and people sit without fear under their own vine and fig tree, yet he also speaks to people in pain and captivity who must wait for rescue. What does it look like for each of you to hold onto hope right now, even in the midst of something difficult you''re walking through together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Micah', 5, 'When you face what feels like a siege or overwhelming pressure, where do each of you tend to look for rescue, and where might God be inviting you to look instead?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Micah', 6, 'When you each think about what God asks of you, justice, mercy, humility, where do you see yourselves actually living that out this week, and where are you holding back?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Micah', 7, 'When Micah warns not to trust even those closest to you, yet then turns to trust completely in God, where do you each find yourself right now: struggling to trust anyone, or finding your trust in God strengthens your trust in each other?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Nahum', 1, 'This passage moves between God''s fierce power against enemies and his comfort for those who take refuge in him. Where do each of you tend to rest your confidence right now, and is there anything making it harder to turn toward him as your stronghold?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Nahum', 2, 'As you read of a once-powerful city emptied and its people fleeing in panic, what in your own lives right now feels unshakeable, and how might you both need to remember that nothing built by human strength alone will last?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Nahum', 3, 'As you both read about a city built on violence and lies, where comfort and security crumbled, what are you relying on right now that you''d want to examine together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Nehemiah', 1, 'When you learned something was broken or wrong that mattered to you, how did you each respond, and what did you do next?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Nehemiah', 2, 'Nehemiah risked vulnerability by letting his sadness show to a powerful king, and later moved forward without telling anyone his plan until he''d seen the problem himself. When do you each tend to hide your concerns from others, and when do you move ahead quietly before sharing what''s on your heart?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Nehemiah', 3, 'When you look at the wall being rebuilt, you notice that many people repaired sections next to their own homes or districts. What does it mean for each of you to own your own part of the work that needs doing between you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Nehemiah', 4, 'When you face doubt or criticism about something important you''re building together, how do you decide whether to defend it more fiercely or to pause and reconsider?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Nehemiah', 5, 'When you look at how Nehemiah used his own position and resources to help rather than take advantage, where do you each see opportunities this week to choose generosity over what you''re entitled to?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Nehemiah', 6, 'When you face pressure or discouragement about something important you''re building together, how do you know what counsel to trust and what to dismiss?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Nehemiah', 7, 'When Nehemiah appointed faithful leaders and carefully organized who belonged in the community, what kind of order or clarity do each of you feel is most needed right now in your own household?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Nehemiah', 8, 'When you heard God''s words read aloud together with your community, what stirred in your heart, and how might you invite that same kind of attentiveness into your own home this week?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Nehemiah', 9, 'As you look back on this past week, when have you and your family experienced God''s faithfulness even while you were struggling or resistant to what he was asking of you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Nehemiah', 10, 'Looking at all the specific commitments this community made together, which one feels most challenging for you both to practice in your own life right now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Nehemiah', 11, 'Some people felt called to move to Jerusalem while others remained in their cities and villages, yet all had important roles to play. Where do you each sense God is calling you to invest your energy right now, and does that match where you actually are?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Nehemiah', 12, 'When you both gathered to celebrate something important together, where did joy overflow beyond what you expected, and what made that moment feel shared?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Nehemiah', 13, 'When you noticed something slipping in your own life or marriage, how quick were you to act, and what made the difference between looking away and stepping in?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Numbers', 1, 'What leaders or people in your life do you each trust to help you see things clearly, the way Moses relied on the twelve tribal heads to count and know the people?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
@@ -772,6 +1818,8 @@ insert into public.passage_prompts (book, chapter, prompt) values ('Numbers', 11
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Numbers', 12, 'When you find yourselves critical of each other, what usually comes first, the real concern beneath it, or the hurt of feeling left out or undervalued?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Numbers', 13, 'When you both look at a challenge ahead in your marriage or life, do you find yourselves seeing the same situation differently, like these spies did, and how do you help each other when one of you feels braver than the other?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Numbers', 14, 'When fear or doubt creeps into your life together, do you find yourselves more like those who panic and want to turn back, or more like Caleb and Joshua, who trust despite the danger?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Numbers', 15, 'When you read about the fringes on garments meant to help people remember God''s commands throughout their day, what small visible reminder or habit have you each found helpful in your own life to stay connected to what matters most?')
@@ -779,6 +1827,8 @@ insert into public.passage_prompts (book, chapter, prompt) values ('Numbers', 15
 insert into public.passage_prompts (book, chapter, prompt) values ('Numbers', 16, 'When you each read how Korah and the others grew discontent with the place they''d been given, did you recognize any restlessness or comparison happening in your own lives right now?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Numbers', 17, 'When you each think about areas where God has already shown his faithfulness to you both, what doubts about his leadership still creep in?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Numbers', 18, 'Aaron is told he''ll have no land inheritance because God himself is his portion, yet he and his sons receive specific gifts of food and offerings from the people. How do each of you experience provision in your marriage, what do you depend on, and what might you be overlooking?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Numbers', 19, 'When you think about the careful steps described here for dealing with death and making things clean again, what grief or loss have you each carried that still needs tending, and how might you help each other attend to it?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
@@ -816,71 +1866,455 @@ insert into public.passage_prompts (book, chapter, prompt) values ('Numbers', 35
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Numbers', 36, 'The daughters of Zelophehad had to marry within their own tribe to keep their family''s inheritance intact. When you''ve had to choose between what you wanted and what protected something important to your family, how did you navigate that together?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Obadiah', 1, 'When you''ve received news that''s stirred you to action, have you and your spouse moved together, or have you found yourselves pulling in different directions?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Philemon', 1, 'Paul calls Philemon a beloved fellow worker, even though they serve in different ways. How do you each see the other''s contribution to your life and faith working together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Philippians', 1, 'Paul speaks often of joy and partnership, even while imprisoned, and mentions that some preach Christ from mixed motives yet he still rejoices that Christ is proclaimed. Where do you each see partnership bringing you joy this week, even when things aren''t going as you''d hoped?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Philippians', 2, 'When you each look at your own life this week, where has one of you been tempted to look only to your own things rather than to the things of your spouse or someone else you love?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Philippians', 3, 'Paul describes letting go of everything he once counted as gain to pursue knowing Christ instead. What is something each of you has held onto, thinking it would make life better, that you might need to release together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Philippians', 4, 'When Paul writes about learning to be content in whatever state he''s in, where do you each feel most restless or discontent in your life right now, and how might you support each other there?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Proverbs', 1, 'Where do you each hear wisdom calling you right now, and what makes it hard to listen?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Proverbs', 2, 'When you each think about seeking wisdom like searching for hidden treasure, what are you actually pursuing right now, in your marriage, your work, your life, that takes that kind of serious effort?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Proverbs', 3, 'When you think about kindness and truth binding your lives together, or about holding back good that you could offer each other, what comes to mind from your week?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Proverbs', 4, 'When you think about the paths you''re both walking right now, what instruction or wisdom from someone you trust has actually changed how you live, and where do you still need to be reminded?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Proverbs', 5, 'When you read about rejoicing in each other and being captivated with each other''s love, what does that look like in your marriage right now, and where might you want it to grow?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Proverbs', 6, 'When you each think about the promises you''ve made to each other, where do you see yourselves keeping watch like the ant does, and where might you be drifting into carelessness?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Proverbs', 7, 'When you think about the persuasion and flattery described here, what temptations in your own lives rely on sweet words or careful timing to pull you away from what you know is good?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Proverbs', 8, 'Wisdom in this chapter stands at crossroads and gates, calling out where people naturally gather. Where do you both hear wisdom calling to you most clearly in your daily life, and are you listening together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Proverbs', 9, 'When you both notice the other person offering you wisdom or correction this week, what makes you more likely to listen, the way Wisdom calls openly from her house, or does Folly''s quiet whisper sometimes sound more appealing?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Proverbs', 10, 'This chapter keeps returning to the power of words: what we say, what we withhold, what we speak carelessly or with intent. When you each think about this past week, where have your words either brought life to each other or created distance?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Proverbs', 11, 'Where do you each see a false balance in your own life right now, a place where you''re measuring things one way for yourself and another way for others?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Proverbs', 12, 'When you think about the times one of you has offered feedback to the other, did receiving it make you feel respected or defensive, and how might that shape how you offer counsel to each other this week?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Proverbs', 13, 'When you think about the words you each spoke this week, do you notice your conversation building something good between you, or tearing something down?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Proverbs', 14, 'When you think about how you build your marriage day to day, are there ways you''re actively strengthening it, and are there habits or patterns that might be quietly tearing it down?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Proverbs', 15, 'When you speak to each other this week, which matters more to you both: being right in the moment, or turning away the anger that harsh words can start?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Proverbs', 16, 'When you consider the plans you''ve made for your life together, where might you be trusting your own judgment instead of inviting God to redirect your steps?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Proverbs', 17, 'This chapter contrasts a quiet home with one full of conflict, and speaks about how words, both careless and cruel, damage relationships. When you think back over this past week between you, where did your words bring peace, and where do you wish you had stayed quieter?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Proverbs', 18, 'When you think about your conversations this week, where have you spoken too quickly or revealed your own opinion before truly hearing the other person, and what might have shifted if you had listened first?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Proverbs', 19, 'When you look at how this chapter talks about integrity, haste, and anger, where do you each see yourselves making quick decisions or speaking hastily in your marriage, and what would it look like to slow down together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Proverbs', 20, 'When you think about the shortcuts or small compromises you each might be tempted toward this week, which of these choices feels most pressing to you: cutting corners on honesty, avoiding a hard conversation, or taking an easier path that you know isn''t quite right?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Proverbs', 21, 'This chapter keeps returning to how our hearts work differently from our outward appearance, that what seems right to us might not be, and that what matters most to God isn''t what we display but what we actually do. Where do you each notice a gap this week between how you see yourself and how you''re actually showing up, especially toward each other?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Proverbs', 22, 'As you both think about your reputation and how others see you, what matters more to you right now: looking successful, or being known as someone trustworthy and generous?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Proverbs', 23, 'As you read about what draws people away from wisdom, fancy foods, wealth, wine, desires that seem beautiful but leave us empty, where do each of you notice that pull in your own life right now, and how might you help each other resist it?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Proverbs', 24, 'When you think about how you each spend your time and energy this week, where do you see wisdom building something real in your life together, and where might you be letting things slip into neglect?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Proverbs', 25, 'When you think about how you speak to each other this week, where might a soft word have worked better than pushing your point?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Proverbs', 26, 'When you each think about the conflicts or frustrations from your week, do you see ways that words like gossip, flattery, or picking at each other''s small mistakes might have kept a disagreement burning instead of letting it die down?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Proverbs', 27, 'Which kinds of honesty between you feel harder to give or receive, the direct rebuke or the kind words that might go unspoken?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Proverbs', 28, 'As you listen to these proverbs about honesty, integrity, and hidden things coming to light, where do each of you feel most tempted to conceal rather than confess in your daily life or in this marriage?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Proverbs', 29, 'When you think about the people closest to you this week, where have you noticed someone growing defensive rather than open to correction, and how did that affect the peace between you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Proverbs', 30, 'Agur asks God for neither poverty nor riches, but just enough to live on, so that he won''t become either full and forget God or so desperate that he turns to dishonesty. Where do you each feel most tempted to forget God or compromise your values, when life feels too comfortable, or when it feels too tight?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Proverbs', 31, 'When you each think about the different kinds of work you do, seen and unseen, what feels most important to you right now, and why?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 1, 'When you think about the counsel and company you''re letting into your lives together, what are you meditating on day and night, and is it nourishing you both?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 2, 'When you hear about others resisting God''s way, how do you each recognize that same resistance in yourselves, and what does taking refuge in him look like for you this week?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 3, 'When you each face criticism or doubt from others, how do you turn toward each other the way the psalmist turns toward God here?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 4, 'When you search your own heart before bed tonight, what distress or dishonor from this week do you most need to lay before God together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 5, 'The psalm moves from pouring out complaints about deceitful people to ending with joy and protection. When you think about the struggles in your own life right now, where are you tempted to get stuck in frustration, and where might you need to redirect your focus toward God''s faithfulness?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 6, 'When you''re overwhelmed by pain or worry, how do you each tend to bring it to God or to each other, and what would change if you brought it as honestly as the writer does here?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 7, 'When you face conflict or feel wronged, do you find yourselves wanting to defend your own innocence to God, as the psalmist does here, or do you tend to question whether you''ve done something to deserve what''s happening?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 8, 'When you look at the vastness of creation, the heavens, the stars, all living things, and then remember that God gives you both a place of honor and responsibility within it, what weight does that put on how you treat each other and the world around you this week?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 9, 'When you read that the psalmist rejoices even while surrounded by enemies, what troubles or conflicts are weighing on you both right now, and where might you need to look for reasons to give thanks anyway?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 10, 'When you look at the helpless people the psalm describes, being hunted and caught in schemes, where do you each see that kind of vulnerability in your own lives or in those around you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 11, 'When you''re both afraid or discouraged, where do you each tend to look for safety, and how could you point each other back to God''s steadiness instead?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 12, 'When you speak to each other, especially in moments of conflict or hurt, do you find yourselves using flattering words that hide what you really think, or can you say what''s true between you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 13, 'When you''re each wrestling with something hard this week, how does the psalmist''s shift from ''how long'' to ''I trust'' speak to where you both are right now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 14, 'When you look at the people around you this week, where have you noticed someone turning toward God rather than away, and what did that look like in an ordinary moment?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 15, 'When you think about keeping your word even when it costs you something, or treating someone with honor when it would be easier not to, what comes to mind from your own week?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 16, 'When you think about the ''portion and cup'' the psalmist describes as assigned to you, what comes to mind, and where do you each find your deepest contentment right now?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 17, 'The psalmist says he''s kept his mouth from disobeying and his feet from slipping, but he''s surrounded by enemies and in real danger. When you face conflict or pressure this week, where do you find yourselves most tempted to slip in how you speak or act toward each other?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 18, 'When you face something that feels overwhelming this week, what would it look like for each of you to call out to God first, the way this psalm does, rather than handling it alone?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 19, 'When you look at creation together, what draws your attention more often: the vastness and beauty of it, or the sense that God is speaking to you through it?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 20, 'When you face trouble this week, what do you most naturally reach for first, and is it really where you want to be placing your trust together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 21, 'When you think about what you''ve asked God for this week, and what he''s given you instead, what do you notice about the difference between what you each expected and what actually happened?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 22, 'When you''re crying out in the dark and feeling mocked or alone, does your partner know what you need from them, or do you keep that struggle quiet between you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 23, 'When has each of you felt led to a place of rest this week, and where do you each most need to be guided right now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 24, 'When you think about approaching God with clean hands and a pure heart this week, what has gotten in your way or held you back?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 25, 'As you both reflect on this psalm, where in your life right now do you find yourselves waiting on God, and what does waiting look like for each of you in that particular place?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 26, 'When you think about who you spend time with and the conversations you''re drawn to, what would you want each other to notice about your integrity this week?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 27, 'When you each think of the one thing you most want from God right now, how does it compare to what the writer asks for in this psalm, and what does that difference tell you about where each of you is in your faith this season?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 28, 'When you think about the contrast between the wicked people described here and the psalmist''s trust in God, where do each of you most struggle to truly believe that God is listening to you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 29, 'When you look at your own week, where have you felt God''s power most present, in something dramatic and unmistakable, or in something quieter that you almost missed?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 30, 'Has there been a time when you both felt secure, only to have circumstances shake that confidence? What brought you back to solid ground?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 31, 'When you look back on a time when you felt forgotten or overwhelmed like the psalm writer describes, how did you actually experience God''s presence with each other, or where do you wish you had?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 32, 'What''s something between you that''s been hard to name or talk about, and what might it look like to bring it into the open together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 33, 'When you look at the week ahead, where are you tempted to rely on your own strength or resources instead of waiting on God together?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 34, 'When you each think about what the psalmist describes, crying out and being heard, being delivered from fear, tasting that God is good, what situation between you this week has left one of you feeling unheard or afraid, and how might you turn toward each other with that same attention?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 35, 'When you read about the psalmist treating enemies with kindness, even mourning for them when they were sick, how does that challenge or change what you each believe you owe to someone who has hurt you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 36, 'As you each consider what blinds us to our own sin, where do you see that happening between you, and what might help you both see more clearly?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 37, 'When you find yourselves frustrated by someone else''s success or worried about injustice in the world, what does it look like for you both to ''cease from anger'' and trust instead of fretting?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 38, 'When you''re struggling with guilt or pain like the psalmist describes, do you tend to withdraw from each other, or do you find ways to stay close even when it''s hard?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 39, 'The psalmist struggles between holding back his words and finally speaking what''s really troubling him. When have you both felt that tension this week, and what eventually moved one of you to break the silence?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 40, 'The psalmist moves from celebrating God''s rescue to feeling overwhelmed by guilt and asking for help. Where do you each find yourself this week, and what would it mean to ask for help the way the psalmist does?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 41, 'When you''re struggling or hurting, who do you both turn to first, and how does that compare to the people who seem to pull away?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 42, 'Where do you each feel most parched right now, and where have you noticed God''s presence or help, even small, this past week?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 43, 'When you each feel discouraged this week, what would help you remember, as this psalm does, that God is still your strength even when circumstances feel unjust or painful?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 44, 'This psalm moves from remembering God''s faithfulness in the past to describing present suffering and confusion, yet the psalmist insists they haven''t turned away from God. When have you both experienced a season where you remained faithful even though circumstances felt unfair or God seemed distant?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 45, 'As you listen to this psalm celebrating a king who loves righteousness and a bride who is honored in his presence, what does it stir in each of you about how you want to honor and be honored in your marriage?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 46, 'When you face something that shakes you this week, whether it''s news, a conflict, or uncertainty, how do you each tend to respond, and where do you actually find steadiness in those moments?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 47, 'When you each think about God choosing your inheritance and guiding your path as a couple, what does that promise stir up in you right now, and where do you most need to trust him?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 48, 'As you look at what God has protected and established in your own lives, what refuge or stronghold comes to mind that you want to tell your children or grandchildren about someday?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 49, 'As you both think about what matters most to you, where do you each find yourself most tempted to build your sense of security or worth, and what does that reveal about what you''re actually trusting in?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 50, 'When you each consider what God says about sacrifice and thanksgiving here, where have you lately mistaken going through the motions for genuine gratitude, and what would it look like to offer thanks more honestly?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 51, 'When you each think about a weight you''re carrying right now, what would it mean to bring that into the open with God, the way this psalm does, rather than hiding it?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 52, 'When you think about what you trust in most during a difficult week, is it more often your own resources and plans, or God''s steadiness, and what does that look like between the two of you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 53, 'As you each think about the areas of your life where you drift from seeking God, what difference might it make between you if you talked honestly about them together, rather than keeping them hidden?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 54, 'When you face someone who seems set against you, does either of you find it hard to believe God is truly on your side, or do you sense his support more easily in those moments?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 55, 'When you read about the psalmist''s betrayal by a close friend, was there a moment in your own life or relationship this week where trust felt fragile or wounded?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 56, 'When you feel attacked or misunderstood this week, what would it look like for each of you to turn that moment into trust rather than fear?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 57, 'When you''re surrounded by hostility or conflict, how do you each tend to respond, do you find yourself staying steadfast like the psalmist, or do you struggle to keep praise and trust alive until the moment passes?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 58, 'When you''ve felt wronged by someone, how have you each wanted justice to look, and has your desire for it changed how you''ve acted toward that person?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 59, 'When you face people or circumstances that feel unfair or threatening, how do you each tend to respond, and where do you actually look for strength in those moments?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 60, 'When you''ve felt abandoned or broken down, what small sign of God''s presence, like the banner mentioned here, has helped you hold on to hope together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 61, 'When your heart feels overwhelmed this week, where do you each actually turn first, and what would it look like to turn to God as your refuge instead?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 62, 'When you look at what''s been destabilizing or shaking you both lately, the lies spoken about you, the people working against you, the comparisons you can''t help making, where do you actually find yourselves looking for solid ground?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 63, 'When you think of seeking God the way this psalm describes, with real longing, in ordinary moments like lying in bed at night, what does that actually look like for each of you right now, and where do you feel most parched?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 64, 'When you think about the words that have wounded you both this week, or that you''ve spoken in anger, what would it look like to bring those to God rather than letting them fester between you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 65, 'When you think of the ways God provides for you, in health, work, relationships, provision, what feels most like an overflow of abundance to each of you, and what does it reveal about what you''re most grateful for right now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 66, 'When you''ve come through hard times together, what has helped you actually believe that God was working for good, not just in theory but in how you live day to day?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 67, 'When you look at your life together this week, where have you seen God''s blessing or provision, and how might sharing that with others around you change the way they see God?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 68, 'This psalm moves between God''s power over enemies and his care for the lonely, the prisoners, and the poor. When you think about your own life right now, where do you need to sense God''s strength, and where do you need to sense his comfort?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 69, 'When you''ve felt overwhelmed or hurt, as the psalmist describes here, have you experienced moments where turning to God in prayer actually shifted something in you, even when your circumstances didn''t change right away?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 70, 'When you both think about the hard things you''re facing right now, what does it mean to you that the psalmist calls out to God as both help and deliverer, rather than waiting until everything is solved?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 71, 'The psalmist has trusted God since childhood and promises to tell the next generation about God''s faithfulness. What stories of God''s work in your own lives do you most want your children or grandchildren to know?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 72, 'This psalm keeps returning to how a just ruler protects the poor, saves the needy, and breaks the oppressor in pieces. Where do you each see yourself in this vision, and what would it look like for you both to act more like the ruler described here, in your own home or community?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 73, 'When you look at what others around you seem to have or achieve, what tempts you to question whether your own faithfulness actually matters?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 74, 'When you look at what''s broken or uncertain in your lives right now, do you find yourselves more tempted to remember God''s past faithfulness, or to question why he feels distant?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 75, 'This psalm contrasts boasting with God''s steadying presence, arrogance with honest praise. When you think about your week together, where have you each been tempted to rely on your own strength or status rather than trust that God holds things in place?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 76, 'When you think about God''s power to protect His people and judge their enemies, where do each of you most need to feel His strength in your lives right now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 77, 'When you find yourselves caught in doubt or complaint, like the writer does early in this psalm, what helps either of you remember God''s faithfulness and strength the way turning to his past deeds does here?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 78, 'As you think about the pattern this psalm shows, where do you each see yourselves turning away from what you know is true, then having to learn the same lesson again?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 79, 'When you feel like your faith is being mocked or your efforts are going unseen, what helps you keep trusting that God sees what''s happening?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 80, 'The psalmist describes a once-thriving vine that has been broken down and ravaged, yet keeps calling out for restoration. Where do each of you feel like something precious has been damaged or neglected in your lives lately, and what would it look like for God to restore it?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 81, 'When you each look back at a time you asked God for something and felt his provision, what made it hard or easy to keep trusting him after that?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 82, 'When you think about the weak and poor around you this week, where has one of you noticed injustice that the other might have missed?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 83, 'When you both feel threatened or outnumbered, where do you turn first, and what would it look like for you to cry out to God together the way this psalm does?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 84, 'The psalmist describes a journey through hard places that become sources of blessing, and a preference for even small belonging in God''s presence over comfort elsewhere. What hard season in your life or marriage might God be inviting you to see differently, and how could you support each other in that shift?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 85, 'The psalmist asks God to restore and revive his people after forgiveness, then speaks of listening for God''s peace. What does revival or renewal look like for you both right now, in your marriage or your week?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 86, 'When you think about bringing your troubles to God throughout your day, like the psalmist does here, what do you actually find yourself turning to him about, and what do you tend to keep to yourself?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 87, 'This psalm celebrates those born in Zion as belonging to God in a special way. What place or community has shaped who you both are, and how do you want that to mark your marriage?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 88, 'When you''re both struggling or when one of you feels distant from the other, do you find yourself reaching out more or pulling away?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 89, 'The psalm begins by singing of God''s faithfulness and covenant promises, then moves to crying out that everything seems broken and hidden. Where do you each see that same pattern in your own lives right now, or in how you''ve walked together as a couple?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 90, 'The psalm speaks of our days passing quickly and asks God to teach us to count our days and gain a heart of wisdom. When you look at how you''re each spending your time these days, what would counting your days differently help you notice or change between you?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 91, 'When you each read about dwelling in God''s refuge and being guarded through danger, what fears or uncertainties are you carrying right now that you''d like to bring into that shelter together?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 92, 'When you look at what''s flourishing in your life right now, what makes you want to give thanks together, and what troubles you that you need to trust God with?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 93, 'When you think about the floods and chaos mentioned here, what feels unstable or threatening in your own lives right now, and does it change anything for each of you to consider that together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 94, 'When you feel overwhelmed by injustice or someone''s wrongdoing toward you, where do you each turn for strength, and how might you turn there together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 95, 'After reading about how the Israelites hardened their hearts and missed God''s rest, where do you each sense yourselves pulling away from listening to him right now, and what might change if you leaned in instead?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 96, 'When you read about declaring God''s glory from day to day and bringing an offering into his courts, what does worship actually look like in your ordinary week together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 97, 'When you read that those who love the Lord hate evil and have light sown for them, what does that look like in your actual week, where are you each noticing that hate for what is wrong, and where are you seeing light breaking through?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 98, 'When was the last time you both felt moved to celebrate something God had done, and did you actually express that joy together, or did it stay quiet inside?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 99, 'When you think about the leaders named here, Moses and Aaron and Samuel, they called out and God answered them. In your own life together, what have you been calling out to God for lately, and do you sense him answering?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 100, 'When have you each felt that gladness and thanksgiving the psalmist describes, and what was happening in your life or between you at that time?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 101, 'The psalmist is careful about what he lets into his home and heart, both what he watches and who he welcomes. What habits or relationships in your home are worth protecting together, and where might you need to be more intentional?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 102, 'This psalm moves from the psalmist''s deepest pain and isolation to trust that God remains constant, yet it ends with prayer for his children''s future. What matters most to each of you right now: your own struggles, or something you''re hoping to build or pass on together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 103, 'The psalmist speaks of remembering God''s benefits and not forgetting them, even when life feels fleeting as grass and flowers. What have you each experienced this week that you might easily overlook without stopping to remember it together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 104, 'When you look at how everything in this psalm finds what it needs, the animals drinking from springs, the grass feeding the livestock, even the young lions seeking food, what provision in your own life have you stopped noticing as something meant for you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 105, 'As you look back over this week, when have you each noticed God''s faithfulness to you, even in small or hidden ways?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 106, 'When you both look back at your own life together, where have you quickly forgotten what God has done for you and started reaching for something else instead?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 107, 'This psalm keeps returning to the moment when people cry out in their trouble and find deliverance. When have each of you cried out together recently, and how did you sense God''s response to you both?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 108, 'Each of you, when have you felt most ready to praise God, and what made the difference between that readiness and the times you''ve felt stuck or silent?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 109, 'When you''ve been hurt by someone''s words or actions, what shifts in you between the moment you''re angry enough to want them to suffer, and the moment you can ask God to help you instead?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 110, 'As you picture people offering themselves willingly in service, where do you each see that kind of eager, joyful giving showing up in your own lives right now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 111, 'When you think about God''s faithfulness to his covenants and his care for those who fear him, what promises or provisions has he been most faithful to show you both, and how might you acknowledge that more openly with each other this week?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 112, 'When you look at what brings you peace or steadiness in hard moments, where do you actually find yourself turning, and is that the same place the psalmist is describing?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 113, 'As you think about how God stoops down to notice the overlooked and lifts up those in desperate circumstances, where do you each see God''s attention in your own lives right now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 114, 'When the psalm asks what made the sea and mountains respond, it''s really asking what made them recognize God''s presence. What have each of you noticed this week that made you sense God at work, even in small or ordinary ways?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 115, 'What in your life right now are you tempted to trust in, something that looks promising but can''t actually move, speak, or help you, and how might you turn that trust back toward God together?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 116, 'When you''ve felt delivered from trouble like the psalmist describes, how have you each shown gratitude for it, and what kept you from forgetting that rescue over time?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 117, 'When have you felt God''s loving kindness toward you both recently, and how might that shape the way you extend kindness to each other this week?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 118, 'When you read how the psalmist called out in distress and was answered with freedom, what distress are you each carrying this week that you wish to bring before God together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 119, 'When you think about the times you''ve felt lost or discouraged this week, what''s one small way either of you might have ''hidden God''s word'' in your heart, like the psalmist describes, to help you find your way back?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 120, 'When you think about the conflicts in your own life this week, where have you found yourself wanting peace but sensing that others around you wanted something else instead?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 121, 'When you think about your coming and going this week, where do you actually turn first when you need help or protection, and what would it look like to turn there first instead?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 122, 'When has someone invited you to worship together, and what made you glad or reluctant to go? What difference did showing up make between you both?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 123, 'When you look to each other for help or guidance this week, where else are you also looking, and what would change if you looked upward together first?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 124, 'When you each look back on this past year, what enemy or overwhelming pressure did you face together where you now realize God sustained you both through it?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 125, 'When you think about the mountains surrounding Jerusalem as a picture of God surrounding you both, what feels most steady in your life right now, and what feels most shaky?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 126, 'When have you each experienced a shift from sorrow to joy, and what seed were you planting during the hard part?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 127, 'Where in your life right now are you both striving harder instead of trusting, and what would it look like to step back and let God build instead?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 128, 'This psalm pictures blessing flowing from walking in God''s ways to your whole household gathered around a table. When you look at your own rhythms together and with those close to you, where do you already sense that kind of flourishing, and where might you be missing it?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 129, 'When you look back at hardships you''ve faced together or apart, do you see ways God has kept you from being overcome by them, or are you still waiting to see how he might?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 130, 'When have you each found yourself crying out from a low place this week, and what small sign of God''s faithfulness are you waiting to see?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 131, 'When you look at your week together, where has one of you been reaching for something beyond your grasp, and how might stilling your soul instead bring you peace?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 132, 'David made a vow that he wouldn''t rest until he found a dwelling place for God. What commitment have you each made together that matters enough to keep pushing toward, even when it''s hard to stay focused?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 133, 'When you think of the unity you share as a couple, what feels most like that precious oil or dew in your life together right now, and where do you sense the blessing flowing from it?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 134, 'Who or what are you each standing watch over in your life right now, and how might that itself be a kind of worship?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 135, 'When you think about what lasts and what fades, what in your life right now feels as empty as the idols described here, and what actually holds weight between you two?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 136, 'What kindness in your own life, big or small, have you noticed this week that you might have overlooked or taken for granted?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 137, 'When you''re far from home or struggling, does it feel possible to share joy with others, or do you need to grieve first?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 138, 'When you called out in the middle of trouble, how did you experience God''s answer, and what strength did you find together?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 139, 'Where do you each feel most hidden or alone, and how might it change things to know that even there, you''re fully known and held together?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 140, 'When you each think about the people or situations that feel like traps or threats to you both right now, how do you actually turn to God with that fear, rather than just telling him about it?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 141, 'As you each read the psalmist''s prayer for protection from influence by wrongdoers, who or what in your lives right now tempts you to drift toward things you know aren''t good, and how might you help each other stay watchful?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 142, 'The psalmist pours out his troubles because he feels abandoned and hunted, yet he tells God this anyway. Where do each of you tend to hold back from saying what''s really weighing on you, and what would it mean to speak it aloud together or to God?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 143, 'When you find yourself in the dark or overwhelmed like the psalmist here, how do you each tend to respond: do you reach toward God first, or do you reach toward each other?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 144, 'As you think about what brings you real security and joy, where do you each feel most like you''re depending on God, and where might you still be trying to protect yourselves?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 145, 'When you think about the ways God has been gracious and merciful to you both this past week, what''s one moment you''d want to pass on to the next generation the way this psalm describes?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 146, 'When you look at where you''re placing your hope this week, between the two of you, what feels most real to trust: the help of people and powers around you, or God''s faithfulness?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 147, 'When you think about what God provides without your effort, the rain, the grass, the food for animals, what goes untended or unnoticed in your own lives together that he might already be caring for?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 148, 'What in your own day, a small creature, a stormy moment, a piece of beauty, called either of you to gratitude this week?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 149, 'When you read about praising God through dance and music, and singing on your beds at night, what does joy together actually look like in your own week right now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Psalm', 150, 'When you think about the different ways this psalm invites praise, through music, movement, loud celebration, quiet reverence, which of these feels most natural to you, and which one might your spouse help you discover?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Revelation', 1, 'When you read that John fell at Jesus'' feet in terror until Jesus told him not to be afraid, what does that bring up for you about times you''ve felt overwhelmed or frightened, and how you''ve found comfort with each other?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Revelation', 2, 'Each of you came into this relationship with real devotion and effort, yet the letter to Ephesus warns about leaving your first love while still doing the work. Where do you each sense your affection toward one another has cooled, even as you keep going through the motions?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Revelation', 3, 'Between the church that appeared alive but was actually dead, the church with little power but faithfulness, and the church that felt complete but was really lacking, which one feels closest to where you find yourselves right now, and what made you recognize it?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Revelation', 4, 'What does it stir in you to imagine all of creation, moment after moment, caught up in worship and wonder at God''s character, and where do you each sense that kind of awe breaking through in your own lives right now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Revelation', 5, 'When you read about all of creation singing together in worship, what draws your hearts closer together right now, and what keeps you from joining in that kind of unity with each other?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Revelation', 6, 'As you read of those who cried out in their suffering and those who hid in fear, what cry or fear have you both carried this week that needs to be named between you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Revelation', 7, 'When you read about those in white robes who have come through great tribulation and now stand before God''s throne, what difficult season or struggle in your own life or marriage do you want to bring into God''s presence right now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Revelation', 8, 'When you read about the prayers of the saints being offered up to God before all these troubles unfold, what weighs on your heart to pray about together these days?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Revelation', 9, 'In this chapter, people experience torment but refuse to turn from what they''re clinging to, even as everything falls apart. What habits or patterns have you each noticed yourselves holding onto even when they cause you pain?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Revelation', 10, 'When you took in John''s words about the book tasting sweet but turning bitter, what felt sweet to you both this week, and what have you had to swallow that left a bitter aftertaste?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Revelation', 11, 'When you think about the two witnesses who testified faithfully even knowing they would be opposed and ultimately killed, what costs are you each willing to bear right now for something you believe God is calling you to do together or separately?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Revelation', 12, 'When you read about the woman being pursued and protected in the wilderness, what is something you''re currently facing together that makes you wonder if God is still watching over you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Revelation', 13, 'When you read about people being drawn to worship what seems powerful and promising, where do you each find yourselves most tempted to put your trust in things that glitter but won''t last?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Revelation', 14, 'This chapter contrasts those who follow the Lamb with those who worship the beast, and speaks of rest coming for those who die in the Lord. When you think about what you''re each pursuing and building toward in your life together, how do you know whether you''re moving toward rest or away from it?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Revelation', 15, 'Those who overcame are pictured singing together about God''s righteousness and holiness, having made it through great struggle. When you think back on hard seasons you''ve weathered as a couple, what truths about God''s character have you found yourselves returning to or holding onto?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Revelation', 16, 'When you read about people who faced overwhelming hardship yet still refused to turn toward God, what does that make you wonder about your own life, or about how you respond to difficulty together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Revelation', 17, 'What powers or influences are you each drawn to or impressed by right now, and do you sense the Lamb''s authority over them in your own life?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Revelation', 18, 'When you think about what draws your heart toward wealth, comfort, or status, do you and your partner recognize the same things pulling at each of you, or do you find yourselves called away by different desires?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Revelation', 19, 'When you read about the marriage of the Lamb and the great multitude''s rejoicing, what does celebration and belonging mean to you both right now in your life together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Revelation', 20, 'When you think about what it means to be faithful even when the stakes feel highest, what kind of faithfulness does each of you most want to grow into this year?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Revelation', 21, 'What would it change about how you live this week to know that God promises to wipe away every tear and make all things new, rather than to fear that pain and loss are all there is?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Revelation', 22, 'As you each read about what lasts forever and what passes away, where do you see yourselves choosing life or choosing the patterns that pull you toward emptiness, and how might you encourage that choice in each other this week?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Romans', 1, 'Paul tells the Romans that he wants to be encouraged by their faith just as much as he hopes to encourage them. When you think of your marriage, where have you each drawn strength from the other''s faith this past week?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Romans', 2, 'When you notice something you disapprove of in each other or others, do you find yourselves practicing that same thing in different ways, and how might God''s patience with you both be inviting you toward gentleness instead of judgment?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Romans', 3, 'Paul says that boasting is excluded and that we''re all under the same judgment. Where do you each still feel tempted to measure yourselves against each other or against others, and what would it look like to release that in your marriage?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Romans', 4, 'Abraham didn''t shrink from the reality of his age and Sarah''s aging body, yet he believed God''s promise anyway. Where in your lives right now are you tempted to doubt what God might do because of what you can see with your eyes?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Romans', 5, 'When you read that suffering can produce perseverance and perseverance proven character, what struggle are each of you carrying right now that might be shaping who you''re becoming together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Romans', 6, 'As you think about the things Paul mentions, the old patterns you''ve left behind and the new life you''re walking in, where do each of you notice this struggle most alive between you, either in yourselves or in your relationship?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Romans', 7, 'When you notice yourself wanting to do something good but struggling to follow through, what''s one area where you both could support each other more this week?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Romans', 8, 'When you look at the struggles or frustrations you''re each carrying right now, where do you find yourself setting your mind: on the things of the flesh, or on the things of the Spirit?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Romans', 9, 'Paul begins by confessing his deep sorrow for people he''s connected to by blood and history, yet ends by talking about stumbling stones and missed paths. Where do you each feel torn between love for someone and concern about the direction their life is taking?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Romans', 10, 'Paul mentions that some people have zeal for God but lack knowledge, while also describing how faith comes through hearing and believing. Where do you each sense that gap in your own life right now, between your desire to follow God and what you actually understand or trust about him?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Romans', 11, 'Paul uses the image of branches being grafted into an olive tree to describe how you''ve been brought into something not naturally yours. Where do you each sense God''s unearned kindness most clearly in your own life or in your marriage?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Romans', 12, 'Paul describes how each of you has different gifts and functions in the body of Christ. When you look at the different ways you two serve and contribute, what do you each see that the other person does well that you might overlook in yourself?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Romans', 13, 'When Paul writes about owing nothing except love to one another, what debts or obligations between you two have gone unattended, and what would it look like to settle them with love this week?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Romans', 14, 'Where do you each tend to judge or look down on the other over small differences in how you do things, and what might change if you both saw those choices as something each of you is working out before the Lord?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Romans', 15, 'When you think about where you''re strong and where your spouse is weak, how are you actually using those differences to build each other up rather than just getting along?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Romans', 16, 'Paul spends these closing verses naming people by name, remembering those who''ve worked alongside him and helped him. When you think back on this past week or month, whose names and faces come to mind as people who''ve stood with you both, even in small ways?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Ruth', 1, 'When has one of you stayed with the other through a season of loss or grief, even when it would have been easier to go your separate way?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
@@ -888,5 +2322,61 @@ insert into public.passage_prompts (book, chapter, prompt) values ('Ruth', 2, 'W
   on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Ruth', 3, 'Naomi encouraged Ruth to seek rest and security by taking a bold step forward, and Ruth did what she was asked. When have you each needed to trust someone''s guidance in your own life, and how did that trust shape what happened between you?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Ruth', 4, 'When Boaz brought Ruth and Naomi''s needs before the elders and made his commitment public, he turned a private decision into a witnessed promise. What is something you each sense you should stop keeping quiet about in your relationship or bring into the light?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Song of Solomon', 1, 'The lovers in this chapter speak about how they notice and delight in each other''s appearance, fragrance, and presence. When was the last time each of you stopped to genuinely notice something specific about the other that you found beautiful or attractive?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Song of Solomon', 2, 'As you read about delight taken in each other, the eagerness to draw near, and the tenderness of being fully seen and known, what small things in your ordinary week could you turn toward together instead of away from?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Song of Solomon', 3, 'In this chapter, the woman searches urgently through the city for her beloved, and when she finds him, she holds him and brings him home. When have you each felt that same kind of longing or urgency toward the other, and what did it look like when you finally connected?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Song of Solomon', 4, 'As you read how he sees her beauty in such specific, delighted detail, what about each other do you notice and admire that you haven''t put into words lately?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Song of Solomon', 5, 'When has one of you felt hurt or disappointed by the other''s absence or response, and how did you move through that longing back toward closeness?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Song of Solomon', 6, 'When you each look at how the beloved describes finding joy in simple, everyday things, what small moments in your own life together feel like that, when your beloved surprises you by noticing something beautiful about you without you asking?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Song of Solomon', 7, 'As you each read these vivid descriptions of desire and delight, what draws your attention about how your beloved looks at you, and what might he or she notice if you looked at them the way this poem does?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
 insert into public.passage_prompts (book, chapter, prompt) values ('Song of Solomon', 8, 'What does it feel like for each of you to be chosen and set apart by your beloved, the way these lovers speak of being marked and kept?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Titus', 1, 'Paul describes people who claim to know God but deny him through their actions, and he talks about setting things in order in Crete. Where do you each see the gap between what you say you believe and what your daily choices show, and how might you help each other close it?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Titus', 2, 'As you read about how older women train younger wives, and younger men show examples through their work, where do you each see yourselves learning from or teaching others in your life right now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Titus', 3, 'Paul talks about how you were once foolish and disobedient, then became different through God''s kindness. Looking at each other now, what has changed most in how you treat one another since you first came together, and what still needs that same kind of mercy?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Zechariah', 1, 'When you hear that God says ''Return to me, and I will return to you,'' what would it look like for each of you to take a step back toward Him this week, and how might you notice Him stepping toward you?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Zechariah', 2, 'As you both listen to God''s promise to protect Jerusalem fiercely, like the apple of his eye, where do each of you need to feel that kind of protective love in your marriage or life right now?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Zechariah', 3, 'When you picture yourself standing before God right now, what filthy garments do you feel you''re wearing, and what clean garments do you hope to be clothed in together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Zechariah', 4, 'When you face something that feels too big to accomplish together, what does trusting God''s Spirit rather than your own strength look like in your marriage this week?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Zechariah', 5, 'What dishonesty or broken promise have you each been avoiding looking at directly, and what might change if you brought it into the light together?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Zechariah', 6, 'When God sends out his forces to bring peace and restoration, what signs of that quieting work have you each noticed happening between you this week?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Zechariah', 7, 'When you practice your faith together, what makes the difference between going through the motions and actually doing it for God, the way you both want to?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Zechariah', 8, 'Where do you see conflict or coldness in your own life right now, the kind the passage calls ''adversary'', and what would it look like for truth and peace to replace it between you both?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Zechariah', 9, 'You both just read about a king coming humbly on a donkey to bring peace, and prisoners being set free from pits of despair. What situation in your lives right now needs that kind of unexpected, gentle salvation rather than force or control?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Zechariah', 10, 'This chapter speaks of false guides who leave people wandering like sheep without a shepherd, but also of God visiting and strengthening his flock. When you think about the guidance in your own life right now, where are you each actually looking for direction, and does it lead you closer together or further apart?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Zechariah', 11, 'The chapter speaks of shepherds who fail their flocks and covenant bonds that break. Where do you each see yourself right now as a shepherd to one another, and what might be wearing down your care for each other?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Zechariah', 12, 'When you read about how each family will mourn separately, yet together as one people, what draws you closer to each other in your faith, and what might still feel like you''re grieving or struggling alone?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Zechariah', 13, 'When you read about the spring opened for sin and uncleanness, what dirty thing in your life or your marriage feels like it could finally be washed clean?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Zechariah', 14, 'This chapter moves between images of terrible conflict and complete restoration, ending with everything made holy. When you think about hardship and healing in your own life together, what feels more real to you right now, the struggle or the restoration?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Zephaniah', 1, 'When you look at what fills your time, your thoughts, and your plans, what are you most counting on to come through for you, and how might that be pulling your focus away from seeking after God?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Zephaniah', 2, 'Before each of you, are there places where you''ve grown careless or assumed things will always stay the same, and what would it mean to seek humility together there instead?')
+  on conflict (book, chapter) do update set prompt = excluded.prompt;
+insert into public.passage_prompts (book, chapter, prompt) values ('Zephaniah', 3, 'When you look at how you each respond to correction in your marriage and life, which do you find harder: to hear it, to give it, or to act on it?')
   on conflict (book, chapter) do update set prompt = excluded.prompt;

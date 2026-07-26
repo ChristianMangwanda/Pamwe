@@ -916,6 +916,6 @@ Two traps found the hard way, both now pinned by tests/code:
     Un-normalized, both map to one chapter and a single upsert carrying both
     fails outright (ON CONFLICT cannot touch the same row twice).
 
-REMAINING: extend the library from 444 to the full 1,189-chapter canon so custom
-plans on any book are pre-covered (same script, `--plans` swapped for a canon
-list, Batch API at half price). Not blocking: uncovered chapters fall back.
+DONE 2026-07-26: library covers the full 1,189-chapter canon (66 books). Every
+chapter of the Bible now has its own prompt, so a custom plan on any book is
+covered. planBuilder still falls back if a lookup ever misses.
