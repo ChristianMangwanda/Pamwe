@@ -21,7 +21,7 @@ import { useCouple } from '../../../providers/CoupleProvider';
 import { supabase } from '../../../lib/supabase';
 import { getPrayers, getAnsweredPrayers, getTodayMarks, markPrayedFor, markAnswered, deletePrayer } from '../../../lib/prayers';
 import { getDreams, deleteDream } from '../../../lib/dreams';
-import { clearReminder } from '../../../lib/prayerReminders';
+import { clearReminder, silenceForToday, syncReminders } from '../../../lib/prayerReminders';
 import { haptics } from '../../../lib/haptics';
 
 type Mark = { prayer_id: string; user_id: string };
@@ -102,8 +102,17 @@ export default function PrayersScreen() {
         JSON.stringify({ active: a.value, answered: ans.value, dreams: drm.value }),
       ).catch(() => {});
     }
+    // Re-arm reminders against what actually still exists. This is what stops a
+    // prayer answered or deleted on the partner's phone from reminding forever
+    // on this one, and what tops the rolling window back up.
+    if (a.status === 'fulfilled') {
+      const prayed = todayMarks.status === 'fulfilled'
+        ? (todayMarks.value as Mark[]).filter((m) => m.user_id === user?.id).map((m) => m.prayer_id)
+        : [];
+      syncReminders(a.value as { id: string; text: string; status?: string }[], prayed);
+    }
     setLoading(false);
-  }, [couple?.id, couple?.timezone]);
+  }, [couple?.id, couple?.timezone, user?.id]);
 
   useFocusEffect(
     useCallback(() => {
@@ -128,6 +137,8 @@ export default function PrayersScreen() {
     if (!couple) return;
     haptics.light();
     setMarks((prev) => prev.some((m) => m.prayer_id === prayerId && m.user_id === user!.id) ? prev : [...prev, { prayer_id: prayerId, user_id: user!.id }]);
+    // You've prayed, so today's reminder has nothing left to ask. Tomorrow's stands.
+    silenceForToday(prayerId);
     try {
       await markPrayedFor(prayerId, couple.timezone);
     } catch {
