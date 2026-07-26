@@ -29,6 +29,33 @@ const GENERIC_PROMPTS = [
   'What is one thing you want to carry into your day together?',
 ];
 
+// "Genesis 9-10" keys on its FIRST chapter: the couple reads both, so a question
+// grounded in the first is still grounded in what they read. Returns null for a
+// reference this can't place, which just means the fallback prompt is used.
+export function chapterKey(reference: string): string | null {
+  const m = /^(.*?)\s+(\d+)(?:\s*-\s*\d+)?$/.exec((reference ?? '').trim());
+  return m ? `${m[1]}|${Number(m[2])}` : null;
+}
+
+// One query for every chapter a plan touches, resolved before the rows are
+// built. A chapter missing from the library is not an error: the caller falls
+// back, so a plan on a book the library has not reached yet still works.
+async function lookupPassagePrompts(references: string[]): Promise<Map<string, string>> {
+  const found = new Map<string, string>();
+  const books = [...new Set(references.map((r) => chapterKey(r)?.split('|')[0]).filter(Boolean))];
+  if (books.length === 0) return found;
+
+  const { data, error } = await supabase
+    .from('passage_prompts')
+    .select('book, chapter, prompt')
+    .in('book', books as string[]);
+  // Never let the library take plan creation down; the fallback covers it.
+  if (error || !data) return found;
+
+  for (const row of data) found.set(`${row.book}|${row.chapter}`, row.prompt);
+  return found;
+}
+
 export type CustomPlanInput = {
   name: string;
   days: number;
@@ -65,14 +92,26 @@ export async function createCustomPlan(coupleId: string, input: CustomPlanInput)
     .single();
   if (planError) throw planError;
 
+  const readings = input.readings.slice(0, days);
   const prompts = input.prompts && input.prompts.length ? input.prompts : GENERIC_PROMPTS;
-  const rows = input.readings.slice(0, days).map((ref, i) => ({
-    plan_id: plan.id,
-    day_number: i + 1,
-    passage_reference: ref,
-    passage_text: null,
-    reflection_prompt: prompts[i % prompts.length],
-  }));
+  const library = await lookupPassagePrompts(readings);
+
+  const rows = readings.map((ref, i) => {
+    // The chapter's own prompt when the library has one, which is the whole
+    // point: a question written for THIS chapter rather than a plan-wide prompt
+    // dealt round-robin. `prompts[i % prompts.length]` is what made a 14-day
+    // Daniel plan ask about the fiery furnace (Daniel 3) on day 5, and it stays
+    // only as the fallback for a chapter the library has not reached yet.
+    const key = chapterKey(ref);
+    const fromLibrary = key ? library.get(key) : undefined;
+    return {
+      plan_id: plan.id,
+      day_number: i + 1,
+      passage_reference: ref,
+      passage_text: null,
+      reflection_prompt: fromLibrary ?? prompts[i % prompts.length],
+    };
+  });
 
   const { error: daysError } = await supabase.from('plan_days').insert(rows);
   if (daysError) throw daysError;
