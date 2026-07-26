@@ -1,16 +1,19 @@
 import { useEffect, useState, ReactNode } from 'react';
-import { View, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated from 'react-native-reanimated';
 import * as Sentry from '@sentry/react-native';
 import { HandsPraying } from 'phosphor-react-native';
 import { Text } from '../../../components/ui/Text';
+import { PamweLoading } from '../../../components/ui/PamweLoading';
 import { Button } from '../../../components/ui/Button';
 import { SectionEyebrow } from '../../../components/ui/SectionEyebrow';
 import { Floral } from '../../../components/ui/Floral';
 import { AudioPlayer } from '../../../components/AudioPlayer';
 import { ReflectionResponses } from '../../../components/ReflectionResponses';
+import { RevealCeremony } from '../../../components/RevealCeremony';
 import { unseal } from '../../../lib/motion';
 import { haptics } from '../../../lib/haptics';
 import { fonts } from '../../../constants/typography';
@@ -43,9 +46,39 @@ export default function RevealScreen() {
   const isFinalDay = !!totalDays && dayNumber >= totalDays;
 
   const revealed = !!myEntry && !!partnerEntry;
+
+  // The ceremony plays the FIRST time this day's reveal is opened. Coming back
+  // to reread goes straight to the words: a moment you have to sit through
+  // twice stops being a moment and becomes a toll gate.
+  //
+  // 'checking' renders an opaque cover, so the cards can never flash behind the
+  // ceremony while the stored flag is being read.
+  const [phase, setPhase] = useState<'checking' | 'playing' | 'done'>('checking');
+  const seenKey = couplePlan?.id ? `pamwe:revealSeen:${couplePlan.id}:${dayNumber}` : null;
+
   useEffect(() => {
-    if (revealed) haptics.success();
-  }, [revealed]);
+    if (!revealed) return;
+    // No plan to key the flag on: show the words rather than hanging forever on
+    // the opaque cover that exists to stop them flashing.
+    if (!seenKey) { setPhase('done'); return; }
+    let alive = true;
+    AsyncStorage.getItem(seenKey)
+      .then((v) => {
+        if (!alive) return;
+        if (v) { setPhase('done'); return; }
+        setPhase('playing');
+        AsyncStorage.setItem(seenKey, '1').catch(() => {});
+      })
+      // A storage failure should cost the ceremony, not the reveal.
+      .catch(() => { if (alive) setPhase('playing'); });
+    return () => { alive = false; };
+  }, [revealed, seenKey]);
+
+  // The ceremony fires its own haptic on the beat where the initials meet, so
+  // only mark the moment here when it was skipped.
+  useEffect(() => {
+    if (revealed && phase === 'done') haptics.success();
+  }, [revealed, phase === 'done']);
 
   // Responses layer: what each of us left on the other's reflection. Live:
   // realtime on entry_responses refetches, and `revision` tells the cards to
@@ -95,7 +128,7 @@ export default function RevealScreen() {
   if (loading && !revealed) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
-        <View style={styles.centered}><ActivityIndicator color={colors.accent} /></View>
+        <View style={styles.centered}><PamweLoading /></View>
       </SafeAreaView>
     );
   }
@@ -125,6 +158,10 @@ export default function RevealScreen() {
           <Floral variant="divider" style={styles.divider} />
         </View>
 
+        {/* Held back until the ceremony finishes, so the cards unfurl as its
+            closing beat rather than animating in unseen behind it. */}
+        {phase === 'done' && (
+          <>
         <Animated.View entering={unseal(0)}>
           <EntryCard
             initial={myInitial}
@@ -169,6 +206,8 @@ export default function RevealScreen() {
             )}
           </EntryCard>
         </Animated.View>
+          </>
+        )}
       </ScrollView>
 
       <View style={styles.footer}>
@@ -177,6 +216,17 @@ export default function RevealScreen() {
           <Text style={[styles.amenLabel, { color: colors.bg }]}>Amen · mark day complete</Text>
         </TouchableOpacity>
       </View>
+
+      {phase === 'playing' && (
+        <RevealCeremony
+          myInitial={myInitial}
+          partnerInitial={partnerInitial}
+          onDone={() => setPhase('done')}
+        />
+      )}
+      {phase === 'checking' && (
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.bg }]} />
+      )}
     </SafeAreaView>
   );
 }
