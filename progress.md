@@ -853,3 +853,25 @@ Deliberately NOT done (judgment calls, logged for Christian): tab-bar glyph icon
 - [CLAUDE.md](CLAUDE.md) — overall project guidance, architecture, conventions
 - [trial-and-error.md](trial-and-error.md) — debugging log, search here first for any class of bug
 - [AGENTS.md](AGENTS.md) — Expo SDK 56 docs pointer
+
+---
+
+## IN FLIGHT (2026-07-26): chapter-keyed reflection prompts
+
+**Decided with Christian, approved after a 20-chapter sample review:**
+one prompt per chapter, generated once and stored forever, keyed `(book, chapter)`.
+Curated plans (M'Cheyne 365, John 21) get backfilled; Psalms and Cord are already
+100% per-day. The live Daniel plan (`1f8273a3…`) is deliberately LEFT ALONE.
+
+**Why:** Ask Pamwe returned 2-3 prompts for a whole plan and planBuilder dealt
+them round-robin (`prompts[i % len]`), so Daniel day 5 asked about the fiery
+furnace (Daniel 3). Curated plans rotated too: M'Cheyne 30 prompts / 365 days,
+John 7 / 21. Chapter-keying fixes it at the root and never re-spends tokens.
+
+**Steps:** (1) `passage_prompts` table + RLS, (2) generate the canon via Batch API
+with claude-haiku-4-5, (3) backfill `plan_days.reflection_prompt` from the library
+for curated plans, (4) planBuilder reads the library for new custom plans.
+
+**Resumable:** `scripts/gen_passage_prompts.py` caches fetched chapter text AND
+every generated prompt to the scratchpad, so a re-run only costs tokens for
+chapters not yet done. Nothing is lost if this session restarts.
