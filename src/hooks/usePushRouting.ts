@@ -41,7 +41,6 @@ export function usePushRouting() {
       case 'recap':
         router.push('/(tabs)/you/recaps' as any);
         break;
-      case 'freeze':
       case 'morning':
       case 'thinking':
         router.push('/(tabs)/(today)' as any);
