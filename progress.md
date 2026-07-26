@@ -875,3 +875,22 @@ for curated plans, (4) planBuilder reads the library for new custom plans.
 **Resumable:** `scripts/gen_passage_prompts.py` caches fetched chapter text AND
 every generated prompt to the scratchpad, so a re-run only costs tokens for
 chapters not yet done. Nothing is lost if this session restarts.
+
+**DONE 2026-07-26.** 444 chapter prompts generated (claude-haiku-4-5, grounded in
+each chapter's own WEB text), applied to hosted, and curated plans backfilled.
+Every curated plan is now 100% unique per-day prompts: M'Cheyne 365/365 (was
+30), John 21/21 (was 7), Psalms and Cord already were. The live Daniel plan is
+untouched, as Christian asked. planBuilder reads the library for new custom
+plans and falls back to the old rotation for a chapter not yet covered.
+
+Two traps found the hard way, both now pinned by tests/code:
+  * M'Cheyne stores 38 of 437 days as RANGES ("Genesis 9-10"). An earlier claim
+    in this file that there were none came from sampling 3 days. Ranges key on
+    their FIRST chapter, in both the SQL backfill and client chapterKey().
+  * plan_days stores "Psalm 23" (singular) while bible-api answers to "Psalms".
+    Un-normalized, both map to one chapter and a single upsert carrying both
+    fails outright (ON CONFLICT cannot touch the same row twice).
+
+REMAINING: extend the library from 444 to the full 1,189-chapter canon so custom
+plans on any book are pre-covered (same script, `--plans` swapped for a canon
+list, Batch API at half price). Not blocking: uncovered chapters fall back.

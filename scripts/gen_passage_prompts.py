@@ -168,6 +168,28 @@ def sql_escape(s):
     return s.replace("'", "''")
 
 
+def normalize_book(book):
+    """plan_days stores 'Psalm 23'; bible-api.com also answers to 'Psalms 23'.
+
+    The library must key on what the APP stores, or every psalm lookup misses.
+    Without this, "Psalms 23" and "Psalm 23" are two rows for one chapter, and a
+    single upsert carrying both fails outright: Postgres cannot apply ON CONFLICT
+    to the same row twice in one statement.
+    """
+    return "Psalm" if book == "Psalms" else book
+
+
+def unique_rows(prompts):
+    """(book, chapter) -> prompt, normalized and de-duplicated, sorted."""
+    out = {}
+    for ref in sorted(prompts):
+        book, chapter = ref.rsplit(" ", 1)
+        key = (normalize_book(book), int(chapter))
+        # First wins; sorted() makes that deterministic across runs.
+        out.setdefault(key, prompts[ref])
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--sample", action="store_true", help="the ~20 review chapters")
@@ -222,15 +244,15 @@ def main():
         "-- One question per chapter, grounded in that chapter's own text.",
         "",
     ]
-    for ref in sorted(prompts):
-        book, chapter = ref.rsplit(" ", 1)
+    rows = unique_rows(prompts)
+    for (book, chapter), prompt in sorted(rows.items()):
         lines.append(
             "insert into public.passage_prompts (book, chapter, prompt) values "
-            f"('{sql_escape(book)}', {chapter}, '{sql_escape(prompts[ref])}')\n"
+            f"('{sql_escape(book)}', {chapter}, '{sql_escape(prompt)}')\n"
             "  on conflict (book, chapter) do update set prompt = excluded.prompt;"
         )
     out.write_text("\n".join(lines) + "\n")
-    print(f"\n{len(prompts)} prompts -> {out}")
+    print(f"\n{len(rows)} prompts -> {out}")
 
 
 if __name__ == "__main__":
