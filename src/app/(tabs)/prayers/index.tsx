@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
-  View, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform, RefreshControl, ActivityIndicator,
-} from 'react-native';
+  View, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform, RefreshControl, } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { PlusCircle, HandsPraying, SealCheck, CaretRight, MoonStars } from 'phosphor-react-native';
 import { Text } from '../../../components/ui/Text';
+import { PamweLoading } from '../../../components/ui/PamweLoading';
 import { Floral } from '../../../components/ui/Floral';
 import { CategoryChip } from '../../../components/ui/CategoryChip';
 import { SegmentedControl } from '../../../components/ui/SegmentedControl';
@@ -262,7 +262,7 @@ export default function PrayersScreen() {
         <Floral variant="divider" style={styles.divider} />
 
         {loading ? (
-          <View style={styles.center}><ActivityIndicator color={colors.accent} /></View>
+          <View style={styles.center}><PamweLoading /></View>
         ) : isDreams ? (
           dreamsEmpty ? (
             <View style={styles.empty}>

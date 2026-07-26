@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { MagnifyingGlass, ArrowRight, CaretRight, Plus, Flower, CheckCircle, Sparkle } from 'phosphor-react-native';
 import { Screen } from '../../../components/ui/Screen';
 import { Text } from '../../../components/ui/Text';
+import { PamweLoading } from '../../../components/ui/PamweLoading';
 import { StripedBanner } from '../../../components/ui/StripedBanner';
 import { AskPamweSheet } from '../../../components/AskPamweSheet';
 import { fonts } from '../../../constants/typography';
@@ -86,7 +87,7 @@ export default function PlansScreen() {
   if (loading) {
     return (
       <Screen>
-        <View style={styles.center}><ActivityIndicator color={colors.accent} /></View>
+        <View style={styles.center}><PamweLoading /></View>
       </Screen>
     );
   }

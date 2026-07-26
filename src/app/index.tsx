@@ -7,7 +7,7 @@ import { View } from 'react-native';
 import { useTheme } from '../providers/ThemeProvider';
 import { Text } from '../components/ui/Text';
 import { Button } from '../components/ui/Button';
-import { PamweWordmark } from '../components/PamweWordmark';
+import { PamweLoading } from '../components/ui/PamweLoading';
 import { hideSplashOnce } from '../lib/splash';
 
 type RouteState = 'loading' | 'auth' | 'unpaired' | 'waiting' | 'plan-select' | 'tabs' | 'error';
@@ -56,7 +56,7 @@ export default function Index() {
     // rather than a bare spinner on a blank screen.
     return (
       <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' }}>
-        <PamweWordmark />
+        <PamweLoading size={34} />
       </View>
     );
   }

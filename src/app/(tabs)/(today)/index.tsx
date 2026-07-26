@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, RefreshControl, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { GearSix } from 'phosphor-react-native';
 import { Text } from '../../../components/ui/Text';
+import { PamweLoading } from '../../../components/ui/PamweLoading';
 import { Button } from '../../../components/ui/Button';
 import { SectionEyebrow } from '../../../components/ui/SectionEyebrow';
 import { ProgressBar } from '../../../components/ui/ProgressBar';
@@ -81,7 +82,7 @@ export default function HomeScreen() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
         <View style={styles.center}>
-          <ActivityIndicator color={colors.accent} />
+          <PamweLoading />
         </View>
       </SafeAreaView>
     );

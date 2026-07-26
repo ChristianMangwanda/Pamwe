@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Feather, CaretRight, CaretLeft, BookmarkSimple } from 'phosphor-react-native';
 import { Text } from '../../../components/ui/Text';
+import { PamweLoading } from '../../../components/ui/PamweLoading';
 import { Floral } from '../../../components/ui/Floral';
 import { fonts } from '../../../constants/typography';
 import { GUTTER } from '../../../theme/tokens';
@@ -121,7 +122,7 @@ export default function ReflectScreen() {
         <Text variant="journal" italic color={colors.ink2} style={styles.subtitle}>What you've come across, together.</Text>
 
         {loading ? (
-          <View style={styles.center}><ActivityIndicator color={colors.accent} /></View>
+          <View style={styles.center}><PamweLoading /></View>
         ) : items.length === 0 ? (
           <View style={styles.empty}>
             <Feather size={40} color="#CBB99B" weight="regular" />
