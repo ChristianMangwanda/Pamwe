@@ -94,6 +94,29 @@ export async function getTodayMarks(timezone: string) {
   return data ?? [];
 }
 
+// Shift a YYYY-MM-DD date literal by whole days. UTC arithmetic on a date-only
+// value, so a DST boundary can't move it.
+function shiftDays(dateISO: string, delta: number): string {
+  const [y, m, d] = dateISO.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d + delta)).toISOString().slice(0, 10);
+}
+
+// Marks from the last `days` days in the couple's timezone, in one query. The
+// list derives "prayed today" from this for the card state, and the reminder
+// system uses the whole window: once you have prayed for something this week,
+// it stops asking daily until the week rolls past.
+export async function getRecentMarks(timezone: string, days = 7) {
+  const since = shiftDays(todayInTimezone(timezone), -(days - 1));
+
+  const { data, error } = await supabase
+    .from('prayer_marks')
+    .select('prayer_id, user_id, marked_date')
+    .gte('marked_date', since);
+
+  if (error) throw error;
+  return data ?? [];
+}
+
 export async function markPrayedFor(prayerId: string, timezone: string) {
   const { data: { session } } = await supabase.auth.getSession();
   const user = session?.user;

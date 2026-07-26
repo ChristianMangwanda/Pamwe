@@ -6,6 +6,7 @@ import { supabase } from './supabase';
 import { getUserCouple } from './couples';
 import { getActiveCouPlan } from './plans';
 import { countMyTotalSubmitted } from './entries';
+import { getPrayers } from './prayers';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -226,6 +227,67 @@ export async function scheduleRecapFromPrefs() {
     await scheduleWeeklyRecap();
   } catch {
     // best-effort — Settings re-schedules whenever the toggle changes
+  }
+}
+
+// The weekly prayer review. Per-prayer reminders now go quiet as soon as you
+// have prayed for something, so this is the one nudge that still arrives: a
+// Sunday-evening prompt to look over the list and see what still needs praying
+// for. It replaces the daily nagging rather than adding to it.
+//
+// Sunday 6pm, deliberately away from the 9am reading recap so the two never
+// stack on one morning.
+const PRAYER_REVIEW_ID = 'pamwe-prayer-review';
+const PRAYER_REVIEW_WEEKDAY = 1; // 1 = Sunday
+const PRAYER_REVIEW_HOUR = 18;
+
+export async function cancelPrayerReview() {
+  await Notifications.cancelScheduledNotificationAsync(PRAYER_REVIEW_ID).catch(() => {});
+}
+
+export async function schedulePrayerReview() {
+  await cancelPrayerReview();
+  await Notifications.scheduleNotificationAsync({
+    identifier: PRAYER_REVIEW_ID,
+    content: {
+      title: 'Your prayers for the week',
+      body: 'Check which ones still need praying for.',
+      sound: true,
+      data: { type: 'prayer_review' },
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+      weekday: PRAYER_REVIEW_WEEKDAY,
+      hour: PRAYER_REVIEW_HOUR,
+      minute: 0,
+    },
+  });
+}
+
+// Runs on sign-in beside the morning and recap schedulers. Only arms once the
+// couple actually has an active prayer, so an empty list is never reviewed.
+export async function schedulePrayerReviewFromPrefs() {
+  try {
+    const status = await getNotificationPermissionStatus();
+    if (status !== 'granted') return;
+
+    const prefs = await getNotificationPrefs();
+    if (prefs?.notification_prayer === false) {
+      await cancelPrayerReview();
+      return;
+    }
+
+    const couple = await getUserCouple().catch(() => null);
+    if (!couple?.id) return;
+    const active = await getPrayers(couple.id, 'active').catch(() => []);
+    if (active.length === 0) {
+      await cancelPrayerReview();
+      return;
+    }
+
+    await schedulePrayerReview();
+  } catch {
+    // best-effort — the prayers tab re-syncs this whenever it loads
   }
 }
 

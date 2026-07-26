@@ -23,6 +23,7 @@ jest.mock('../lib/notifications', () => ({
   watchPushTokenRotation: jest.fn(() => ({ remove: jest.fn() })),
   scheduleMorningFromPrefs: jest.fn(() => Promise.resolve()),
   scheduleRecapFromPrefs: jest.fn(() => Promise.resolve()),
+  schedulePrayerReviewFromPrefs: jest.fn(() => Promise.resolve()),
   clearDeliveredNotifications: jest.fn(() => Promise.resolve()),
 }));
 

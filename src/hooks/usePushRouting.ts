@@ -25,6 +25,8 @@ export function usePushRouting() {
         router.push(data.reveal ? '/(tabs)/(today)/reveal' : ('/(tabs)/(today)' as any));
         break;
       case 'prayer':
+      case 'prayer_reminder':
+      case 'prayer_review':
         router.push('/(tabs)/prayers' as any);
         break;
       case 'dream':

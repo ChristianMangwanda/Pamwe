@@ -23,7 +23,7 @@ jest.mock('../lib/notifications', () => ({
 
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { setReminder, clearReminder, silenceForToday, syncReminders, todayLocalISO } from '../lib/prayerReminders';
+import { setReminder, clearReminder, silenceForWeek, syncReminders, todayLocalISO } from '../lib/prayerReminders';
 
 const mockSchedule = Notifications.scheduleNotificationAsync as jest.Mock;
 const mockCancel = Notifications.cancelScheduledNotificationAsync as jest.Mock;
@@ -63,12 +63,31 @@ describe('setReminder', () => {
   });
 });
 
-describe('silenceForToday', () => {
-  it("cancels only today's occurrence, leaving the rest standing", async () => {
-    await silenceForToday('p1');
+// Christian's rule: praying for something ends the asking. Being reminded daily
+// about a prayer you have already prayed is the nag, so it goes quiet for the
+// week and the Sunday review is what brings it back.
+describe('silenceForWeek', () => {
+  it('cancels the whole pending window, not just today', async () => {
+    await setReminder('p1', 'prayed for now', 21, 0);
+    jest.clearAllMocks();
 
-    expect(mockCancel).toHaveBeenCalledTimes(1);
-    expect(mockCancel).toHaveBeenCalledWith(`pamwe-prayer-p1-${todayLocalISO()}`);
+    await silenceForWeek('p1');
+
+    const cancelled = mockCancel.mock.calls.map(([id]) => String(id));
+    expect(cancelled).toContain(`pamwe-prayer-p1-${todayLocalISO()}`);
+    // The sweep covers future days too, so nothing fires again tomorrow.
+    expect(cancelled.length).toBeGreaterThan(1);
+    expect(cancelled.every((id) => id.startsWith('pamwe-prayer-p1-'))).toBe(true);
+  });
+
+  it('keeps the stored time so the reminder can return next week', async () => {
+    await setReminder('p1', 'prayed for now', 21, 0);
+    await silenceForWeek('p1');
+    jest.clearAllMocks();
+
+    // A week later the mark has aged out, so sync arms it again unasked.
+    await syncReminders([{ id: 'p1', text: 'prayed for now' }], []);
+    expect(scheduledIds().some((id) => id.startsWith('pamwe-prayer-p1-'))).toBe(true);
   });
 });
 
@@ -95,15 +114,28 @@ describe('syncReminders', () => {
     expect(scheduledIds()).toHaveLength(0);
   });
 
-  it("does not re-arm today for a prayer already prayed for today", async () => {
+  it('arms nothing at all for a prayer already prayed for this week', async () => {
     await setReminder('p1', 'prayed already', 8, 0);
     jest.clearAllMocks();
 
     await syncReminders([{ id: 'p1', text: 'prayed already' }], ['p1']);
 
-    expect(scheduledIds()).not.toContain(`pamwe-prayer-p1-${todayLocalISO()}`);
-    // Later days still stand, so the rhythm continues tomorrow.
-    expect(scheduledIds().length).toBeGreaterThan(0);
+    // Not today, and not tomorrow either: the asking is done for the week.
+    expect(scheduledIds()).toHaveLength(0);
+  });
+
+  it('still arms the prayers that have NOT been prayed for', async () => {
+    await setReminder('p1', 'done', 8, 0);
+    await setReminder('p2', 'still needs praying', 8, 0);
+    jest.clearAllMocks();
+
+    await syncReminders(
+      [{ id: 'p1', text: 'done' }, { id: 'p2', text: 'still needs praying' }],
+      ['p1'],
+    );
+
+    expect(scheduledIds().some((id) => id.startsWith('pamwe-prayer-p1-'))).toBe(false);
+    expect(scheduledIds().some((id) => id.startsWith('pamwe-prayer-p2-'))).toBe(true);
   });
 
   it('stays under the iOS 64 pending-notification cap as reminders pile up', async () => {

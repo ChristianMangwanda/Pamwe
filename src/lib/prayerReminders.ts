@@ -139,10 +139,12 @@ export async function clearReminder(prayerId: string) {
   }
 }
 
-// "I prayed today" silences only today's reminder. Tomorrow's still stands, so
-// the rhythm continues without the nag once you have actually prayed.
-export async function silenceForToday(prayerId: string) {
-  await Notifications.cancelScheduledNotificationAsync(idFor(prayerId, todayLocalISO())).catch(() => {});
+// Praying for something ends the asking. Not just for today: being reminded
+// daily about a prayer you have already prayed is the nag Christian hit. The
+// stored time is kept, so once the mark ages out of the week window syncReminders
+// arms it again, and the Sunday review is what surfaces it in the meantime.
+export async function silenceForWeek(prayerId: string) {
+  await cancelWindow(prayerId);
 }
 
 function windowFor(reminderCount: number): number {
@@ -157,7 +159,7 @@ function windowFor(reminderCount: number): number {
 // ran on the device that acted, so the other phone kept firing forever.
 export async function syncReminders(
   prayers: { id: string; text: string; status?: string }[],
-  prayedTodayIds: string[] = [],
+  prayedThisWeekIds: string[] = [],
 ) {
   try {
     const map = await readMap();
@@ -181,8 +183,14 @@ export async function syncReminders(
         changed = true;
         continue;
       }
+      if (prayedThisWeekIds.includes(prayerId)) {
+        // Already prayed for this week: stay quiet entirely rather than asking
+        // again tomorrow. The Sunday review is the one nudge that still comes.
+        await cancelWindow(prayerId);
+        continue;
+      }
       const r = map[prayerId];
-      await armWindow(prayerId, text, r.hour, r.minute, days, prayedTodayIds.includes(prayerId));
+      await armWindow(prayerId, text, r.hour, r.minute, days, false);
     }
 
     if (changed) await writeMap(map);

@@ -19,12 +19,16 @@ import { useTheme } from '../../../providers/ThemeProvider';
 import { useAuth } from '../../../providers/AuthProvider';
 import { useCouple } from '../../../providers/CoupleProvider';
 import { supabase } from '../../../lib/supabase';
-import { getPrayers, getAnsweredPrayers, getTodayMarks, markPrayedFor, markAnswered, deletePrayer } from '../../../lib/prayers';
+import { getPrayers, getAnsweredPrayers, getRecentMarks, markPrayedFor, markAnswered, deletePrayer } from '../../../lib/prayers';
 import { getDreams, deleteDream } from '../../../lib/dreams';
-import { clearReminder, silenceForToday, syncReminders } from '../../../lib/prayerReminders';
+import { todayInTimezone } from '../../../lib/catchup';
+import { clearReminder, silenceForWeek, syncReminders } from '../../../lib/prayerReminders';
 import { haptics } from '../../../lib/haptics';
 
-type Mark = { prayer_id: string; user_id: string };
+// Marks over the last week, in one query. The cards read only today's from it;
+// the reminder system uses the whole window, since praying for something ends
+// the daily asking until the week rolls past.
+type Mark = { prayer_id: string; user_id: string; marked_date: string };
 type Tab = 'prayers' | 'dreams';
 
 // A prayer seeded from a dream has to fit the prayers table's 280-char check.
@@ -80,10 +84,10 @@ export default function PrayersScreen() {
     if (!couple?.id) { setLoading(false); return; }
     // Three independent fetches: with the old all-or-nothing Promise.all, one
     // transient failure threw away the other two results and blanked the list.
-    const [a, ans, todayMarks, drm] = await Promise.allSettled([
+    const [a, ans, weekMarks, drm] = await Promise.allSettled([
       getPrayers(couple.id, 'active'),
       getAnsweredPrayers(couple.id),
-      getTodayMarks(couple.timezone),
+      getRecentMarks(couple.timezone),
       getDreams(couple.id),
     ]);
     if (a.status === 'fulfilled') {
@@ -91,7 +95,7 @@ export default function PrayersScreen() {
       setEverLoaded(true);
     }
     if (ans.status === 'fulfilled') setAnswered(ans.value as Prayer[]);
-    if (todayMarks.status === 'fulfilled') setMarks(todayMarks.value as Mark[]);
+    if (weekMarks.status === 'fulfilled') setMarks(weekMarks.value as Mark[]);
     if (drm.status === 'fulfilled') {
       setDreams(drm.value as Dream[]);
       setEverLoaded(true);
@@ -106,8 +110,9 @@ export default function PrayersScreen() {
     // prayer answered or deleted on the partner's phone from reminding forever
     // on this one, and what tops the rolling window back up.
     if (a.status === 'fulfilled') {
-      const prayed = todayMarks.status === 'fulfilled'
-        ? (todayMarks.value as Mark[]).filter((m) => m.user_id === user?.id).map((m) => m.prayer_id)
+      // Anything I have prayed for THIS WEEK stops asking daily.
+      const prayed = weekMarks.status === 'fulfilled'
+        ? (weekMarks.value as Mark[]).filter((m) => m.user_id === user?.id).map((m) => m.prayer_id)
         : [];
       syncReminders(a.value as { id: string; text: string; status?: string }[], prayed);
     }
@@ -130,15 +135,24 @@ export default function PrayersScreen() {
 
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
 
-  const prayedByMe = (id: string) => marks.some((m) => m.prayer_id === id && m.user_id === user?.id);
-  const prayedByPartner = (id: string) => marks.some((m) => m.prayer_id === id && m.user_id === partnerId);
+  const today = todayInTimezone(couple?.timezone ?? 'UTC');
+  const prayedByMe = (id: string) =>
+    marks.some((m) => m.prayer_id === id && m.user_id === user?.id && m.marked_date === today);
+  const prayedByPartner = (id: string) =>
+    marks.some((m) => m.prayer_id === id && m.user_id === partnerId && m.marked_date === today);
 
   const handlePray = async (prayerId: string) => {
     if (!couple) return;
     haptics.light();
-    setMarks((prev) => prev.some((m) => m.prayer_id === prayerId && m.user_id === user!.id) ? prev : [...prev, { prayer_id: prayerId, user_id: user!.id }]);
-    // You've prayed, so today's reminder has nothing left to ask. Tomorrow's stands.
-    silenceForToday(prayerId);
+    // The optimistic mark carries today's date, or the card's "prayed today"
+    // check (which now filters on marked_date) would not see it.
+    setMarks((prev) =>
+      prev.some((m) => m.prayer_id === prayerId && m.user_id === user!.id && m.marked_date === today)
+        ? prev
+        : [...prev, { prayer_id: prayerId, user_id: user!.id, marked_date: today }]);
+    // You've prayed for it, so the daily asking stops. The Sunday review is what
+    // brings it back if it still needs praying for.
+    silenceForWeek(prayerId);
     try {
       await markPrayedFor(prayerId, couple.timezone);
     } catch {

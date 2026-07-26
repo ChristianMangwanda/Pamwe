@@ -9,6 +9,7 @@ import {
   watchPushTokenRotation,
   scheduleMorningFromPrefs,
   scheduleRecapFromPrefs,
+  schedulePrayerReviewFromPrefs,
   clearDeliveredNotifications,
 } from '../lib/notifications';
 
@@ -67,6 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         savePushToken(token);
         scheduleMorningFromPrefs();
         scheduleRecapFromPrefs();
+        schedulePrayerReviewFromPrefs();
       }
     });
     const rotationSub = watchPushTokenRotation();

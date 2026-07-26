@@ -17,7 +17,8 @@ import { setPlanCadence, CADENCE_OPTIONS, type Cadence } from '../../../lib/plan
 import { haptics } from '../../../lib/haptics';
 import {
   getNotificationPrefs, updateNotificationPrefs, getNotificationPermissionStatus,
-  scheduleMorningNotification, scheduleWeeklyRecap, cancelWeeklyRecap, NotificationPrefs,
+  scheduleMorningNotification, scheduleWeeklyRecap, cancelWeeklyRecap,
+  schedulePrayerReview, cancelPrayerReview, NotificationPrefs,
 } from '../../../lib/notifications';
 
 const MORNING_PRESETS = ['06:00', '06:30', '07:00', '07:30', '08:00'];
@@ -137,7 +138,7 @@ export default function SettingsScreen() {
           <View style={[styles.divider, { backgroundColor: colors.line }]} />
           <ToggleRow label="Partner reflections" description="When your partner submits, nudges you, or is thinking of you." value={prefs?.notification_partner ?? true} onChange={(v) => savePref({ notification_partner: v })} colors={colors} />
           <View style={[styles.divider, { backgroundColor: colors.line }]} />
-          <ToggleRow label="New prayers" description="When your partner adds a prayer point." value={prefs?.notification_prayer ?? true} onChange={(v) => savePref({ notification_prayer: v })} colors={colors} />
+          <ToggleRow label="Prayers" description="When your partner adds one, plus a Sunday look at what still needs praying for." value={prefs?.notification_prayer ?? true} onChange={(v) => { savePref({ notification_prayer: v }); if (v) schedulePrayerReview(); else cancelPrayerReview(); }} colors={colors} />
           <View style={[styles.divider, { backgroundColor: colors.line }]} />
           <ToggleRow label="New dreams" description="When your partner writes down a dream." value={prefs?.notification_dream ?? true} onChange={(v) => savePref({ notification_dream: v })} colors={colors} />
           <View style={[styles.divider, { backgroundColor: colors.line }]} />
