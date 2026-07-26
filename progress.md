@@ -1,6 +1,31 @@
 # Pamwe Build Progress Summary
 
-**Last Updated:** July 25, 2026
+**Last Updated:** July 26, 2026
+
+---
+
+## ⭐ B17 (2026-07-26): eight rounds since b16
+
+Everything below shipped in b17. Nothing here reached a device before it.
+
+- **Chapter-keyed reflection prompts.** 444 prompts, one per chapter, grounded in
+  that chapter's own text. Curated plans backfilled to 100% unique per-day
+  (M'Cheyne 365/365 from 30, John 21/21 from 7). planBuilder reads the library
+  for new custom plans, falling back to the old rotation for uncovered chapters.
+  The live Daniel plan is untouched by choice.
+- **Reply notifications + keyboard fix.** notify-new-response (replies only,
+  never hearts/amens); KeyboardAvoidingView on both screens that host the reply
+  box, so the keyboard stops covering what you type.
+- **Prayer reminders reworked.** Praying for something ends the daily asking for
+  the week; a Sunday 6pm review replaces the nagging. Dated one-shots under a
+  budget, because iOS silently drops past 64 pending local notifications.
+- **Weekly recap actually sends** (was a mock banner captioned "Sent to you both").
+- **Reveal ceremony**: your two initials meet, divider draws, "Amen", then the
+  reflections unfurl. Once per day, tap to skip.
+- **Reflections paged** 12 at a time. **Branded loading** (wordmark, not a
+  spinner) and a 220ms tab cross-fade. **Heart moved inline** beside the CTA.
+- **Sentry PAMWE-IOS-4 fixed**: the draft insert race that showed a raw Postgres
+  constraint to the reader on Share.
 
 ---
 
