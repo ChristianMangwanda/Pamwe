@@ -1,5 +1,5 @@
 import { useEffect, useState, ReactNode } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -150,7 +150,14 @@ export default function RevealScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top', 'bottom']}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      {/* Replying to your partner happens on this screen, and the keyboard used
+          to sit right over the box you were typing in. */}
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.header}>
           <SectionEyebrow color={colors.accent2}>Revealed together</SectionEyebrow>
           <Text style={[styles.title, { color: colors.ink }]}>What you each wrote</Text>
@@ -216,6 +223,7 @@ export default function RevealScreen() {
           <Text style={[styles.amenLabel, { color: colors.bg }]}>Amen · mark day complete</Text>
         </TouchableOpacity>
       </View>
+      </KeyboardAvoidingView>
 
       {phase === 'playing' && (
         <RevealCeremony

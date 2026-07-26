@@ -20,6 +20,11 @@ export function usePushRouting() {
 
     const data = response.notification.request.content.data as Record<string, unknown> | null;
     switch (data?.type) {
+      case 'response':
+        // A reply lands on a day you have already revealed, so the reflect
+        // history is where it can always be read.
+        router.push('/(tabs)/reflect' as any);
+        break;
       case 'partner_entry':
         // reveal is only valid once both have submitted; otherwise land on Today
         router.push(data.reveal ? '/(tabs)/(today)/reveal' : ('/(tabs)/(today)' as any));

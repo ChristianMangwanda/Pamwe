@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, ReactNode } from 'react';
-import { View, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Text } from '../../../components/ui/Text';
@@ -98,7 +98,13 @@ export default function ReflectionDetailScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top', 'bottom']}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      {/* Replies are composed here too, so the keyboard must not cover them. */}
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         <BackLink label="Reflections" onPress={() => router.back()} />
 
         <Text style={[styles.eyebrow, { color: colors.accent }]}>{dateLabel} · {reference}</Text>
@@ -133,6 +139,7 @@ export default function ReflectionDetailScreen() {
           )}
         </ReflectionCard>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

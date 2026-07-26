@@ -136,7 +136,7 @@ export default function SettingsScreen() {
           </View>
 
           <View style={[styles.divider, { backgroundColor: colors.line }]} />
-          <ToggleRow label="Partner reflections" description="When your partner submits, nudges you, or is thinking of you." value={prefs?.notification_partner ?? true} onChange={(v) => savePref({ notification_partner: v })} colors={colors} />
+          <ToggleRow label="Partner reflections" description="When your partner submits, replies to you, nudges you, or is thinking of you." value={prefs?.notification_partner ?? true} onChange={(v) => savePref({ notification_partner: v })} colors={colors} />
           <View style={[styles.divider, { backgroundColor: colors.line }]} />
           <ToggleRow label="Prayers" description="When your partner adds one, plus a Sunday look at what still needs praying for." value={prefs?.notification_prayer ?? true} onChange={(v) => { savePref({ notification_prayer: v }); if (v) schedulePrayerReview(); else cancelPrayerReview(); }} colors={colors} />
           <View style={[styles.divider, { backgroundColor: colors.line }]} />
