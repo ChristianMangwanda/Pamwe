@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ChartLineUp } from 'phosphor-react-native';
 import { Text } from '../../../components/ui/Text';
+import { PamweLoading } from '../../../components/ui/PamweLoading';
 import { BackLink } from '../../../components/ui/BackLink';
 import { Floral } from '../../../components/ui/Floral';
 import { SegmentedControl } from '../../../components/ui/SegmentedControl';
-import { NotificationPreview } from '../../../components/NotificationPreview';
 import { fonts } from '../../../constants/typography';
 import { GUTTER } from '../../../theme/tokens';
 import { useTheme } from '../../../providers/ThemeProvider';
@@ -52,7 +51,7 @@ export default function RecapsScreen() {
         <SegmentedControl segments={PERIODS} value={period} onChange={setPeriod} style={styles.tabs} />
 
         {loading || !recap ? (
-          <View style={styles.center}><ActivityIndicator color={colors.accent} /></View>
+          <View style={styles.center}><PamweLoading /></View>
         ) : (
           <>
             <Text variant="eyebrow" color={colors.muted} style={styles.range}>{recap.rangeLabel}</Text>
@@ -68,19 +67,6 @@ export default function RecapsScreen() {
             <RecapCard title="What you learned" body={recap.learned} colors={colors} />
             <RecapCard title="What you prayed for" body={recap.pray} colors={colors} />
 
-            {/* Only the week is actually delivered (a Sunday-morning local
-                reminder). Month and quarter are views you come here for, so
-                don't show them a banner claiming they were sent. */}
-            {recap.period === 'week' && (
-              <>
-                <Text variant="eyebrow" color={colors.muted} style={styles.sent}>Sent to you both on Sundays</Text>
-                <NotificationPreview
-                  icon={<ChartLineUp size={20} color={colors.bg} weight="fill" />}
-                  line="Your week together is ready 🌿"
-                  subline="Look back on what you read and prayed for."
-                />
-              </>
-            )}
           </>
         )}
       </ScrollView>
@@ -123,5 +109,4 @@ const styles = StyleSheet.create({
   card: { marginTop: 12, borderWidth: 1, borderRadius: 16, paddingHorizontal: 18, paddingVertical: 16 },
   cardTitle: { fontFamily: fonts.sansSemiBold, fontSize: 9, letterSpacing: 1.6, textTransform: 'uppercase' },
   cardBody: { fontFamily: fonts.serif, fontSize: 16, lineHeight: 25, marginTop: 8 },
-  sent: { marginTop: 20, marginBottom: 8 },
 });
