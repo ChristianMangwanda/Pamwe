@@ -101,7 +101,7 @@ src/app/
     ├── plans/                     # index (Ask Pamwe card) → [id] detail; builder (Ask Pamwe)
     ├── prayers/                   # index = Prayers|Dreams toggle (swipe cards + detail sheet w/ reminders) → add · dream-add → timeline (answered)
     ├── reflect/                   # index (history + From-your-story card) → [id] detail (responses) → words (Their Words)
-    └── you/                       # index (stats + dark toggle) → settings, recaps, couple, privacy, terms, delete-account
+    └── you/                       # index (stats + dark toggle) → settings, recaps, couple (→ anniversary), privacy, terms, delete-account
 ```
 
 A floral **Ask Pamwe bubble** ([src/components/PamweFab.tsx](src/components/PamweFab.tsx)) floats on every non-ritual tab (never Today or the reading/journal/reveal flow) and opens [AskPamweSheet](src/components/AskPamweSheet.tsx). Screens it floats on pad their scroll end by `FAB_CLEARANCE`.

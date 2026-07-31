@@ -4,6 +4,49 @@
 
 ---
 
+## ⭐ B20 (2026-07-31): the anniversary picker gets a screen
+
+Build 20 is on App Store Connect, VALID. One commit on main (`380cd6f`). No DB
+change, no native change: b19 already carried the column, the RPC and the picker
+pod, so this is JS only.
+
+- **The anniversary setting was unusable in b19.** Opening it showed the date
+  wheel cut roughly in half with Save entirely below the screen edge. Shipped
+  blind in b19 and found on device.
+- **It is now its own screen** (`you/anniversary.tsx`) instead of a bottom sheet.
+  The picker sits in a flex child that centres it with Save pinned outside that
+  child, so the picker's late self-measurement can only re-centre the wheel and
+  can never push Save away. Cause and reasoning in `trial-and-error.md`.
+- **Copy says what the setting is for.** "The date you got together. It sets the
+  days together count here and on your Lock Screen", and the row prompts with
+  "Set the date you got together" rather than "Counting from the day you paired",
+  which described the fallback rather than the thing being asked for.
+- Also stopped rebuilding `maximumDate` every render, which re-set the picker's
+  bounds natively on each turn of the wheel.
+
+Gate: tsc clean, **24 suites / 183 Jest** (unchanged). Archive verified before
+upload: hosted project ref present and dead-project ref absent in the bundle, app
+and widget `CFBundleVersion` both 20, all three purpose strings present, new copy
+in the bundle and the old sheet copy gone.
+
+**Still on Christian:** everything b19 left open (the Lock Screen widget on a real
+wallpaper, both toggle states, tap target), plus confirming the anniversary screen
+saves and that the day count matches the widget.
+
+**Known gap, deliberately not built:** there is no way to clear an anniversary
+once set. `setAnniversary(null)` and the RPC both accept it; only the UI is
+missing.
+
+**Loose end in the working tree:** a set of macOS `" 2"` duplicate files
+(assets, design handoff, four in `ios/VerseWidget/`, two test files, and one
+migration). All untracked and byte-identical to their originals, so they are
+excluded from builds: `add_widget_target.rb` uses explicit file lists rather than
+a glob, and there is no `assetBundlePatterns` in app.json. They do affect Jest,
+which globs `__tests__`, so a plain `npx jest` reports 26 suites / 200 tests
+instead of 24 / 183. Left in place pending Christian's call.
+
+---
+
 ## ⭐ B19 (2026-07-31): reveal ceremony, Lock Screen widget, and a Debug build that could not link
 
 Build 19 is on App Store Connect, VALID. Hosted DB is in sync (one migration,
