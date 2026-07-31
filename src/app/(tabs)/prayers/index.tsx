@@ -22,7 +22,7 @@ import { supabase } from '../../../lib/supabase';
 import { getPrayers, getAnsweredPrayers, getRecentMarks, markPrayedFor, markAnswered, deletePrayer } from '../../../lib/prayers';
 import { getDreams, deleteDream } from '../../../lib/dreams';
 import { todayInTimezone } from '../../../lib/catchup';
-import { clearReminder, silenceForWeek, syncReminders } from '../../../lib/prayerReminders';
+import { clearReminder, syncReminders } from '../../../lib/prayerReminders';
 import { haptics } from '../../../lib/haptics';
 
 // Marks over the last week, in one query. The cards read only today's from it;
@@ -110,7 +110,9 @@ export default function PrayersScreen() {
     // prayer answered or deleted on the partner's phone from reminding forever
     // on this one, and what tops the rolling window back up.
     if (a.status === 'fulfilled') {
-      // Anything I have prayed for THIS WEEK stops asking daily.
+      // Anything I have prayed for is done asking, permanently. The recent-marks
+      // window is just how far back we look to catch a mark whose clearReminder
+      // didn't stick (killed mid-flight, storage hiccup).
       const prayed = weekMarks.status === 'fulfilled'
         ? (weekMarks.value as Mark[]).filter((m) => m.user_id === user?.id).map((m) => m.prayer_id)
         : [];
@@ -150,9 +152,10 @@ export default function PrayersScreen() {
       prev.some((m) => m.prayer_id === prayerId && m.user_id === user!.id && m.marked_date === today)
         ? prev
         : [...prev, { prayer_id: prayerId, user_id: user!.id, marked_date: today }]);
-    // You've prayed for it, so the daily asking stops. The Sunday review is what
-    // brings it back if it still needs praying for.
-    silenceForWeek(prayerId);
+    // You've prayed for it, and that ends the reminder for good (Christian's
+    // rule, 2026-07-31). Setting a new one from the prayer's sheet is the only
+    // way to be asked again.
+    clearReminder(prayerId);
     try {
       await markPrayedFor(prayerId, couple.timezone);
     } catch {

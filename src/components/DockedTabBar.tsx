@@ -1,4 +1,4 @@
-import { Easing, Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 // expo-router 56 vendors react-navigation; these types have no public subpath export.
 import type {
   BottomTabBarButtonProps,
@@ -47,15 +47,12 @@ export function useDockedTabOptions(): BottomTabNavigationOptions {
 
   return {
     headerShown: false,
-    // Tabs defaulted to 'none', so switching swapped screens on the same frame
-    // and read as a jolt rather than a change of place. A short cross-fade on
-    // the app's own settle curve (lib/motion.ts) gives the movement somewhere to
-    // land without making the tap feel slow.
-    animation: 'fade',
-    transitionSpec: {
-      animation: 'timing',
-      config: { duration: 220, easing: Easing.bezier(0.22, 1, 0.36, 1) },
-    },
+    // Tab switches are deliberately instant (the default 'none'). The b17
+    // cross-fade sat on a known upstream race (animated tab opacity + native
+    // screen detach) that left a revisited tab stuck fully transparent, and it
+    // put a 220ms floor under every switch. Do not re-add an `animation` here;
+    // the soft landing lives in the splash fade-out at launch instead
+    // (lib/splash.ts). Details in trial-and-error.md.
     tabBarActiveTintColor: colors.accent,
     tabBarInactiveTintColor: colors.muted,
     tabBarStyle: {

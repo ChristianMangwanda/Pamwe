@@ -19,6 +19,7 @@ jest.mock('expo-linking', () => ({
 
 jest.mock('expo-splash-screen', () => ({
   preventAutoHideAsync: jest.fn(),
+  setOptions: jest.fn(),
   hideAsync: jest.fn(),
 }));
 

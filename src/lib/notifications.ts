@@ -396,12 +396,37 @@ async function cancelMorningReminders() {
   );
 }
 
-const MORNING_CONTENT = {
-  title: "Today's reading is ready",
-  body: 'Open Pamwe and read it together.',
-  sound: true,
-  data: { type: 'morning' },
-};
+// Christian's wording (2026-07-31): warm and simple, never bossy. "Today's
+// reading is ready / Open Pamwe and read it together" read as generic and
+// commanding, so it now greets whoever this phone belongs to by name and
+// invites. First name only: display_name can hold a full name, and "Good
+// morning, Christian Mangwanda" is nobody's kitchen table. Exported for tests.
+export function morningContent(displayName?: string | null) {
+  const first = displayName?.trim().split(/\s+/)[0];
+  return {
+    title: first ? `Good morning, ${first}` : 'Good morning',
+    body: "Let's read today's word.",
+    sound: true,
+    data: { type: 'morning' },
+  };
+}
+
+// The signed-in user's own display name, for the greeting. Null on any miss:
+// the reminder must still schedule when the profile fetch fails.
+async function myDisplayName(): Promise<string | null> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return null;
+    const { data } = await supabase
+      .from('users')
+      .select('display_name')
+      .eq('id', session.user.id)
+      .single();
+    return data?.display_name ?? null;
+  } catch {
+    return null;
+  }
+}
 
 // The next `count` reading days at hour:minute, from a start date on a cadence.
 // Exported for testing: the arithmetic is the whole feature.
@@ -425,11 +450,12 @@ export async function scheduleMorningNotification(
   hour: number, minute: number, cadenceDays = 1, startDate?: string,
 ) {
   await cancelMorningReminders();
+  const content = morningContent(await myDisplayName());
 
   if (cadenceDays <= 1 || !startDate) {
     await Notifications.scheduleNotificationAsync({
       identifier: MORNING_ID,
-      content: MORNING_CONTENT,
+      content,
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DAILY,
         hour,
@@ -444,9 +470,38 @@ export async function scheduleMorningNotification(
     dates.map((date, i) =>
       Notifications.scheduleNotificationAsync({
         identifier: morningIdAt(i),
-        content: MORNING_CONTENT,
+        content,
         trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date },
       }),
     ),
   );
+}
+
+// Identifier-scheme migrations. The morning reminder (pre-b14) and the prayer
+// reminders (pre-b17) were both once scheduled WITHOUT explicit identifiers, as
+// repeating DAILY triggers under expo-generated random ids, and cancelled via
+// cancel-all. The cancel-by-id schemes that replaced them can't reach those,
+// and iOS keeps scheduled requests alive across app updates, so on updated
+// phones the leftovers fired beside the new ones (the duplicate morning banner,
+// the unkillable prayer nag). Anything carrying one of our payload types under
+// a foreign identifier is such a leftover. Runs on every launch from
+// AuthProvider; a no-op once they're gone.
+const LEGACY_ID_PREFIXES: Record<string, string> = {
+  morning: MORNING_ID,
+  prayer_reminder: 'pamwe-prayer-',
+};
+
+export async function cleanupLegacyScheduled() {
+  try {
+    const all = await Notifications.getAllScheduledNotificationsAsync();
+    const legacy = all.filter((n) => {
+      const prefix = LEGACY_ID_PREFIXES[String(n.content.data?.type)];
+      return !!prefix && !n.identifier.startsWith(prefix);
+    });
+    await Promise.all(
+      legacy.map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier).catch(() => {})),
+    );
+  } catch {
+    // best effort — a failed sweep just tries again next launch
+  }
 }

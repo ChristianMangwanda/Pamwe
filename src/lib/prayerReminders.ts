@@ -11,10 +11,10 @@ import { getNotificationPermissionStatus } from './notifications';
 // marking "I prayed today" changed nothing.
 //
 // They are now DATED one-shots over a rolling window, re-armed by syncReminders
-// on every visit to the Prayers tab. That makes "quiet once you've prayed"
-// expressible (cancel just today's) and makes reminders self-healing: a prayer
-// answered or deleted on the PARTNER'S phone drops off this one too, which the
-// old local-only clearReminder could never do.
+// on every visit to the Prayers tab. Praying for something ends the asking for
+// good (the reminder is dropped, not paused), and reminders are self-healing: a
+// prayer answered or deleted on the PARTNER'S phone drops off this one too,
+// which the old local-only clearReminder could never do.
 //
 // iOS keeps at most 64 pending local notifications and silently drops the rest,
 // so the window is budgeted rather than fixed: with many reminders each gets a
@@ -139,14 +139,6 @@ export async function clearReminder(prayerId: string) {
   }
 }
 
-// Praying for something ends the asking. Not just for today: being reminded
-// daily about a prayer you have already prayed is the nag Christian hit. The
-// stored time is kept, so once the mark ages out of the week window syncReminders
-// arms it again, and the Sunday review is what surfaces it in the meantime.
-export async function silenceForWeek(prayerId: string) {
-  await cancelWindow(prayerId);
-}
-
 function windowFor(reminderCount: number): number {
   if (reminderCount <= 0) return MAX_AHEAD_DAYS;
   const perPrayer = Math.floor(PRAYER_BUDGET / reminderCount);
@@ -159,7 +151,7 @@ function windowFor(reminderCount: number): number {
 // ran on the device that acted, so the other phone kept firing forever.
 export async function syncReminders(
   prayers: { id: string; text: string; status?: string }[],
-  prayedThisWeekIds: string[] = [],
+  prayedIds: string[] = [],
 ) {
   try {
     const map = await readMap();
@@ -183,10 +175,13 @@ export async function syncReminders(
         changed = true;
         continue;
       }
-      if (prayedThisWeekIds.includes(prayerId)) {
-        // Already prayed for this week: stay quiet entirely rather than asking
-        // again tomorrow. The Sunday review is the one nudge that still comes.
+      if (prayedIds.includes(prayerId)) {
+        // Prayed for: the asking is done, permanently. Backstop for the
+        // clearReminder that handlePray already ran; setting a new reminder
+        // from the prayer's sheet is the way to be asked again.
         await cancelWindow(prayerId);
+        delete map[prayerId];
+        changed = true;
         continue;
       }
       const r = map[prayerId];

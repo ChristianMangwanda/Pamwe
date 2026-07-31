@@ -11,6 +11,7 @@ import {
   scheduleRecapFromPrefs,
   schedulePrayerReviewFromPrefs,
   clearDeliveredNotifications,
+  cleanupLegacyScheduled,
 } from '../lib/notifications';
 
 type AuthContextType = {
@@ -63,6 +64,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // switch. The reminder schedules from the user's saved pref.
   useEffect(() => {
     if (!session?.user?.id) return;
+    // Not gated on the push token: these are local notifications, and the
+    // pre-b14/b17 repeating leftovers keep firing whether or not push registers.
+    cleanupLegacyScheduled();
     registerForPushNotifications().then((token) => {
       if (token) {
         savePushToken(token);

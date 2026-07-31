@@ -13,6 +13,12 @@ let hidden = false;
 export function hideSplashOnce() {
   if (hidden) return;
   hidden = true;
+  // Fade the splash out over the app instead of cutting: the one soft entrance
+  // per session, so opening feels eased while every tab switch stays instant
+  // (the b17 tab cross-fade is gone; see DockedTabBar). Native, iOS-only, and
+  // entirely outside the navigation machinery, so nothing here can race a
+  // screen transition.
+  SplashScreen.setOptions({ fade: true, duration: 350 });
   SplashScreen.hideAsync().catch(() => {
     // Already hidden, or the module isn't available. Nothing to recover from.
   });

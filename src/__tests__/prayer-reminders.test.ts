@@ -23,7 +23,7 @@ jest.mock('../lib/notifications', () => ({
 
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { setReminder, clearReminder, silenceForWeek, syncReminders, todayLocalISO } from '../lib/prayerReminders';
+import { setReminder, clearReminder, syncReminders, todayLocalISO } from '../lib/prayerReminders';
 
 const mockSchedule = Notifications.scheduleNotificationAsync as jest.Mock;
 const mockCancel = Notifications.cancelScheduledNotificationAsync as jest.Mock;
@@ -63,31 +63,33 @@ describe('setReminder', () => {
   });
 });
 
-// Christian's rule: praying for something ends the asking. Being reminded daily
-// about a prayer you have already prayed is the nag, so it goes quiet for the
-// week and the Sunday review is what brings it back.
-describe('silenceForWeek', () => {
-  it('cancels the whole pending window, not just today', async () => {
+// Christian's rule (2026-07-31): praying for something ends the asking, full
+// stop. Not quiet for a day or a week: the reminder is dropped, and setting a
+// new one from the prayer's sheet is the only way to be asked again.
+describe('praying retires the reminder', () => {
+  it('sync cancels the whole pending window, not just today', async () => {
     await setReminder('p1', 'prayed for now', 21, 0);
     jest.clearAllMocks();
 
-    await silenceForWeek('p1');
+    await syncReminders([{ id: 'p1', text: 'prayed for now' }], ['p1']);
 
     const cancelled = mockCancel.mock.calls.map(([id]) => String(id));
     expect(cancelled).toContain(`pamwe-prayer-p1-${todayLocalISO()}`);
     // The sweep covers future days too, so nothing fires again tomorrow.
     expect(cancelled.length).toBeGreaterThan(1);
     expect(cancelled.every((id) => id.startsWith('pamwe-prayer-p1-'))).toBe(true);
+    expect(scheduledIds()).toHaveLength(0);
   });
 
-  it('keeps the stored time so the reminder can return next week', async () => {
+  it('never re-arms it, even after the mark ages out of the recent-marks window', async () => {
     await setReminder('p1', 'prayed for now', 21, 0);
-    await silenceForWeek('p1');
+    await syncReminders([{ id: 'p1', text: 'prayed for now' }], ['p1']);
     jest.clearAllMocks();
 
-    // A week later the mark has aged out, so sync arms it again unasked.
+    // Weeks later the mark no longer appears in the marks the tab fetches.
+    // The reminder was dropped outright, so nothing comes back.
     await syncReminders([{ id: 'p1', text: 'prayed for now' }], []);
-    expect(scheduledIds().some((id) => id.startsWith('pamwe-prayer-p1-'))).toBe(true);
+    expect(scheduledIds()).toHaveLength(0);
   });
 });
 
@@ -114,13 +116,13 @@ describe('syncReminders', () => {
     expect(scheduledIds()).toHaveLength(0);
   });
 
-  it('arms nothing at all for a prayer already prayed for this week', async () => {
+  it('arms nothing at all for a prayer already prayed for', async () => {
     await setReminder('p1', 'prayed already', 8, 0);
     jest.clearAllMocks();
 
     await syncReminders([{ id: 'p1', text: 'prayed already' }], ['p1']);
 
-    // Not today, and not tomorrow either: the asking is done for the week.
+    // Not today, and not tomorrow either: the asking is done.
     expect(scheduledIds()).toHaveLength(0);
   });
 

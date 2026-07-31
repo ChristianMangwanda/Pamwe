@@ -25,6 +25,7 @@ jest.mock('../lib/notifications', () => ({
   scheduleRecapFromPrefs: jest.fn(() => Promise.resolve()),
   schedulePrayerReviewFromPrefs: jest.fn(() => Promise.resolve()),
   clearDeliveredNotifications: jest.fn(() => Promise.resolve()),
+  cleanupLegacyScheduled: jest.fn(() => Promise.resolve()),
 }));
 
 const mockGetSession = supabase.auth.getSession as jest.Mock;

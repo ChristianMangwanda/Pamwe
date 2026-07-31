@@ -144,7 +144,7 @@ export function PrayerDetailSheet({
               <BellRinging size={17} color={colors.accent2} weight="regular" />
               <View style={styles.flex}>
                 <Text style={[styles.reminderTitle, { color: colors.ink }]}>Remind me to pray</Text>
-                <Text style={[styles.reminderSub, { color: colors.muted }]}>A daily nudge on this phone.</Text>
+                <Text style={[styles.reminderSub, { color: colors.muted }]}>A daily nudge on this phone. It stops once you pray for it.</Text>
               </View>
               <Switch
                 value={!!reminder}
