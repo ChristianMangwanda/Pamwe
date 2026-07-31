@@ -9,6 +9,7 @@ export default function YouLayout() {
       <Stack.Screen name="settings" />
       <Stack.Screen name="recaps" />
       <Stack.Screen name="couple" />
+      <Stack.Screen name="anniversary" />
       <Stack.Screen name="privacy" />
       <Stack.Screen name="terms" />
       <Stack.Screen name="delete-account" options={{ presentation: 'modal' }} />
