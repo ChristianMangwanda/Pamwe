@@ -1,0 +1,402 @@
+{
+  "plugins": [
+    "react",
+    "import"
+  ],
+  "rules": {
+    "react/forbid-elements": [
+      "warn",
+      {
+        "forbid": [
+          {
+            "element": "button",
+            "message": "Use <Button> from the design system instead of <button>."
+          }
+        ]
+      }
+    ],
+    "no-restricted-imports": [
+      "warn",
+      {
+        "patterns": [
+          {
+            "group": [
+              "components/general/Avatar/**",
+              "components/general/BackLink/**",
+              "components/general/BottomSheet/**",
+              "components/general/Button/**",
+              "components/general/Card/**",
+              "components/general/CategoryChip/**",
+              "components/general/Floral/**",
+              "components/general/Glass/**",
+              "components/general/ProgressBar/**",
+              "components/general/Screen/**",
+              "components/general/SectionEyebrow/**",
+              "components/general/SegmentedControl/**",
+              "components/general/Spinner/**",
+              "components/general/StreakBar/**",
+              "components/general/StreakTree/**",
+              "components/general/StripedBanner/**",
+              "components/general/Switch/**",
+              "components/general/Text/**",
+              "components/general/TwineDivider/**"
+            ],
+            "message": "Import design-system components from 'index.js', not component internals."
+          }
+        ]
+      }
+    ],
+    "no-restricted-syntax": [
+      "warn",
+      {
+        "selector": "Literal[value=/#[0-9a-fA-F]{3,8}\\b/]",
+        "message": "Raw hex color — use a design-system color token via var()."
+      },
+      {
+        "selector": "Literal[value=/\\b\\d+px\\b/]",
+        "message": "Raw px value — use a design-system spacing token via var()."
+      },
+      {
+        "selector": "Literal[value=/font-family\\s*:\\s*(?!['\\\"]?(?:Fraunces_300Light|Fraunces_300Light_Italic|Fraunces_400Regular|Fraunces_400Regular_Italic|Fraunces_500Medium|Fraunces_500Medium_Italic|Fraunces_600SemiBold|InstrumentSans_400Regular|InstrumentSans_500Medium|InstrumentSans_600SemiBold))/i]",
+        "message": "Font not provided by the design system. Available: Fraunces_300Light, Fraunces_300Light_Italic, Fraunces_400Regular, Fraunces_400Regular_Italic, Fraunces_500Medium, Fraunces_500Medium_Italic, Fraunces_600SemiBold, InstrumentSans_400Regular, InstrumentSans_500Medium, InstrumentSans_600SemiBold."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Avatar'] > JSXAttribute > JSXIdentifier[name!=/^(?:initial|name|status|dashed|key|ref|className|style|children)$/]",
+        "message": "<Avatar> doesn't accept that prop. Declared props: initial, name, status, dashed."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='BackLink'] > JSXAttribute > JSXIdentifier[name!=/^(?:onPress|label|key|ref|className|style|children)$/]",
+        "message": "<BackLink> doesn't accept that prop. Declared props: onPress, label."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='BottomSheet'] > JSXAttribute > JSXIdentifier[name!=/^(?:visible|onClose|children|key|ref|className|style|children)$/]",
+        "message": "<BottomSheet> doesn't accept that prop. Declared props: visible, onClose, children."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Button'] > JSXAttribute > JSXIdentifier[name!=/^(?:variant|title|loading|activeOpacity|children|rejectResponderTermination|delayLongPress|delayPressIn|delayPressOut|disabled|focusable|hitSlop|id|style|pressRetentionOffset|testID|touchSoundDisabled|accessible|accessibilityActions|accessibilityLabel|accessibilityRole|accessibilityState|accessibilityHint|accessibilityValue|importantForAccessibility|role|accessibilityLabelledBy|accessibilityLiveRegion|screenReaderFocusable|accessibilityElementsHidden|accessibilityViewIsModal|accessibilityIgnoresInvertColors|accessibilityLanguage|accessibilityShowsLargeContentViewer|accessibilityLargeContentTitle|accessibilityRespondsToUserInteraction|hasTVPreferredFocus|nextFocusDown|nextFocusForward|nextFocusLeft|nextFocusRight|nextFocusUp|key|ref|className|style|children)$/]",
+        "message": "<Button> doesn't accept that prop. Declared props: variant, title, loading, activeOpacity, children, rejectResponderTermination, delayLongPress, delayPressIn, delayPressOut, disabled, focusable, hitSlop, id, style, pressRetentionOffset, testID, touchSoundDisabled, accessible, accessibilityActions, accessibilityLabel, accessibilityRole, accessibilityState, accessibilityHint, accessibilityValue, importantForAccessibility, role, accessibilityLabelledBy, accessibilityLiveRegion, screenReaderFocusable, accessibilityElementsHidden, accessibilityViewIsModal, accessibilityIgnoresInvertColors, accessibilityLanguage, accessibilityShowsLargeContentViewer, accessibilityLargeContentTitle, accessibilityRespondsToUserInteraction, hasTVPreferredFocus, nextFocusDown, nextFocusForward, nextFocusLeft, nextFocusRight, nextFocusUp."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Button'] > JSXAttribute[name.name='variant'] > Literal[value!=/^(?:primary|secondary|ghost|dashed)$/]",
+        "message": "<Button> variant must be one of 'primary' | 'secondary' | 'ghost' | 'dashed'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Button'] > JSXAttribute[name.name='importantForAccessibility'] > Literal[value!=/^(?:auto|yes|no|no-hide-descendants)$/]",
+        "message": "<Button> importantForAccessibility must be one of 'auto' | 'yes' | 'no' | 'no-hide-descendants'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Button'] > JSXAttribute[name.name='accessibilityLiveRegion'] > Literal[value!=/^(?:none|polite|assertive)$/]",
+        "message": "<Button> accessibilityLiveRegion must be one of 'none' | 'polite' | 'assertive'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Card'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|radius|padding|hitSlop|id|needsOffscreenAlphaCompositing|pointerEvents|removeClippedSubviews|style|testID|nativeID|collapsable|collapsableChildren|renderToHardwareTextureAndroid|focusable|tabIndex|shouldRasterizeIOS|isTVSelectable|hasTVPreferredFocus|tvParallaxShiftDistanceX|tvParallaxShiftDistanceY|tvParallaxTiltAngle|tvParallaxMagnification|accessible|accessibilityActions|accessibilityLabel|accessibilityRole|accessibilityState|accessibilityHint|accessibilityValue|importantForAccessibility|role|accessibilityLabelledBy|accessibilityLiveRegion|screenReaderFocusable|accessibilityElementsHidden|accessibilityViewIsModal|accessibilityIgnoresInvertColors|accessibilityLanguage|accessibilityShowsLargeContentViewer|accessibilityLargeContentTitle|accessibilityRespondsToUserInteraction|key|ref|className|style|children)$/]",
+        "message": "<Card> doesn't accept that prop. Declared props: children, radius, padding, hitSlop, id, needsOffscreenAlphaCompositing, pointerEvents, removeClippedSubviews, style, testID, nativeID, collapsable, collapsableChildren, renderToHardwareTextureAndroid, focusable, tabIndex, shouldRasterizeIOS, isTVSelectable, hasTVPreferredFocus, tvParallaxShiftDistanceX, tvParallaxShiftDistanceY, tvParallaxTiltAngle, tvParallaxMagnification, accessible, accessibilityActions, accessibilityLabel, accessibilityRole, accessibilityState, accessibilityHint, accessibilityValue, importantForAccessibility, role, accessibilityLabelledBy, accessibilityLiveRegion, screenReaderFocusable, accessibilityElementsHidden, accessibilityViewIsModal, accessibilityIgnoresInvertColors, accessibilityLanguage, accessibilityShowsLargeContentViewer, accessibilityLargeContentTitle, accessibilityRespondsToUserInteraction."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Card'] > JSXAttribute[name.name='pointerEvents'] > Literal[value!=/^(?:none|auto|box-none|box-only)$/]",
+        "message": "<Card> pointerEvents must be one of 'none' | 'auto' | 'box-none' | 'box-only'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Card'] > JSXAttribute[name.name='importantForAccessibility'] > Literal[value!=/^(?:auto|yes|no|no-hide-descendants)$/]",
+        "message": "<Card> importantForAccessibility must be one of 'auto' | 'yes' | 'no' | 'no-hide-descendants'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Card'] > JSXAttribute[name.name='accessibilityLiveRegion'] > Literal[value!=/^(?:none|polite|assertive)$/]",
+        "message": "<Card> accessibilityLiveRegion must be one of 'none' | 'polite' | 'assertive'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='CategoryChip'] > JSXAttribute > JSXIdentifier[name!=/^(?:category|style|key|ref|className|style|children)$/]",
+        "message": "<CategoryChip> doesn't accept that prop. Declared props: category, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='CategoryChip'] > JSXAttribute[name.name='category'] > Literal[value!=/^(?:family|health|work|guidance|thanks|other)$/]",
+        "message": "<CategoryChip> category must be one of 'family' | 'health' | 'work' | 'guidance' | 'thanks' | 'other'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Floral'] > JSXAttribute > JSXIdentifier[name!=/^(?:variant|style|key|ref|className|style|children)$/]",
+        "message": "<Floral> doesn't accept that prop. Declared props: variant, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Floral'] > JSXAttribute[name.name='variant'] > Literal[value!=/^(?:corner|divider)$/]",
+        "message": "<Floral> variant must be one of 'corner' | 'divider'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Glass'] > JSXAttribute > JSXIdentifier[name!=/^(?:radius|children|hitSlop|id|needsOffscreenAlphaCompositing|pointerEvents|removeClippedSubviews|style|testID|nativeID|collapsable|collapsableChildren|renderToHardwareTextureAndroid|focusable|tabIndex|shouldRasterizeIOS|isTVSelectable|hasTVPreferredFocus|tvParallaxShiftDistanceX|tvParallaxShiftDistanceY|tvParallaxTiltAngle|tvParallaxMagnification|accessible|accessibilityActions|accessibilityLabel|accessibilityRole|accessibilityState|accessibilityHint|accessibilityValue|importantForAccessibility|role|accessibilityLabelledBy|accessibilityLiveRegion|screenReaderFocusable|accessibilityElementsHidden|accessibilityViewIsModal|accessibilityIgnoresInvertColors|accessibilityLanguage|accessibilityShowsLargeContentViewer|accessibilityLargeContentTitle|accessibilityRespondsToUserInteraction|key|ref|className|style|children)$/]",
+        "message": "<Glass> doesn't accept that prop. Declared props: radius, children, hitSlop, id, needsOffscreenAlphaCompositing, pointerEvents, removeClippedSubviews, style, testID, nativeID, collapsable, collapsableChildren, renderToHardwareTextureAndroid, focusable, tabIndex, shouldRasterizeIOS, isTVSelectable, hasTVPreferredFocus, tvParallaxShiftDistanceX, tvParallaxShiftDistanceY, tvParallaxTiltAngle, tvParallaxMagnification, accessible, accessibilityActions, accessibilityLabel, accessibilityRole, accessibilityState, accessibilityHint, accessibilityValue, importantForAccessibility, role, accessibilityLabelledBy, accessibilityLiveRegion, screenReaderFocusable, accessibilityElementsHidden, accessibilityViewIsModal, accessibilityIgnoresInvertColors, accessibilityLanguage, accessibilityShowsLargeContentViewer, accessibilityLargeContentTitle, accessibilityRespondsToUserInteraction."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Glass'] > JSXAttribute[name.name='pointerEvents'] > Literal[value!=/^(?:none|auto|box-none|box-only)$/]",
+        "message": "<Glass> pointerEvents must be one of 'none' | 'auto' | 'box-none' | 'box-only'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Glass'] > JSXAttribute[name.name='importantForAccessibility'] > Literal[value!=/^(?:auto|yes|no|no-hide-descendants)$/]",
+        "message": "<Glass> importantForAccessibility must be one of 'auto' | 'yes' | 'no' | 'no-hide-descendants'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Glass'] > JSXAttribute[name.name='accessibilityLiveRegion'] > Literal[value!=/^(?:none|polite|assertive)$/]",
+        "message": "<Glass> accessibilityLiveRegion must be one of 'none' | 'polite' | 'assertive'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ProgressBar'] > JSXAttribute > JSXIdentifier[name!=/^(?:progress|height|key|ref|className|style|children)$/]",
+        "message": "<ProgressBar> doesn't accept that prop. Declared props: progress, height."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Screen'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|scroll|animated|refreshControl|keyboardShouldPersistTaps|key|ref|className|style|children)$/]",
+        "message": "<Screen> doesn't accept that prop. Declared props: children, scroll, animated, refreshControl, keyboardShouldPersistTaps."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='SectionEyebrow'] > JSXAttribute > JSXIdentifier[name!=/^(?:color|italic|allowFontScaling|children|ellipsizeMode|id|lineBreakMode|numberOfLines|style|testID|nativeID|maxFontSizeMultiplier|minimumFontScale|pointerEvents|pressRetentionOffset|adjustsFontSizeToFit|dynamicTypeRamp|suppressHighlighting|lineBreakStrategyIOS|disabled|selectable|selectionColor|textBreakStrategy|dataDetectorType|android_hyphenationFrequency|accessible|accessibilityActions|accessibilityLabel|accessibilityRole|accessibilityState|accessibilityHint|accessibilityValue|importantForAccessibility|role|accessibilityLabelledBy|accessibilityLiveRegion|screenReaderFocusable|accessibilityElementsHidden|accessibilityViewIsModal|accessibilityIgnoresInvertColors|accessibilityLanguage|accessibilityShowsLargeContentViewer|accessibilityLargeContentTitle|accessibilityRespondsToUserInteraction|key|ref|className|style|children)$/]",
+        "message": "<SectionEyebrow> doesn't accept that prop. Declared props: color, italic, allowFontScaling, children, ellipsizeMode, id, lineBreakMode, numberOfLines, style, testID, nativeID, maxFontSizeMultiplier, minimumFontScale, pointerEvents, pressRetentionOffset, adjustsFontSizeToFit, dynamicTypeRamp, suppressHighlighting, lineBreakStrategyIOS, disabled, selectable, selectionColor, textBreakStrategy, dataDetectorType, android_hyphenationFrequency, accessible, accessibilityActions, accessibilityLabel, accessibilityRole, accessibilityState, accessibilityHint, accessibilityValue, importantForAccessibility, role, accessibilityLabelledBy, accessibilityLiveRegion, screenReaderFocusable, accessibilityElementsHidden, accessibilityViewIsModal, accessibilityIgnoresInvertColors, accessibilityLanguage, accessibilityShowsLargeContentViewer, accessibilityLargeContentTitle, accessibilityRespondsToUserInteraction."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='SectionEyebrow'] > JSXAttribute[name.name='ellipsizeMode'] > Literal[value!=/^(?:head|middle|tail|clip)$/]",
+        "message": "<SectionEyebrow> ellipsizeMode must be one of 'head' | 'middle' | 'tail' | 'clip'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='SectionEyebrow'] > JSXAttribute[name.name='lineBreakMode'] > Literal[value!=/^(?:head|middle|tail|clip)$/]",
+        "message": "<SectionEyebrow> lineBreakMode must be one of 'head' | 'middle' | 'tail' | 'clip'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='SectionEyebrow'] > JSXAttribute[name.name='pointerEvents'] > Literal[value!=/^(?:none|auto|box-none|box-only)$/]",
+        "message": "<SectionEyebrow> pointerEvents must be one of 'none' | 'auto' | 'box-none' | 'box-only'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='SectionEyebrow'] > JSXAttribute[name.name='dynamicTypeRamp'] > Literal[value!=/^(?:caption2|caption1|footnote|subheadline|callout|body|headline|title3|title2|title1|largeTitle)$/]",
+        "message": "<SectionEyebrow> dynamicTypeRamp must be one of 'caption2' | 'caption1' | 'footnote' | 'subheadline' | 'callout' | 'body' | 'headline' | 'title3' | 'title2' | 'title1' | 'largeTitle'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='SectionEyebrow'] > JSXAttribute[name.name='lineBreakStrategyIOS'] > Literal[value!=/^(?:none|standard|hangul-word|push-out)$/]",
+        "message": "<SectionEyebrow> lineBreakStrategyIOS must be one of 'none' | 'standard' | 'hangul-word' | 'push-out'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='SectionEyebrow'] > JSXAttribute[name.name='textBreakStrategy'] > Literal[value!=/^(?:simple|highQuality|balanced)$/]",
+        "message": "<SectionEyebrow> textBreakStrategy must be one of 'simple' | 'highQuality' | 'balanced'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='SectionEyebrow'] > JSXAttribute[name.name='dataDetectorType'] > Literal[value!=/^(?:none|link|phoneNumber|email|all)$/]",
+        "message": "<SectionEyebrow> dataDetectorType must be one of 'none' | 'link' | 'phoneNumber' | 'email' | 'all'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='SectionEyebrow'] > JSXAttribute[name.name='android_hyphenationFrequency'] > Literal[value!=/^(?:none|normal|full)$/]",
+        "message": "<SectionEyebrow> android_hyphenationFrequency must be one of 'none' | 'normal' | 'full'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='SectionEyebrow'] > JSXAttribute[name.name='importantForAccessibility'] > Literal[value!=/^(?:auto|yes|no|no-hide-descendants)$/]",
+        "message": "<SectionEyebrow> importantForAccessibility must be one of 'auto' | 'yes' | 'no' | 'no-hide-descendants'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='SectionEyebrow'] > JSXAttribute[name.name='accessibilityLiveRegion'] > Literal[value!=/^(?:none|polite|assertive)$/]",
+        "message": "<SectionEyebrow> accessibilityLiveRegion must be one of 'none' | 'polite' | 'assertive'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='SegmentedControl'] > JSXAttribute > JSXIdentifier[name!=/^(?:segments|value|onChange|style|key|ref|className|style|children)$/]",
+        "message": "<SegmentedControl> doesn't accept that prop. Declared props: segments, value, onChange, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Spinner'] > JSXAttribute > JSXIdentifier[name!=/^(?:size|color|key|ref|className|style|children)$/]",
+        "message": "<Spinner> doesn't accept that prop. Declared props: size, color."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='StreakBar'] > JSXAttribute > JSXIdentifier[name!=/^(?:count|max|key|ref|className|style|children)$/]",
+        "message": "<StreakBar> doesn't accept that prop. Declared props: count, max."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='StreakTree'] > JSXAttribute > JSXIdentifier[name!=/^(?:count|key|ref|className|style|children)$/]",
+        "message": "<StreakTree> doesn't accept that prop. Declared props: count."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='StripedBanner'] > JSXAttribute > JSXIdentifier[name!=/^(?:height|radius|stripe|tint|style|children|key|ref|className|style|children)$/]",
+        "message": "<StripedBanner> doesn't accept that prop. Declared props: height, radius, stripe, tint, style, children."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Switch'] > JSXAttribute > JSXIdentifier[name!=/^(?:value|onValueChange|accessibilityLabel|key|ref|className|style|children)$/]",
+        "message": "<Switch> doesn't accept that prop. Declared props: value, onValueChange, accessibilityLabel."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Text'] > JSXAttribute > JSXIdentifier[name!=/^(?:variant|color|italic|allowFontScaling|children|ellipsizeMode|id|lineBreakMode|numberOfLines|style|testID|nativeID|maxFontSizeMultiplier|minimumFontScale|pointerEvents|pressRetentionOffset|adjustsFontSizeToFit|dynamicTypeRamp|suppressHighlighting|lineBreakStrategyIOS|disabled|selectable|selectionColor|textBreakStrategy|dataDetectorType|android_hyphenationFrequency|accessible|accessibilityActions|accessibilityLabel|accessibilityRole|accessibilityState|accessibilityHint|accessibilityValue|importantForAccessibility|role|accessibilityLabelledBy|accessibilityLiveRegion|screenReaderFocusable|accessibilityElementsHidden|accessibilityViewIsModal|accessibilityIgnoresInvertColors|accessibilityLanguage|accessibilityShowsLargeContentViewer|accessibilityLargeContentTitle|accessibilityRespondsToUserInteraction|key|ref|className|style|children)$/]",
+        "message": "<Text> doesn't accept that prop. Declared props: variant, color, italic, allowFontScaling, children, ellipsizeMode, id, lineBreakMode, numberOfLines, style, testID, nativeID, maxFontSizeMultiplier, minimumFontScale, pointerEvents, pressRetentionOffset, adjustsFontSizeToFit, dynamicTypeRamp, suppressHighlighting, lineBreakStrategyIOS, disabled, selectable, selectionColor, textBreakStrategy, dataDetectorType, android_hyphenationFrequency, accessible, accessibilityActions, accessibilityLabel, accessibilityRole, accessibilityState, accessibilityHint, accessibilityValue, importantForAccessibility, role, accessibilityLabelledBy, accessibilityLiveRegion, screenReaderFocusable, accessibilityElementsHidden, accessibilityViewIsModal, accessibilityIgnoresInvertColors, accessibilityLanguage, accessibilityShowsLargeContentViewer, accessibilityLargeContentTitle, accessibilityRespondsToUserInteraction."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Text'] > JSXAttribute[name.name='variant'] > Literal[value!=/^(?:button|heading|body|hero|scripture|journal|label|eyebrow|h1|h2|reader|cta|chip)$/]",
+        "message": "<Text> variant must be one of 'button' | 'heading' | 'body' | 'hero' | 'scripture' | 'journal' | 'label' | 'eyebrow' | 'h1' | 'h2' | 'reader' | 'cta' | 'chip'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Text'] > JSXAttribute[name.name='ellipsizeMode'] > Literal[value!=/^(?:head|middle|tail|clip)$/]",
+        "message": "<Text> ellipsizeMode must be one of 'head' | 'middle' | 'tail' | 'clip'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Text'] > JSXAttribute[name.name='lineBreakMode'] > Literal[value!=/^(?:head|middle|tail|clip)$/]",
+        "message": "<Text> lineBreakMode must be one of 'head' | 'middle' | 'tail' | 'clip'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Text'] > JSXAttribute[name.name='pointerEvents'] > Literal[value!=/^(?:none|auto|box-none|box-only)$/]",
+        "message": "<Text> pointerEvents must be one of 'none' | 'auto' | 'box-none' | 'box-only'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Text'] > JSXAttribute[name.name='dynamicTypeRamp'] > Literal[value!=/^(?:caption2|caption1|footnote|subheadline|callout|body|headline|title3|title2|title1|largeTitle)$/]",
+        "message": "<Text> dynamicTypeRamp must be one of 'caption2' | 'caption1' | 'footnote' | 'subheadline' | 'callout' | 'body' | 'headline' | 'title3' | 'title2' | 'title1' | 'largeTitle'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Text'] > JSXAttribute[name.name='lineBreakStrategyIOS'] > Literal[value!=/^(?:none|standard|hangul-word|push-out)$/]",
+        "message": "<Text> lineBreakStrategyIOS must be one of 'none' | 'standard' | 'hangul-word' | 'push-out'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Text'] > JSXAttribute[name.name='textBreakStrategy'] > Literal[value!=/^(?:simple|highQuality|balanced)$/]",
+        "message": "<Text> textBreakStrategy must be one of 'simple' | 'highQuality' | 'balanced'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Text'] > JSXAttribute[name.name='dataDetectorType'] > Literal[value!=/^(?:none|link|phoneNumber|email|all)$/]",
+        "message": "<Text> dataDetectorType must be one of 'none' | 'link' | 'phoneNumber' | 'email' | 'all'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Text'] > JSXAttribute[name.name='android_hyphenationFrequency'] > Literal[value!=/^(?:none|normal|full)$/]",
+        "message": "<Text> android_hyphenationFrequency must be one of 'none' | 'normal' | 'full'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Text'] > JSXAttribute[name.name='importantForAccessibility'] > Literal[value!=/^(?:auto|yes|no|no-hide-descendants)$/]",
+        "message": "<Text> importantForAccessibility must be one of 'auto' | 'yes' | 'no' | 'no-hide-descendants'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Text'] > JSXAttribute[name.name='accessibilityLiveRegion'] > Literal[value!=/^(?:none|polite|assertive)$/]",
+        "message": "<Text> accessibilityLiveRegion must be one of 'none' | 'polite' | 'assertive'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='TwineDivider'] > JSXAttribute > JSXIdentifier[name!=/^(?:width|key|ref|className|style|children)$/]",
+        "message": "<TwineDivider> doesn't accept that prop. Declared props: width."
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "**/index.js"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    }
+  ],
+  "x-omelette": {
+    "components": {
+      "Avatar": {
+        "replaces": []
+      },
+      "BackLink": {
+        "replaces": []
+      },
+      "BottomSheet": {
+        "replaces": []
+      },
+      "Button": {
+        "replaces": [
+          "button"
+        ]
+      },
+      "Card": {
+        "replaces": []
+      },
+      "CategoryChip": {
+        "replaces": []
+      },
+      "Floral": {
+        "replaces": []
+      },
+      "Glass": {
+        "replaces": []
+      },
+      "ProgressBar": {
+        "replaces": []
+      },
+      "Screen": {
+        "replaces": []
+      },
+      "SectionEyebrow": {
+        "replaces": []
+      },
+      "SegmentedControl": {
+        "replaces": []
+      },
+      "Spinner": {
+        "replaces": []
+      },
+      "StreakBar": {
+        "replaces": []
+      },
+      "StreakTree": {
+        "replaces": []
+      },
+      "StripedBanner": {
+        "replaces": []
+      },
+      "Switch": {
+        "replaces": []
+      },
+      "Text": {
+        "replaces": []
+      },
+      "TwineDivider": {
+        "replaces": []
+      }
+    },
+    "tokens": [
+      "--accent",
+      "--accent2",
+      "--bg",
+      "--bgOverlay",
+      "--glass",
+      "--glassBorder",
+      "--gutter",
+      "--ink",
+      "--ink2",
+      "--line",
+      "--line2",
+      "--line3",
+      "--lineAccent",
+      "--muted",
+      "--sel",
+      "--surface",
+      "--surface2",
+      "--swatch-amber",
+      "--swatch-highlightInk",
+      "--swatch-rose",
+      "--swatch-sage",
+      "--swatch-sky"
+    ],
+    "tokenKinds": {
+      "--bg": "color",
+      "--surface": "color",
+      "--surface2": "color",
+      "--line": "color",
+      "--line2": "color",
+      "--line3": "color",
+      "--lineAccent": "color",
+      "--sel": "color",
+      "--ink": "color",
+      "--ink2": "color",
+      "--muted": "color",
+      "--accent": "color",
+      "--accent2": "color",
+      "--glass": "color",
+      "--glassBorder": "color",
+      "--bgOverlay": "color",
+      "--gutter": "spacing",
+      "--swatch-amber": "color",
+      "--swatch-rose": "color",
+      "--swatch-sage": "color",
+      "--swatch-sky": "color",
+      "--swatch-highlightInk": "color"
+    },
+    "fontFamilies": [
+      "Fraunces_300Light",
+      "Fraunces_300Light_Italic",
+      "Fraunces_400Regular",
+      "Fraunces_400Regular_Italic",
+      "Fraunces_500Medium",
+      "Fraunces_500Medium_Italic",
+      "Fraunces_600SemiBold",
+      "InstrumentSans_400Regular",
+      "InstrumentSans_500Medium",
+      "InstrumentSans_600SemiBold"
+    ]
+  }
+}

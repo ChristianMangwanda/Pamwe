@@ -14,7 +14,7 @@ import { Floral } from '../../../components/ui/Floral';
 import { AudioPlayer } from '../../../components/AudioPlayer';
 import { ReflectionResponses } from '../../../components/ReflectionResponses';
 import { RevealCeremony } from '../../../components/RevealCeremony';
-import { unseal } from '../../../lib/motion';
+import { unseal, UnsealKind } from '../../../lib/motion';
 import { haptics } from '../../../lib/haptics';
 import { fonts } from '../../../constants/typography';
 import { GUTTER } from '../../../theme/tokens';
@@ -54,18 +54,30 @@ export default function RevealScreen() {
   // 'checking' renders an opaque cover, so the cards can never flash behind the
   // ceremony while the stored flag is being read.
   const [phase, setPhase] = useState<'checking' | 'playing' | 'done'>('checking');
+  // How the cards arrive, and whether they are on the tree at all. The ceremony
+  // sets this when it starts its lift, 140ms before the veil has cleared, so
+  // they unfurl underneath it as its closing beat rather than after it.
+  const [cardMotion, setCardMotion] = useState<UnsealKind | null>(null);
   const seenKey = couplePlan?.id ? `pamwe:revealSeen:${couplePlan.id}:${dayNumber}` : null;
+
+  // Nothing here plays the ceremony, so this is the one place left to mark the
+  // moment: its own score ends in deliberate silence and a skip fires none.
+  const straightToWords = () => {
+    setPhase('done');
+    setCardMotion('full');
+    haptics.success();
+  };
 
   useEffect(() => {
     if (!revealed) return;
     // No plan to key the flag on: show the words rather than hanging forever on
     // the opaque cover that exists to stop them flashing.
-    if (!seenKey) { setPhase('done'); return; }
+    if (!seenKey) { straightToWords(); return; }
     let alive = true;
     AsyncStorage.getItem(seenKey)
       .then((v) => {
         if (!alive) return;
-        if (v) { setPhase('done'); return; }
+        if (v) { straightToWords(); return; }
         setPhase('playing');
         AsyncStorage.setItem(seenKey, '1').catch(() => {});
       })
@@ -73,12 +85,6 @@ export default function RevealScreen() {
       .catch(() => { if (alive) setPhase('playing'); });
     return () => { alive = false; };
   }, [revealed, seenKey]);
-
-  // The ceremony fires its own haptic on the beat where the initials meet, so
-  // only mark the moment here when it was skipped.
-  useEffect(() => {
-    if (revealed && phase === 'done') haptics.success();
-  }, [revealed, phase === 'done']);
 
   // Responses layer: what each of us left on the other's reflection. Live:
   // realtime on entry_responses refetches, and `revision` tells the cards to
@@ -149,7 +155,11 @@ export default function RevealScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top', 'bottom']}>
+    // The ceremony sits outside the safe area on purpose: its veil covers the
+    // whole screen and it centres on the true middle of it, not on the middle
+    // of what is left after the insets.
+    <View style={[styles.container, { backgroundColor: colors.bg }]}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       {/* Replying to your partner happens on this screen, and the keyboard used
           to sit right over the box you were typing in. */}
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
@@ -165,11 +175,11 @@ export default function RevealScreen() {
           <Floral variant="divider" style={styles.divider} />
         </View>
 
-        {/* Held back until the ceremony finishes, so the cards unfurl as its
-            closing beat rather than animating in unseen behind it. */}
-        {phase === 'done' && (
+        {/* Held back until the ceremony calls for them, so the cards unfurl as
+            its closing beat rather than animating in unseen behind it. */}
+        {cardMotion && (
           <>
-        <Animated.View entering={unseal(0)}>
+        <Animated.View entering={unseal(0, cardMotion)}>
           <EntryCard
             initial={myInitial}
             solid={false}
@@ -191,7 +201,7 @@ export default function RevealScreen() {
           </EntryCard>
         </Animated.View>
 
-        <Animated.View entering={unseal(1)}>
+        <Animated.View entering={unseal(1, cardMotion)}>
           <EntryCard
             initial={partnerInitial}
             solid
@@ -224,18 +234,20 @@ export default function RevealScreen() {
         </TouchableOpacity>
       </View>
       </KeyboardAvoidingView>
+    </SafeAreaView>
 
       {phase === 'playing' && (
         <RevealCeremony
           myInitial={myInitial}
           partnerInitial={partnerInitial}
+          onCardsIn={setCardMotion}
           onDone={() => setPhase('done')}
         />
       )}
       {phase === 'checking' && (
         <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.bg }]} />
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 

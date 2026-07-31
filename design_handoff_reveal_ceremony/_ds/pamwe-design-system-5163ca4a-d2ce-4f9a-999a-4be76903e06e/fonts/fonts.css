@@ -1,0 +1,50 @@
+@font-face{
+  font-family: 'Fraunces_300Light';
+  src: url('./Fraunces_300Light.ttf') format('truetype');
+  font-display: swap;
+}
+@font-face{
+  font-family: 'Fraunces_300Light_Italic';
+  src: url('./Fraunces_300Light_Italic.ttf') format('truetype');
+  font-display: swap;
+}
+@font-face{
+  font-family: 'Fraunces_400Regular';
+  src: url('./Fraunces_400Regular.ttf') format('truetype');
+  font-display: swap;
+}
+@font-face{
+  font-family: 'Fraunces_400Regular_Italic';
+  src: url('./Fraunces_400Regular_Italic.ttf') format('truetype');
+  font-display: swap;
+}
+@font-face{
+  font-family: 'Fraunces_500Medium';
+  src: url('./Fraunces_500Medium.ttf') format('truetype');
+  font-display: swap;
+}
+@font-face{
+  font-family: 'Fraunces_500Medium_Italic';
+  src: url('./Fraunces_500Medium_Italic.ttf') format('truetype');
+  font-display: swap;
+}
+@font-face{
+  font-family: 'Fraunces_600SemiBold';
+  src: url('./Fraunces_600SemiBold.ttf') format('truetype');
+  font-display: swap;
+}
+@font-face{
+  font-family: 'InstrumentSans_400Regular';
+  src: url('./InstrumentSans_400Regular.ttf') format('truetype');
+  font-display: swap;
+}
+@font-face{
+  font-family: 'InstrumentSans_500Medium';
+  src: url('./InstrumentSans_500Medium.ttf') format('truetype');
+  font-display: swap;
+}
+@font-face{
+  font-family: 'InstrumentSans_600SemiBold';
+  src: url('./InstrumentSans_600SemiBold.ttf') format('truetype');
+  font-display: swap;
+}

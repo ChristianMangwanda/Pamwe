@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/pamwe-design-system-5163ca4a-d2ce-4f9a-999a-4be76903e06e/fonts/fonts.css">
+<link rel="stylesheet" href="_ds/pamwe-design-system-5163ca4a-d2ce-4f9a-999a-4be76903e06e/_ds_bundle.css">
+<link rel="stylesheet" href="_ds/pamwe-design-system-5163ca4a-d2ce-4f9a-999a-4be76903e06e/styles.css">
+<script src="_ds/pamwe-design-system-5163ca4a-d2ce-4f9a-999a-4be76903e06e/_ds_bundle.js"></script>
+<style>
+:root { --sp: 1; }
+[data-speed="slow"] { --sp: 2.6; }
+html, body { margin: 0; padding: 0; background: #EFE6D6; }
+a { color: #6B2421; text-decoration: none; }
+a:hover { color: #9B5651; }
+@keyframes pmFade { from { opacity: 0 } to { opacity: 1 } }
+@keyframes pmFadeOut { from { opacity: 1 } to { opacity: 0 } }
+@keyframes pmTravelL { from { transform: translateX(-237px) } to { transform: translateX(-60px) } }
+@keyframes pmTravelR { from { transform: translateX(237px) } to { transform: translateX(60px) } }
+@keyframes pmPressL {
+  0% { transform: translateX(0); animation-timing-function: cubic-bezier(.6,0,.85,.4) }
+  53% { transform: translateX(34px); animation-timing-function: cubic-bezier(.22,1,.36,1) }
+  100% { transform: translateX(28px) }
+}
+@keyframes pmPressR {
+  0% { transform: translateX(0); animation-timing-function: cubic-bezier(.6,0,.85,.4) }
+  53% { transform: translateX(-34px); animation-timing-function: cubic-bezier(.22,1,.36,1) }
+  100% { transform: translateX(-28px) }
+}
+@keyframes pmSwell {
+  0% { transform: scale(1); animation-timing-function: cubic-bezier(.3,0,.7,1) }
+  14% { transform: scale(1.12); animation-timing-function: cubic-bezier(.22,1,.36,1) }
+  100% { transform: scale(1) }
+}
+@keyframes pmGlow {
+  0% { opacity: 0; transform: scale(.35); animation-timing-function: cubic-bezier(.2,.8,.4,1) }
+  23% { opacity: .85; transform: scale(1.5); animation-timing-function: cubic-bezier(.22,1,.36,1) }
+  100% { opacity: .3; transform: scale(1.18) }
+}
+@keyframes pmRing { from { opacity: .5; transform: scale(.55) } to { opacity: 0; transform: scale(2.9) } }
+@keyframes pmBloom {
+  0% { opacity: 0; transform: scale(.12) rotate(-18deg); animation-timing-function: cubic-bezier(.2,.85,.3,1) }
+  54% { opacity: 1; transform: scale(1.08) rotate(2deg); animation-timing-function: cubic-bezier(.22,1,.36,1) }
+  100% { opacity: 1; transform: scale(1) rotate(0deg) }
+}
+@keyframes pmVine { 0% { opacity: 0; transform: scaleX(.14) } 34% { opacity: 1 } 100% { opacity: 1; transform: scaleX(1) } }
+@keyframes pmSprig { from { opacity: 0; transform: translateY(10px) scale(.86) } to { opacity: .92; transform: translateY(0) scale(1) } }
+@keyframes pmAmen { from { opacity: 0; transform: translateY(14px) scale(.94) } to { opacity: 1; transform: translateY(0) scale(1) } }
+@keyframes pmLift { from { opacity: 1; transform: translateY(0) scale(1) } to { opacity: 0; transform: translateY(-16px) scale(1.03) } }
+@keyframes pmCard { from { opacity: 0; transform: translateY(22px) scale(.97) } to { opacity: 1; transform: translateY(0) scale(1) } }
+@keyframes pmBuzz { 0%, 100% { transform: translateX(0) } 20% { transform: translateX(1.3px) } 45% { transform: translateX(-1.1px) } 70% { transform: translateX(.6px) } }
+@keyframes pmTick { 0% { opacity: .22; transform: scale(1) } 16% { opacity: 1; transform: scale(2) } 100% { opacity: .3; transform: scale(1) } }
+@keyframes pmHead { from { transform: scaleX(0) } to { transform: scaleX(1) } }
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:var(--bg);padding:56px 48px 96px;font-family:'InstrumentSans_400Regular',sans-serif;color:var(--ink);box-sizing:border-box">
+
+  <div style="max-width:1420px;margin:0 auto;display:flex;flex-direction:column;gap:44px">
+
+    <header style="display:flex;flex-direction:column;gap:14px;max-width:760px">
+      <div style="font-family:'InstrumentSans_500Medium',sans-serif;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)">Pamwe · Reveal ceremony · round two</div>
+      <h1 style="margin:0;font-family:'Fraunces_500Medium',serif;font-size:46px;line-height:1.06;letter-spacing:-.01em;color:var(--ink)">Two orbs, one meeting, then the flower, then the word.</h1>
+      <p style="margin:0;font-size:16px;line-height:1.6;color:var(--ink2);max-width:620px;text-wrap:pretty">Four acts across 4.3 seconds, each with its own beat. The approach is long enough to watch, the contact is the loudest thing the app ever does, and "Amen" arrives alone. Timings below are exact and map one to one onto Reanimated.</p>
+    </header>
+
+    <div style="display:flex;gap:56px;align-items:flex-start;flex-wrap:wrap">
+
+      <div data-speed="{{ speedAttr }}" style="display:flex;flex-direction:column;gap:20px;position:sticky;top:32px">
+
+        <div ref="{{ stageRef }}" onClick="{{ onSkip }}" data-theme="{{ themeAttr }}" style="position:relative;width:390px;height:790px;border-radius:46px;border:1px solid var(--line);background:var(--bg);overflow:hidden;cursor:pointer;box-shadow:0 24px 60px rgba(43,31,20,.14)">
+
+          <div style="position:absolute;inset:0;animation:pmBuzz calc(180ms*var(--sp)) linear calc({{ buzzAt }}*var(--sp)) both">
+
+            <div style="position:absolute;inset:0;padding:56px 26px 0;box-sizing:border-box;display:flex;flex-direction:column;gap:18px">
+              <div style="display:flex;flex-direction:column;gap:6px;align-items:center;text-align:center">
+                <div style="font-family:'InstrumentSans_500Medium',sans-serif;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)">Today's reveal</div>
+                <div style="font-family:'Fraunces_400Regular_Italic',serif;font-size:19px;line-height:1.5;color:var(--ink);max-width:270px">They shall become one flesh.</div>
+                <div style="font-family:'InstrumentSans_400Regular',sans-serif;font-size:12px;color:var(--muted)">Genesis 2:24</div>
+              </div>
+              <div ref="{{ cardARef }}" style="animation:{{ cardKf }} calc({{ cardDur }}*var(--sp)) cubic-bezier(.22,1,.36,1) calc({{ cardDelayA }}*var(--sp)) both">
+                <div style="background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:10px">
+                  <div style="font-family:'InstrumentSans_500Medium',sans-serif;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)">Ammy</div>
+                  <div style="font-family:'Fraunces_400Regular',serif;font-size:15px;line-height:1.65;color:var(--ink)">I keep landing on the word leave. We left a lot to get here, and I would do it again this morning.</div>
+                </div>
+              </div>
+              <div ref="{{ cardBRef }}" style="animation:{{ cardKf }} calc({{ cardDur }}*var(--sp)) cubic-bezier(.22,1,.36,1) calc({{ cardDelayB }}*var(--sp)) both">
+                <div style="background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:10px">
+                  <div style="font-family:'InstrumentSans_500Medium',sans-serif;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)">Tanaka</div>
+                  <div style="font-family:'Fraunces_400Regular',serif;font-size:15px;line-height:1.65;color:var(--ink)">Mine was held. Today it looked like the ordinary things you did without being asked.</div>
+                </div>
+              </div>
+            </div>
+
+            <sc-if value="{{ full }}" hint-placeholder-val="{{ true }}">
+              <div ref="{{ veilRef }}" style="position:absolute;inset:0;background:var(--bg);animation:pmFadeOut calc(560ms*var(--sp)) cubic-bezier(.4,0,.6,1) calc(4260ms*var(--sp)) both"></div>
+              <div ref="{{ groupRef }}" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;animation:pmLift calc(480ms*var(--sp)) cubic-bezier(.4,0,.6,1) calc(4260ms*var(--sp)) both">
+
+                <div style="position:relative;width:100%;height:64px;display:flex;align-items:center;justify-content:center">
+
+                  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">
+                    <img src="assets/glow-light.png" alt="" style="width:236px;height:236px;display:{{ glowLight }};animation:pmGlow calc(620ms*var(--sp)) linear calc(1960ms*var(--sp)) both">
+                  </div>
+                  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">
+                    <img src="assets/glow-dark.png" alt="" style="width:236px;height:236px;display:{{ glowDark }};animation:pmGlow calc(620ms*var(--sp)) linear calc(1960ms*var(--sp)) both">
+                  </div>
+
+                  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">
+                    <div style="width:64px;height:64px;border-radius:32px;border:1px solid var(--accent2);opacity:0;animation:pmRing calc(720ms*var(--sp)) cubic-bezier(.2,.75,.3,1) calc(1980ms*var(--sp)) forwards"></div>
+                  </div>
+                  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">
+                    <div style="width:64px;height:64px;border-radius:32px;border:1px solid var(--lineAccent);opacity:0;animation:pmRing calc(760ms*var(--sp)) cubic-bezier(.2,.75,.3,1) calc(2100ms*var(--sp)) forwards"></div>
+                  </div>
+
+                  <div style="position:absolute;top:-56px;left:0;right:0;display:flex;justify-content:center;gap:84px;pointer-events:none">
+                    <img src="assets/sprig-left.png" alt="" style="width:88px;height:70px;transform-origin:bottom right;animation:pmSprig calc(600ms*var(--sp)) cubic-bezier(.22,1,.36,1) calc(2900ms*var(--sp)) both">
+                    <img src="assets/sprig-right.png" alt="" style="width:88px;height:70px;transform-origin:bottom left;animation:pmSprig calc(600ms*var(--sp)) cubic-bezier(.22,1,.36,1) calc(2990ms*var(--sp)) both">
+                  </div>
+
+                  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+                    <div style="animation:pmTravelL calc(1320ms*var(--sp)) cubic-bezier(.33,0,.5,.85) calc(260ms*var(--sp)) both">
+                      <div style="animation:pmPressL calc(720ms*var(--sp)) linear calc(1580ms*var(--sp)) both">
+                        <div style="animation:pmSwell calc(440ms*var(--sp)) linear calc(1980ms*var(--sp)) both">
+                          <div style="animation:pmFade calc(500ms*var(--sp)) cubic-bezier(.22,1,.36,1) calc(260ms*var(--sp)) both">
+                            <div style="width:64px;height:64px;border-radius:32px;background:var(--sel);border:1.5px solid var(--accent2);display:flex;align-items:center;justify-content:center;font-family:'Fraunces_500Medium',serif;font-size:22px;color:var(--accent)">A</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+                    <div style="animation:pmTravelR calc(1320ms*var(--sp)) cubic-bezier(.33,0,.5,.85) calc(260ms*var(--sp)) both">
+                      <div style="animation:pmPressR calc(720ms*var(--sp)) linear calc(1580ms*var(--sp)) both">
+                        <div style="animation:pmSwell calc(440ms*var(--sp)) linear calc(1980ms*var(--sp)) both">
+                          <div style="animation:pmFade calc(500ms*var(--sp)) cubic-bezier(.22,1,.36,1) calc(260ms*var(--sp)) both">
+                            <div style="width:64px;height:64px;border-radius:32px;background:var(--sel);border:1.5px solid var(--accent2);display:flex;align-items:center;justify-content:center;font-family:'Fraunces_500Medium',serif;font-size:22px;color:var(--accent)">T</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+                <div style="margin-top:30px;display:flex;align-items:center;justify-content:center">
+                  <img src="assets/vine-left.png" alt="" style="width:104px;height:42px;transform-origin:right center;animation:pmVine calc(600ms*var(--sp)) cubic-bezier(.22,1,.36,1) calc(2600ms*var(--sp)) both">
+                  <img src="assets/rose-center.png" alt="" style="width:84px;height:94px;margin:0 -4px;animation:pmBloom calc(560ms*var(--sp)) linear calc(2260ms*var(--sp)) both">
+                  <img src="assets/vine-right.png" alt="" style="width:104px;height:42px;transform-origin:left center;animation:pmVine calc(600ms*var(--sp)) cubic-bezier(.22,1,.36,1) calc(2640ms*var(--sp)) both">
+                </div>
+
+                <div style="margin-top:22px;font-family:'Fraunces_400Regular_Italic',serif;font-size:30px;letter-spacing:.04em;color:var(--accent);animation:pmAmen calc(600ms*var(--sp)) cubic-bezier(.22,1,.36,1) calc(3420ms*var(--sp)) both">Amen</div>
+
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ reducedRun }}" hint-placeholder-val="{{ false }}">
+              <div ref="{{ veilRef }}" style="position:absolute;inset:0;background:var(--bg);animation:pmFadeOut calc(400ms*var(--sp)) cubic-bezier(.4,0,.6,1) calc(1560ms*var(--sp)) both"></div>
+              <div ref="{{ groupRef }}" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;animation:pmFadeOut calc(360ms*var(--sp)) linear calc(1560ms*var(--sp)) both">
+                <div style="display:flex;align-items:center;justify-content:center;gap:0;animation:pmFade calc(320ms*var(--sp)) linear 0ms both">
+                  <div style="width:64px;height:64px;border-radius:32px;background:var(--sel);border:1.5px solid var(--accent2);display:flex;align-items:center;justify-content:center;font-family:'Fraunces_500Medium',serif;font-size:22px;color:var(--accent)">A</div>
+                  <div style="width:64px;height:64px;border-radius:32px;background:var(--sel);border:1.5px solid var(--accent2);display:flex;align-items:center;justify-content:center;font-family:'Fraunces_500Medium',serif;font-size:22px;color:var(--accent)">T</div>
+                </div>
+                <img src="assets/flowers-divider.png" alt="" style="width:232px;height:42px;margin-top:34px;animation:pmFade calc(360ms*var(--sp)) linear calc(420ms*var(--sp)) both">
+                <div style="margin-top:24px;font-family:'Fraunces_400Regular_Italic',serif;font-size:30px;letter-spacing:.04em;color:var(--accent);animation:pmFade calc(360ms*var(--sp)) linear calc(900ms*var(--sp)) both">Amen</div>
+              </div>
+            </sc-if>
+
+          </div>
+        </div>
+
+        <div style="width:390px;display:flex;flex-direction:column;gap:10px">
+          <div style="position:relative;height:26px">
+            <div style="position:absolute;top:11px;left:0;right:0;height:2px;background:var(--line2);border-radius:1px"></div>
+            <div style="position:absolute;top:11px;left:0;right:0;height:2px;border-radius:1px;overflow:hidden">
+              <div style="height:2px;background:var(--accent2);transform-origin:left center;animation:pmHead calc({{ totalMs }}*var(--sp)) linear 0ms both"></div>
+            </div>
+            <sc-for list="{{ haptics }}" as="h" hint-placeholder-count="8">
+              <div style="position:absolute;top:6px;left:{{ h.pct }}%;width:{{ h.size }}px;height:{{ h.size }}px;margin-left:-{{ h.half }}px;border-radius:50%;background:var(--accent);animation:pmTick calc(460ms*var(--sp)) ease-out calc({{ h.ms }}ms*var(--sp)) both"></div>
+            </sc-for>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-family:'InstrumentSans_400Regular',sans-serif">
+            <span>0s</span>
+            <span>haptic score</span>
+            <span>{{ totalLabel }}</span>
+          </div>
+        </div>
+
+        <div style="width:390px;display:flex;flex-direction:column;gap:14px;padding-top:4px">
+          <div style="width:180px"><x-import component-from-global-scope="Pamwe.Button" title="Play the ceremony" on-press="{{ onPlay }}" hint-size="180px,44px"></x-import></div>
+          <div style="display:flex;gap:12px;align-items:center">
+            <x-import component-from-global-scope="Pamwe.SegmentedControl" segments="{{ themeSegments }}" value="{{ themeAttr }}" on-change="{{ onTheme }}" hint-size="200px,36px"></x-import>
+          </div>
+          <div style="display:flex;gap:26px;align-items:center;flex-wrap:wrap">
+            <div style="display:flex;gap:10px;align-items:center">
+              <x-import component-from-global-scope="Pamwe.Switch" value="{{ reduced }}" on-value-change="{{ onReduced }}" hint-size="46px,28px"></x-import>
+              <span style="font-size:13px;color:var(--ink2)">Reduce Motion</span>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center">
+              <x-import component-from-global-scope="Pamwe.Switch" value="{{ slow }}" on-value-change="{{ onSlow }}" hint-size="46px,28px"></x-import>
+              <span style="font-size:13px;color:var(--ink2)">Study at 0.4x</span>
+            </div>
+          </div>
+          <div style="font-size:12px;line-height:1.6;color:var(--muted);max-width:360px">Tap the phone at any point to see the skip. The frame pulse at contact stands in for the haptic. Dots on the track are haptic beats.</div>
+        </div>
+      </div>
+
+      <div style="flex:1;min-width:520px;display:flex;flex-direction:column;gap:46px">
+
+        <section style="display:flex;flex-direction:column;gap:18px">
+          <h2 style="margin:0;font-family:'Fraunces_500Medium',serif;font-size:26px;color:var(--ink)">The four acts</h2>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <sc-for list="{{ acts }}" as="a" hint-placeholder-count="4">
+              <div style="display:grid;grid-template-columns:34px 150px 120px 1fr;gap:16px;align-items:baseline;padding:14px 0;border-top:1px solid var(--line2)">
+                <div style="font-family:'Fraunces_400Regular',serif;font-size:18px;color:var(--accent2)">{{ a.n }}</div>
+                <div style="font-family:'Fraunces_500Medium',serif;font-size:17px;color:var(--ink)">{{ a.name }}</div>
+                <div style="font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums">{{ a.window }}</div>
+                <div style="font-size:14px;line-height:1.6;color:var(--ink2);text-wrap:pretty">{{ a.note }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section style="display:flex;flex-direction:column;gap:18px">
+          <h2 style="margin:0;font-family:'Fraunces_500Medium',serif;font-size:26px;color:var(--ink)">Timeline</h2>
+          <p style="margin:0;font-size:14px;line-height:1.6;color:var(--ink2);max-width:640px">Every segment is transform or opacity only. Marks are absolute milliseconds from ceremony start. Where a row lists two easings, the keyframe carries a per segment curve. Distances are logical points on a 390 wide screen, measured from screen center.</p>
+          <div style="display:grid;grid-template-columns:112px 96px 1fr 116px 168px;gap:0;font-size:12.5px;border-top:1px solid var(--line);font-variant-numeric:tabular-nums">
+            <div style="padding:10px 12px;font-family:'InstrumentSans_500Medium',sans-serif;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);background:var(--sel)">Element</div>
+            <div style="padding:10px 12px;font-family:'InstrumentSans_500Medium',sans-serif;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);background:var(--sel)">Mark</div>
+            <div style="padding:10px 12px;font-family:'InstrumentSans_500Medium',sans-serif;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);background:var(--sel)">Transform</div>
+            <div style="padding:10px 12px;font-family:'InstrumentSans_500Medium',sans-serif;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);background:var(--sel)">Opacity</div>
+            <div style="padding:10px 12px;font-family:'InstrumentSans_500Medium',sans-serif;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);background:var(--sel)">Easing</div>
+            <sc-for list="{{ timeline }}" as="r" hint-placeholder-count="18">
+              <div style="padding:11px 12px;border-top:1px solid var(--line2);color:var(--ink);font-family:'InstrumentSans_500Medium',sans-serif">{{ r.el }}</div>
+              <div style="padding:11px 12px;border-top:1px solid var(--line2);color:var(--accent)">{{ r.mark }}</div>
+              <div style="padding:11px 12px;border-top:1px solid var(--line2);color:var(--ink2)">{{ r.tr }}</div>
+              <div style="padding:11px 12px;border-top:1px solid var(--line2);color:var(--ink2)">{{ r.op }}</div>
+              <div style="padding:11px 12px;border-top:1px solid var(--line2);color:var(--muted);font-size:11.5px">{{ r.ease }}</div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section style="display:flex;flex-direction:column;gap:18px">
+          <h2 style="margin:0;font-family:'Fraunces_500Medium',serif;font-size:26px;color:var(--ink)">Haptic score</h2>
+          <p style="margin:0;font-size:14px;line-height:1.6;color:var(--ink2);max-width:640px">The approach ticks quicken as the orbs close, so the body predicts the meeting before the eye confirms it. Contact is the only strong beat. Nothing fires after 2280, so "Amen" lands in silence.</p>
+          <div style="display:grid;grid-template-columns:88px 190px 1fr;font-size:13px;border-top:1px solid var(--line);font-variant-numeric:tabular-nums">
+            <sc-for list="{{ hapticSpec }}" as="h" hint-placeholder-count="8">
+              <div style="padding:11px 12px;border-top:1px solid var(--line2);color:var(--accent)">{{ h.ms }}</div>
+              <div style="padding:11px 12px;border-top:1px solid var(--line2);color:var(--ink);font-family:'InstrumentSans_500Medium',sans-serif">{{ h.pattern }}</div>
+              <div style="padding:11px 12px;border-top:1px solid var(--line2);color:var(--ink2)">{{ h.note }}</div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section style="display:flex;flex-direction:column;gap:18px">
+          <h2 style="margin:0;font-family:'Fraunces_500Medium',serif;font-size:26px;color:var(--ink)">Reduce Motion</h2>
+          <p style="margin:0;font-size:14px;line-height:1.6;color:var(--ink2);max-width:640px">No translation, no scale, no rotation. Only crossfades, and they keep the same order of acts so the ceremony still reads as a sequence rather than a stack. One haptic. Total 1960ms.</p>
+          <div style="display:grid;grid-template-columns:112px 1fr;font-size:13px;border-top:1px solid var(--line);font-variant-numeric:tabular-nums">
+            <sc-for list="{{ reduceSpec }}" as="r" hint-placeholder-count="6">
+              <div style="padding:11px 12px;border-top:1px solid var(--line2);color:var(--accent)">{{ r.ms }}</div>
+              <div style="padding:11px 12px;border-top:1px solid var(--line2);color:var(--ink2)">{{ r.what }}</div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section style="display:flex;flex-direction:column;gap:18px">
+          <h2 style="margin:0;font-family:'Fraunces_500Medium',serif;font-size:26px;color:var(--ink)">Skip</h2>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+            <div style="background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:10px">
+              <div style="font-family:'Fraunces_500Medium',serif;font-size:17px;color:var(--ink)">Before "Amen" settles</div>
+              <div style="font-size:13.5px;line-height:1.65;color:var(--ink2)">Cancel every animation and hold each value where it stands, no snapping back. Ceremony group opacity to 0 over 160ms linear. Veil opacity to 0 over 220ms after a 60ms delay. Cards unfurl at once, 320ms each, 90ms apart. Queued haptics are cleared and none fire.</div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:10px">
+              <div style="font-family:'Fraunces_500Medium',serif;font-size:17px;color:var(--ink)">After "Amen" settles, past 4020</div>
+              <div style="font-size:13.5px;line-height:1.65;color:var(--ink2)">A tap only shortens the hold. Run the normal lift immediately: veil 560ms, group rise and fade 480ms, cards on their usual 500ms stagger. The last thing the user saw was the finished ceremony, so it should end the way it was designed to end.</div>
+            </div>
+          </div>
+        </section>
+
+        <section style="display:flex;flex-direction:column;gap:18px">
+          <h2 style="margin:0;font-family:'Fraunces_500Medium',serif;font-size:26px;color:var(--ink)">Art assets</h2>
+          <p style="margin:0;font-size:14px;line-height:1.6;color:var(--ink2);max-width:640px">Sizes are logical points, export at 2x and 3x. The prototype uses pieces cut from the existing divider and corner artwork, which is enough to judge the choreography. For shipping, commission the pieces below drawn as a single centerpiece so the seams line up.</p>
+          <div style="display:grid;grid-template-columns:180px 118px 1fr;font-size:13px;border-top:1px solid var(--line)">
+            <sc-for list="{{ assets }}" as="a" hint-placeholder-count="7">
+              <div style="padding:11px 12px;border-top:1px solid var(--line2);color:var(--ink);font-family:'InstrumentSans_500Medium',sans-serif">{{ a.name }}</div>
+              <div style="padding:11px 12px;border-top:1px solid var(--line2);color:var(--accent);font-variant-numeric:tabular-nums">{{ a.size }}</div>
+              <div style="padding:11px 12px;border-top:1px solid var(--line2);color:var(--ink2)">{{ a.layer }}</div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section style="display:flex;flex-direction:column;gap:18px">
+          <h2 style="margin:0;font-family:'Fraunces_500Medium',serif;font-size:26px;color:var(--ink)">Notes for the port</h2>
+          <ul style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:10px;font-size:14px;line-height:1.6;color:var(--ink2);max-width:660px">
+            <li>Colors are roles only: veil and ground are background, orb fill is sel, orb border and rings are accent-soft, initials and "Amen" are accent, glow is a pre-rendered soft asset tinted accent-soft in light and accent in dark.</li>
+            <li>The two press segments are one keyframe with a curve change at 53 percent. In Reanimated, run withSequence of two withTiming calls, 380ms accelerating then 340ms on the settle curve.</li>
+            <li>The travel and the press are separate animated values on nested views so neither fights for the same transform.</li>
+            <li>Glow holds at 0.3 opacity after its flare and only leaves with the veil, so the meeting point stays warm while the flower grows.</li>
+            <li>Vines scale on X from the edge nearest the bloom, so the embroidery reads as growing outward rather than sliding in.</li>
+            <li>60fps check: at most nine animated layers are live at once and none of them change layout, only transform and opacity.</li>
+          </ul>
+        </section>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light' | 'dark'&quot;,&quot;section&quot;:&quot;Ceremony&quot;},&quot;reduceMotion&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Ceremony&quot;}}">
+class Component extends DCLogic {
+  state = {
+    playing: true,
+    dark: this.props.theme === 'dark',
+    reduced: !!this.props.reduceMotion,
+    slow: false
+  };
+  stageRef = React.createRef();
+  veilRef = React.createRef();
+  groupRef = React.createRef();
+  cardARef = React.createRef();
+  cardBRef = React.createRef();
+
+  play = () => {
+    this.setState({ playing: false });
+    clearTimeout(this._t);
+    this._t = setTimeout(() => this.setState({ playing: true }), 40);
+  };
+
+  skip = () => {
+    const stage = this.stageRef.current;
+    if (!stage || !this.state.playing) return;
+    stage.getAnimations({ subtree: true }).forEach(a => {
+      try { a.commitStyles(); } catch (e) {}
+      a.cancel();
+    });
+    const group = this.groupRef.current, veil = this.veilRef.current;
+    if (group) { group.style.transition = 'opacity 160ms linear'; group.style.opacity = '0'; }
+    if (veil) { veil.style.transition = 'opacity 220ms cubic-bezier(.4,0,.6,1) 60ms'; veil.style.opacity = '0'; }
+    [this.cardARef.current, this.cardBRef.current].forEach((c, i) => {
+      if (!c) return;
+      c.style.animation = 'none';
+      c.style.transition = 'opacity 320ms cubic-bezier(.22,1,.36,1) ' + (i * 90) + 'ms, transform 320ms cubic-bezier(.22,1,.36,1) ' + (i * 90) + 'ms';
+      requestAnimationFrame(() => requestAnimationFrame(() => { c.style.opacity = '1'; c.style.transform = 'none'; }));
+    });
+  };
+
+  fullHaptics = [
+    { ms: 900, pattern: 'tap, selection', note: 'First sense of approach. Barely there, one soft tick as the orbs clear the edges.' },
+    { ms: 1340, pattern: 'light impact', note: 'The rhythm starts. Gaps shorten from here.' },
+    { ms: 1620, pattern: 'light impact', note: 'Second tick, 280ms later.' },
+    { ms: 1800, pattern: 'light impact', note: '180ms later. The quickening is what tells the body something is about to happen.' },
+    { ms: 1900, pattern: 'light impact', note: '100ms later, the last breath before contact.' },
+    { ms: 1980, pattern: 'medium impact plus success', note: 'Contact. Medium on the frame, success 40ms behind it. The strong beat of the whole app.' },
+    { ms: 2050, pattern: 'light impact', note: 'The swell releasing. Reads as the recoil of the meeting, not a new event.' },
+    { ms: 2280, pattern: 'tap, selection', note: 'The bloom opening. Last haptic of the ceremony.' }
+  ];
+  reducedHaptics = [
+    { ms: 320, pattern: 'success', note: 'One beat, on the orbs arriving. Nothing else.' }
+  ];
+
+  acts = [
+    { n: 'I', name: 'Approach', window: '260 to 1980', note: 'Two orbs enter from beyond the left and right edges and cross most of the screen. You watch them come. Haptic ticks quicken with the distance closing.' },
+    { n: 'II', name: 'Meeting', window: '1980 to 2420', note: 'They press into each other 6 points past touching, swell to 1.12, and settle. Glow flares, two rings ripple outward, the strong haptic lands.' },
+    { n: 'III', name: 'Bloom', window: '2260 to 3500', note: 'The rose opens out of the meeting point, then vines grow outward from it, then two tulip sprigs rise behind the orbs. Three staged entrances, no crossfades on top of each other.' },
+    { n: 'IV', name: 'Amen', window: '3420 to 4260', note: 'The word alone, rising 14 points into place. 240ms of held silence after it settles, then the veil lifts.' }
+  ];
+
+  timeline = [
+    { el: 'Veil', mark: '0 to 4260', tr: 'none, covers the reveal screen', op: '1', ease: 'held' },
+    { el: 'Both orbs', mark: '260 to 760', tr: 'none', op: '0 to 1', ease: 'settle 0.22, 1, 0.36, 1' },
+    { el: 'Left orb', mark: '260 to 1580', tr: 'translateX -237 to -60', op: '1', ease: 'travel 0.33, 0, 0.5, 0.85' },
+    { el: 'Right orb', mark: '260 to 1580', tr: 'translateX +237 to +60', op: '1', ease: 'travel 0.33, 0, 0.5, 0.85' },
+    { el: 'Left orb', mark: '1580 to 1960', tr: 'translateX -60 to -26', op: '1', ease: 'close in 0.6, 0, 0.85, 0.4' },
+    { el: 'Right orb', mark: '1580 to 1960', tr: 'translateX +60 to +26', op: '1', ease: 'close in 0.6, 0, 0.85, 0.4' },
+    { el: 'Left orb', mark: '1960 to 2300', tr: 'translateX -26 to -32, rests touching', op: '1', ease: 'settle' },
+    { el: 'Right orb', mark: '1960 to 2300', tr: 'translateX +26 to +32, rests touching', op: '1', ease: 'settle' },
+    { el: 'Both orbs', mark: '1980 to 2040', tr: 'scale 1 to 1.12', op: '1', ease: '0.3, 0, 0.7, 1' },
+    { el: 'Both orbs', mark: '2040 to 2420', tr: 'scale 1.12 to 1', op: '1', ease: 'settle' },
+    { el: 'Glow', mark: '1980 to 2120', tr: 'scale 0.35 to 1.5', op: '0 to 0.85', ease: '0.2, 0.8, 0.4, 1' },
+    { el: 'Glow', mark: '2120 to 2580', tr: 'scale 1.5 to 1.18', op: '0.85 to 0.3, then held', ease: 'settle' },
+    { el: 'Ring 1', mark: '1980 to 2700', tr: 'scale 0.55 to 2.9', op: '0.5 to 0', ease: '0.2, 0.75, 0.3, 1' },
+    { el: 'Ring 2', mark: '2100 to 2860', tr: 'scale 0.55 to 2.9', op: '0.5 to 0', ease: '0.2, 0.75, 0.3, 1' },
+    { el: 'Rose bloom', mark: '2260 to 2560', tr: 'scale 0.12 to 1.08, rotate -18 to +2', op: '0 to 1', ease: '0.2, 0.85, 0.3, 1' },
+    { el: 'Rose bloom', mark: '2560 to 2820', tr: 'scale 1.08 to 1, rotate +2 to 0', op: '1', ease: 'settle' },
+    { el: 'Vine left', mark: '2600 to 3200', tr: 'scaleX 0.14 to 1, origin right edge', op: '0 to 1 by 2800', ease: 'settle' },
+    { el: 'Vine right', mark: '2640 to 3240', tr: 'scaleX 0.14 to 1, origin left edge', op: '0 to 1 by 2840', ease: 'settle' },
+    { el: 'Sprig left', mark: '2900 to 3500', tr: 'translateY +10 to 0, scale 0.86 to 1', op: '0 to 0.92', ease: 'settle' },
+    { el: 'Sprig right', mark: '2990 to 3590', tr: 'translateY +10 to 0, scale 0.86 to 1', op: '0 to 0.92', ease: 'settle' },
+    { el: 'Amen', mark: '3420 to 4020', tr: 'translateY +14 to 0, scale 0.94 to 1', op: '0 to 1', ease: 'settle' },
+    { el: 'All', mark: '4020 to 4260', tr: 'held', op: 'held', ease: 'the exhale' },
+    { el: 'Ceremony group', mark: '4260 to 4740', tr: 'translateY 0 to -16, scale 1 to 1.03', op: '1 to 0', ease: '0.4, 0, 0.6, 1' },
+    { el: 'Veil', mark: '4260 to 4820', tr: 'none', op: '1 to 0', ease: '0.4, 0, 0.6, 1' },
+    { el: 'Card 1', mark: '4400 to 4900', tr: 'translateY +22 to 0, scale 0.97 to 1', op: '0 to 1', ease: 'settle' },
+    { el: 'Card 2', mark: '4560 to 5060', tr: 'translateY +22 to 0, scale 0.97 to 1', op: '0 to 1', ease: 'settle' }
+  ];
+
+  reduceSpec = [
+    { ms: '0 to 320', what: 'Both orbs fade in, already side by side and touching at center. No travel, no swell.' },
+    { ms: '320', what: 'One success haptic. The only haptic in this variant.' },
+    { ms: '420 to 780', what: 'The flower fades in whole, as one assembled asset. No growth, no stagger.' },
+    { ms: '900 to 1260', what: 'Amen fades in. Still last, still alone.' },
+    { ms: '1260 to 1560', what: 'Held.' },
+    { ms: '1560 to 1960', what: 'Veil and ceremony crossfade out together, cards fade in place 300ms each, 80ms apart. No slide.' }
+  ];
+
+  assets = [
+    { name: 'bloom-center.png', size: '84 x 94', size2: '', layer: 'New centerpiece rose, larger and more detailed than the divider rose. Sits 30 below the orb pair, above the veil.' },
+    { name: 'vine-left.png', size: '104 x 42', layer: 'Left half of the divider flourish, cut at the bloom seam. Anchor its right edge to the bloom edge, scales on X.' },
+    { name: 'vine-right.png', size: '104 x 42', layer: 'Mirror of the left. Anchor its left edge to the bloom.' },
+    { name: 'sprig-left.png', size: '96 x 76', layer: 'Tulip and leaf cluster, drawn to lean inward. Layers behind the orbs, top edge 72 above the orb row.' },
+    { name: 'sprig-right.png', size: '96 x 76', layer: 'Mirror of the left sprig, same layer.' },
+    { name: 'orb-glow.png', size: '236 x 236', layer: 'Soft radial falloff to fully transparent, no hard edge. One alpha asset, tinted accent-soft in light and accent in dark. Behind the orbs, above the veil.' },
+    { name: 'flower-whole.png', size: '232 x 42', layer: 'The assembled flower as one piece, for the Reduce Motion fade and for the seam check against the cut pieces.' }
+  ];
+
+  renderVals() {
+    const r = this.state.reduced;
+    const total = r ? 2100 : 5100;
+    const list = r ? this.reducedHaptics : this.fullHaptics;
+    return {
+      stageRef: this.stageRef,
+      veilRef: this.veilRef,
+      groupRef: this.groupRef,
+      cardARef: this.cardARef,
+      cardBRef: this.cardBRef,
+      full: this.state.playing && !r,
+      reducedRun: this.state.playing && r,
+      reduced: r,
+      slow: this.state.slow,
+      dark: this.state.dark,
+      themeAttr: this.state.dark ? 'dark' : 'light',
+      speedAttr: this.state.slow ? 'slow' : 'normal',
+      glowLight: this.state.dark ? 'none' : 'block',
+      glowDark: this.state.dark ? 'block' : 'none',
+      buzzAt: r ? '0ms' : '1980ms',
+      cardKf: r ? 'pmFade' : 'pmCard',
+      cardDur: r ? '300ms' : '500ms',
+      cardDelayA: r ? '1620ms' : '4400ms',
+      cardDelayB: r ? '1700ms' : '4560ms',
+      totalMs: total + 'ms',
+      totalLabel: (total / 1000).toFixed(1) + 's',
+      haptics: list.map(h => {
+        const strong = h.pattern.indexOf('success') === 0 || h.pattern.indexOf('medium') === 0;
+        const size = strong ? 9 : 5;
+        return { ms: h.ms, pct: (h.ms / total * 100).toFixed(2), size, half: size / 2 };
+      }),
+      hapticSpec: list,
+      acts: this.acts,
+      timeline: this.timeline,
+      reduceSpec: this.reduceSpec,
+      assets: this.assets,
+      themeSegments: [{ key: 'light', label: 'Light' }, { key: 'dark', label: 'Dark' }],
+      onPlay: this.play,
+      onSkip: this.skip,
+      onTheme: k => this.setState({ dark: k === 'dark' }, this.play),
+      onReduced: v => this.setState({ reduced: v }, this.play),
+      onSlow: v => this.setState({ slow: v }, this.play)
+    };
+  }
+}
+
+</script>
+</body>
+</html>

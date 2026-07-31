@@ -1,0 +1,44 @@
+/* Generated from src/theme/tokens.ts by prebundle.mjs. Reference values:
+ * components read these through useTheme(), not CSS custom properties. */
+:root {
+  --bg: #EFE6D6;
+  --surface: #F7F0E1;
+  --surface2: #F3E7E4;
+  --line: #D9CCB0;
+  --line2: #E5DAC4;
+  --line3: #E0D3B8;
+  --lineAccent: #E4CFC9;
+  --sel: #EADFC6;
+  --ink: #2B1F14;
+  --ink2: #7A6A55;
+  --muted: #A89678;
+  --accent: #6B2421;
+  --accent2: #9B5651;
+  --glass: rgba(247, 240, 225, 0.68);
+  --glassBorder: rgba(255, 255, 255, 0.45);
+  --bgOverlay: rgba(239, 230, 214, 0.85);
+  --gutter: 26px;
+  --swatch-amber: #F0D89B;
+  --swatch-rose: #ECBAB6;
+  --swatch-sage: #C7D3B0;
+  --swatch-sky: #B7CBDD;
+  --swatch-highlightInk: #2B1F14;
+}
+[data-theme="dark"] {
+  --bg: #17120E;
+  --surface: #221B15;
+  --surface2: #2B211D;
+  --line: #3A3026;
+  --line2: #2E261E;
+  --line3: #352B22;
+  --lineAccent: #4A352F;
+  --sel: #33291F;
+  --ink: #EFE6D6;
+  --ink2: #B9A98D;
+  --muted: #9C8D72;
+  --accent: #E7AA9C;
+  --accent2: #D18A7F;
+  --glass: rgba(28, 22, 17, 0.72);
+  --glassBorder: rgba(255, 255, 255, 0.10);
+  --bgOverlay: rgba(23, 18, 14, 0.85);
+}

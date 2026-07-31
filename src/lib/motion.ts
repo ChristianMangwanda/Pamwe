@@ -37,13 +37,31 @@ export const popIn = new Keyframe({
   .duration(500)
   .reduceMotion(ReduceMotion.System);
 
-/** Reveal cards: translateY 18 + scale .97 → identity, 500ms, staggered 160ms per card. */
-export function unseal(index: number) {
+/** How the reveal cards arrive, decided by how the ceremony above them ended. */
+export type UnsealKind = 'full' | 'skip' | 'reduced';
+
+/** Reveal cards: translateY 22 + scale .97 → identity, staggered per card.
+ *  'full' is the ceremony's closing beat (500ms, 160ms apart), 'skip' the
+ *  hurried version for a tap (320ms, 90ms), 'reduced' a plain crossfade in
+ *  place (300ms, 80ms) for the Reduce Motion ceremony. */
+export function unseal(index: number, kind: UnsealKind = 'full') {
+  // Already the Reduce Motion design, so it opts out of the system setting
+  // rather than being flattened into an instant cut by it.
+  if (kind === 'reduced') {
+    return new Keyframe({
+      0: { opacity: 0 },
+      100: { opacity: 1, easing: Easing.linear },
+    })
+      .duration(300)
+      .delay(index * 80)
+      .reduceMotion(ReduceMotion.Never);
+  }
+  const quick = kind === 'skip';
   return new Keyframe({
-    0: { opacity: 0, transform: [{ translateY: 18 }, { scale: 0.97 }] },
+    0: { opacity: 0, transform: [{ translateY: 22 }, { scale: 0.97 }] },
     100: { opacity: 1, transform: [{ translateY: 0 }, { scale: 1 }], easing: settle },
   })
-    .duration(500)
-    .delay(index * 160)
+    .duration(quick ? 320 : 500)
+    .delay(index * (quick ? 90 : 160))
     .reduceMotion(ReduceMotion.System);
 }
