@@ -355,3 +355,66 @@ There's no standalone `xcodeproj` gem on any Ruby here, but CocoaPods vendors it
 ### pod install stamps the widget Info.plist
 
 The Expo `react_native_post_install` hook writes `RCTNewArchEnabled` into every target's Info.plist, including the widget's, on each `pod install`. Harmless (WidgetKit ignores it) and it reappears if removed, so leave it. It does NOT attach any `[CP]` pod phases to the widget target (verified: the widget keeps just Sources/Frameworks/Resources).
+
+## Round 7 aftermath (2026-07-30)
+
+### Scheduled local notifications outlive the code that scheduled them
+
+Symptom: after b17 shipped the dated-window prayer reminders, a "Time to pray" banner for the same prayer kept firing daily and nothing in the app could stop it, not praying, not answering, not deleting the prayer. Cause: pre-b17 builds scheduled ONE repeating DAILY notification per prayer under an expo-generated random id; the b17 rewrite cancels only its own `pamwe-prayer-<id>-<date>` identifiers, so the old repeating request just kept living in the OS across the app update. iOS persists scheduled requests independently of the app binary; replacing the scheduling code does NOT touch what's already queued.
+
+Next morning the SAME bug class showed up again as the "two morning banners" duplicate: pre-b14 builds scheduled the morning reminder with no identifier and relied on `cancelAllScheduledNotificationsAsync()`; b14's cancel-by-id (`pamwe-morning*`) can't reach the old random-id request, so both the leftover and the new one fired every morning.
+
+### The b17 tab cross-fade left revisited tabs blank (and made every switch feel slow)
+
+Symptom: switching tabs felt noticeably slower after b17, and returning to a previously visited tab sometimes showed a blank page under a working tab bar. Cause: `animation: 'fade'` on the bottom tabs makes each tab's visibility an animated opacity (0 when inactive) AND lets react-native-screens natively detach faded-out tabs. A revisited tab re-attaches at opacity 0 and only becomes visible when a JS-started 220ms animation completes; rapid switches race the animation against detach/re-attach and can strand the screen fully transparent. Known, unfixed upstream: react-navigation discussion 12721 + issue 12755, react-native-screens issue 3824 (fade or shift + detachInactiveScreens, the iOS default). The 220ms spec also put a hard floor under every switch, on top of every tab refetching on focus.
+**Fix + rule:** tabs are back to the default instant switch ('none'); the one soft entrance per session is the native splash fade-out (`SplashScreen.setOptions({ fade: true })` in lib/splash.ts), which lives entirely outside navigation and cannot race it. Don't re-add `animation` to the tab navigator while those upstream issues are open; if a transition is ever wanted again, the workaround is `detachInactiveScreens: false`, paid in memory across 6 tabs, and it still adds latency.
+**Fix + rule:** `cleanupLegacyScheduled()` in notifications.ts sweeps `getAllScheduledNotificationsAsync()` on every launch (AuthProvider) and cancels any request whose payload type is ours (`morning`, `prayer_reminder`) but whose identifier lacks the matching prefix. Sweep by payload shape, not by stored ids, because the new code had already rewritten the AsyncStorage map without the old `notificationId`. General rule: any time an identifier scheme for scheduled notifications changes, ship a migration sweep that cancels the old shape, or the old ones fire forever.
+
+## Debug builds could not link (2026-07-31)
+
+**Symptom.** `xcodebuild -configuration Debug` failed at the app's link step for
+both simulator and device, with missing C++ symbols in every third-party Fabric
+component pod at once:
+
+```
+"facebook::react::Sealable::Sealable()", referenced from:
+    RNDateTimePickerProps::RNDateTimePickerProps() in libRNDateTimePicker.a
+    RNGestureHandlerButtonProps::...          in libRNGestureHandler.a
+    RNGoogleSigninButtonProps::...            in libRNGoogleSignin.a
+    RNSVGCircleProps::...                     in libRNSVG.a
+```
+
+plus `RCTPackagerConnection` and `RCTReconnectingWebSocket` missing from
+`libexpo-dev-launcher.a`. **Release archives were unaffected**, which is the
+detail that makes this confusing: the tree looks broken from a dev build and
+fine from an archive. Do not conclude the project is broken from a Debug build.
+
+**Cause.** React Native ships its prebuilt core, dependencies and Hermes as
+separate debug and release artifacts (`Pods/ReactNativeCore-artifacts/`,
+`ReactNativeDependencies-artifacts/`, `hermes-engine-artifacts/`, each holding a
+`-debug.tar.gz` and a `-release.tar.gz`). Each pod carries a script phase that
+swaps the right one in per configuration, and all three decide which with:
+
+```sh
+if echo $GCC_PREPROCESSOR_DEFINITIONS | grep -q "DEBUG=1"; then CONFIG="Debug"; fi
+```
+
+CocoaPods generates those three targets with only
+`GCC_PREPROCESSOR_DEFINITIONS = $(inherited) COCOAPODS=1`, and nothing upstream
+defines `DEBUG=1`, so the check never matched and the scripts installed the
+**release** artifacts into Debug builds. The release React core is stripped
+(11MB, 0 exported `Sealable`); the debug one is not (63MB, 13 exported). Hence
+every Fabric pod losing the same symbols, and the dev-launcher losing the
+dev-server ones.
+
+**Fix.** A `post_install` hook in `ios/Podfile` defines `DEBUG=1` on the Debug
+configuration of `React-Core-prebuilt`, `ReactNativeDependencies` and
+`hermes-engine`. None of the three compile sources, so the define does nothing
+but satisfy the check. **`ios/Podfile` is now git-tracked** (a `.gitignore`
+exception) so a regenerated `ios/` cannot silently drop it.
+
+**How to confirm it is working:** after a Debug build,
+`ls -la ios/Pods/React-Core-prebuilt/React.xcframework/ios-arm64/React.framework/React`
+should be ~63MB, and
+`nm -gU <that binary> | grep -c Sealable` should be 13. If it reads 11MB and 0,
+the release artifact is installed and the link will fail.
