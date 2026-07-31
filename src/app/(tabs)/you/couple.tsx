@@ -1,27 +1,34 @@
 import { useCallback, useState } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { EyeSlash } from 'phosphor-react-native';
+import { EyeSlash, Heart } from 'phosphor-react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { Text } from '../../../components/ui/Text';
 import { BackLink } from '../../../components/ui/BackLink';
+import { Button } from '../../../components/ui/Button';
+import { BottomSheet } from '../../../components/ui/BottomSheet';
 import { Floral } from '../../../components/ui/Floral';
 import { fonts } from '../../../constants/typography';
 import { GUTTER } from '../../../theme/tokens';
 import { useTheme } from '../../../providers/ThemeProvider';
 import { useAuth } from '../../../providers/AuthProvider';
 import { useCouple } from '../../../providers/CoupleProvider';
-import { profileInitial } from '../../../lib/couples';
+import { profileInitial, togetherSince, daysTogether, setAnniversary, toISODate } from '../../../lib/couples';
+import { haptics } from '../../../lib/haptics';
 import { countCoupleReflections } from '../../../lib/entries';
 import { countPrayers } from '../../../lib/prayers';
 
 export default function CoupleScreen() {
   const router = useRouter();
-  const { colors } = useTheme();
+  const { colors, mode } = useTheme();
   const { user } = useAuth();
-  const { couple, partner } = useCouple();
+  const { couple, partner, refresh } = useCouple();
 
   const [stats, setStats] = useState({ reflections: 0, prayers: 0 });
+  const [picking, setPicking] = useState(false);
+  const [draftDate, setDraftDate] = useState<Date | null>(null);
+  const [saving, setSaving] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -37,12 +44,40 @@ export default function CoupleScreen() {
   const partnerName = partner?.display_name ?? 'your partner';
   const partnerInit = profileInitial(partner) ?? '?';
   const streak = couple?.streak_count ?? 0;
-  const pairedAt = couple?.paired_at
-    ? new Date(couple.paired_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  // Both read the couple's own anniversary once it is set, and fall back to the
+  // pairing date until then. The Lock Screen widget counts from the same rule,
+  // so the number on the home screen matches the number here.
+  const since = togetherSince(couple);
+  const pairedAt = since
+    ? since.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
     : null;
-  const daysTogether = couple?.paired_at
-    ? Math.max(1, Math.floor((Date.now() - new Date(couple.paired_at).getTime()) / 86400000) + 1)
-    : 0;
+  const days = daysTogether(couple);
+  const anniversaryLabel = couple?.anniversary
+    ? togetherSince(couple)?.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })
+    : null;
+
+  const openPicker = () => {
+    haptics.tap();
+    setDraftDate(since ?? new Date());
+    setPicking(true);
+  };
+
+  const saveAnniversary = async () => {
+    if (!draftDate) return;
+    setSaving(true);
+    try {
+      // A DATE column, so send the local calendar day rather than an ISO
+      // instant, which would shift the date west of Greenwich.
+      await setAnniversary(toISODate(draftDate));
+      await refresh();
+      haptics.success();
+      setPicking(false);
+    } catch {
+      Alert.alert('Could not save', 'Check your connection and try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top', 'bottom']}>
@@ -66,10 +101,27 @@ export default function CoupleScreen() {
         </View>
 
         <View style={styles.stats}>
-          <Stat value={daysTogether} label="Days together" colors={colors} />
+          <Stat value={days} label="Days together" colors={colors} />
           <Stat value={stats.reflections} label="Revealed" colors={colors} />
           <Stat value={stats.prayers} label="Prayers" colors={colors} />
         </View>
+
+        <TouchableOpacity
+          onPress={openPicker}
+          activeOpacity={0.85}
+          style={[styles.noteRow, styles.anniversaryRow, { backgroundColor: colors.surface, borderColor: colors.line }]}
+          accessibilityRole="button"
+          accessibilityLabel={anniversaryLabel ? `Anniversary, ${anniversaryLabel}. Change it.` : 'Set your anniversary'}
+        >
+          <Heart size={18} color={colors.accent2} weight="regular" />
+          <View style={styles.anniversaryText}>
+            <Text style={[styles.noteLabel, { color: colors.ink }]}>Your anniversary</Text>
+            <Text style={[styles.anniversaryHint, { color: colors.muted }]}>
+              {anniversaryLabel ?? 'Counting from the day you paired'}
+            </Text>
+          </View>
+          <Text style={[styles.noteOn, { color: colors.accent }]}>{anniversaryLabel ? 'Change' : 'Set'}</Text>
+        </TouchableOpacity>
 
         <Floral variant="divider" style={styles.divider} />
 
@@ -83,6 +135,27 @@ export default function CoupleScreen() {
           written for that day. We never show it early, to anyone.
         </Text>
       </ScrollView>
+
+      <BottomSheet visible={picking} onClose={() => setPicking(false)}>
+        <Text variant="h2" style={styles.sheetTitle}>Your anniversary</Text>
+        <Text style={[styles.sheetBody, { color: colors.ink2 }]}>
+          The day you count from. It sets the “days together” number here and on your Lock Screen.
+        </Text>
+        {draftDate && (
+          <DateTimePicker
+            value={draftDate}
+            mode="date"
+            display="spinner"
+            // Tomorrow onward would render as a negative count on the widget,
+            // where there is no room to explain itself.
+            maximumDate={new Date()}
+            onChange={(_, d) => { if (d) setDraftDate(d); }}
+            themeVariant={mode}
+            style={styles.picker}
+          />
+        )}
+        <Button title="Save" onPress={saveAnniversary} loading={saving} style={styles.sheetSave} />
+      </BottomSheet>
     </SafeAreaView>
   );
 }
@@ -116,4 +189,11 @@ const styles = StyleSheet.create({
   noteLabel: { flex: 1, fontFamily: fonts.sans, fontSize: 15 },
   noteOn: { fontFamily: fonts.sansMedium, fontSize: 12 },
   privacy: { fontFamily: fonts.sans, fontSize: 14, lineHeight: 22, marginTop: 12 },
+  anniversaryRow: { marginTop: 10 },
+  anniversaryText: { flex: 1 },
+  anniversaryHint: { fontFamily: fonts.sans, fontSize: 12, marginTop: 2 },
+  sheetTitle: { paddingHorizontal: GUTTER, marginTop: 6 },
+  sheetBody: { fontFamily: fonts.sans, fontSize: 14, lineHeight: 21, paddingHorizontal: GUTTER, marginTop: 6 },
+  picker: { alignSelf: 'stretch', marginTop: 4 },
+  sheetSave: { marginHorizontal: GUTTER, marginTop: 8 },
 });

@@ -10,6 +10,28 @@ struct Verse: Decodable, Hashable {
     let full: String
     let short: String
     let ref: String
+    /// "Eccl. 4:9". The Lock Screen falls back to this when the full reference
+    /// and the days counter cannot share one line.
+    let abbr: String
+    /// Where the reader opens when the Lock Screen widget is tapped. Written by
+    /// scripts/gen_widget_verses.py from the app's own book list, so `book` is
+    /// always a name findBook() resolves.
+    let book: String
+    let chapter: Int
+    let verse: Int?
+
+    /// pamwe://bible/Ecclesiastes/4?verse=9 — an existing reader route, no new
+    /// deep-link handling needed.
+    var readerURL: URL? {
+        var components = URLComponents()
+        components.scheme = "pamwe"
+        components.host = "bible"
+        components.path = "/\(book)/\(chapter)"
+        if let verse {
+            components.queryItems = [URLQueryItem(name: "verse", value: String(verse))]
+        }
+        return components.url
+    }
 }
 
 enum VerseStore {
@@ -21,7 +43,11 @@ enum VerseStore {
         d: 0,
         full: "Though one may be overpowered, two can defend themselves. A cord of three strands is not quickly broken.",
         short: "A cord of three strands is not quickly broken.",
-        ref: "Ecclesiastes 4:12"
+        ref: "Ecclesiastes 4:12",
+        abbr: "Eccl. 4:12",
+        book: "Ecclesiastes",
+        chapter: 4,
+        verse: 12
     )
 
     private static func load() -> [Verse] {

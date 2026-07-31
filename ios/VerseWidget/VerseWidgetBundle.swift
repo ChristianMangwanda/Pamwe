@@ -6,6 +6,7 @@ import SwiftUI
 @main
 struct VerseWidgetBundle: WidgetBundle {
     var body: some Widget {
-        VerseWidget()
+        VerseWidget()      // Home Screen, small / medium / large
+        LockVerseWidget()  // Lock Screen, accessoryRectangular
     }
 }

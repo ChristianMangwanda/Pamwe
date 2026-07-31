@@ -25,7 +25,9 @@ import urllib.request
 import urllib.parse
 from pathlib import Path
 
-OUT = Path(__file__).resolve().parent.parent / "ios" / "VerseWidget" / "verses.json"
+ROOT = Path(__file__).resolve().parent.parent
+OUT = ROOT / "ios" / "VerseWidget" / "verses.json"
+BIBLE_TS = ROOT / "src" / "lib" / "bible.ts"
 CACHE = Path("/private/tmp/claude-501/-Users-christianmangwanda-Desktop-Pamwe/"
              "757e427a-c0cd-4235-a8fd-410cabb826ae/scratchpad/verse_cache.json")
 SHORT_MAX = 85     # character budget for the Small-widget line
@@ -200,6 +202,79 @@ def normalize_ref(ref):
     return re.sub(r"^Psalms ", "Psalm ", ref.strip())
 
 
+# Standard citation short forms, used only when the Lock Screen header cannot
+# fit the full reference AND the days counter (accessoryRectangular is about
+# 172pt wide, roughly half the width the mock was drawn at). These are the
+# conventional abbreviations study Bibles use, not invented ones.
+ABBREVIATIONS = {
+    "Genesis": "Gen.", "Exodus": "Ex.", "Leviticus": "Lev.", "Numbers": "Num.",
+    "Deuteronomy": "Deut.", "Joshua": "Josh.", "Judges": "Judg.", "Ruth": "Ruth",
+    "1 Samuel": "1 Sam.", "2 Samuel": "2 Sam.", "1 Kings": "1 Kings", "2 Kings": "2 Kings",
+    "1 Chronicles": "1 Chron.", "2 Chronicles": "2 Chron.", "Ezra": "Ezra",
+    "Nehemiah": "Neh.", "Esther": "Est.", "Job": "Job", "Psalms": "Ps.",
+    "Proverbs": "Prov.", "Ecclesiastes": "Eccl.", "Song of Solomon": "Song",
+    "Isaiah": "Isa.", "Jeremiah": "Jer.", "Lamentations": "Lam.", "Ezekiel": "Ezek.",
+    "Daniel": "Dan.", "Hosea": "Hos.", "Joel": "Joel", "Amos": "Amos",
+    "Obadiah": "Obad.", "Jonah": "Jonah", "Micah": "Mic.", "Nahum": "Nah.",
+    "Habakkuk": "Hab.", "Zephaniah": "Zeph.", "Haggai": "Hag.", "Zechariah": "Zech.",
+    "Malachi": "Mal.", "Matthew": "Matt.", "Mark": "Mark", "Luke": "Luke",
+    "John": "John", "Acts": "Acts", "Romans": "Rom.", "1 Corinthians": "1 Cor.",
+    "2 Corinthians": "2 Cor.", "Galatians": "Gal.", "Ephesians": "Eph.",
+    "Philippians": "Phil.", "Colossians": "Col.", "1 Thessalonians": "1 Thess.",
+    "2 Thessalonians": "2 Thess.", "1 Timothy": "1 Tim.", "2 Timothy": "2 Tim.",
+    "Titus": "Titus", "Philemon": "Philem.", "Hebrews": "Heb.", "James": "James",
+    "1 Peter": "1 Pet.", "2 Peter": "2 Pet.", "1 John": "1 John", "2 John": "2 John",
+    "3 John": "3 John", "Jude": "Jude", "Revelation": "Rev.",
+}
+
+
+def abbreviate(book, ref):
+    """'Ecclesiastes 4:9' -> 'Eccl. 4:9'. Falls back to the full reference, which
+    only costs the counter its place in the header."""
+    short = ABBREVIATIONS.get(book)
+    if not short:
+        return ref
+    # Replace the book portion only; the chapter:verse tail is already correct.
+    return re.sub(r"^.*?(?=\s+\d)", short, ref, count=1)
+
+
+def app_book_names():
+    """The reader's own canonical book names, read from src/lib/bible.ts.
+
+    Tapping the Lock Screen widget opens /bible/<book>/<chapter>, and the reader
+    resolves <book> with findBook(), which matches BIBLE_BOOKS[].name exactly
+    (case-insensitively). Reading the list from source rather than retyping it is
+    what keeps a tap from landing on an empty chapter: a book named differently
+    here than there fails the build below instead of shipping a dead link.
+    """
+    names = re.findall(r"\{\s*name:\s*'([^']+)'", BIBLE_TS.read_text(encoding="utf-8"))
+    if len(names) < 66:
+        sys.exit(f"could not read the book list from {BIBLE_TS} (found {len(names)})")
+    books = {n.lower(): n for n in names}
+    # normalize_ref cites a single psalm as "Psalm 23:1", so accept that spelling
+    # too and route it to the reader's "Psalms".
+    books["psalm"] = books["psalms"]
+    return books
+
+
+def parse_target(api_ref, books):
+    """Split bible-api.com's reference into the reader's deep-link parts.
+
+    Uses the raw API reference, not the display one: display cites a single psalm
+    as "Psalm 23" while the reader's book is "Psalms".
+    """
+    m = re.match(r"^(.+?)\s+(\d+)(?::(\d+))?", api_ref.strip())
+    if not m:
+        return None
+    book = books.get(m.group(1).strip().lower())
+    if not book:
+        return None
+    target = {"book": book, "chapter": int(m.group(2))}
+    if m.group(3):
+        target["verse"] = int(m.group(3))
+    return target
+
+
 def make_short(full):
     full = full.strip()
     if len(full) <= SHORT_MAX:
@@ -232,7 +307,8 @@ def main():
             seen.add(r)
             refs.append(r)
 
-    entries, failed = [], []
+    books = app_book_names()
+    entries, failed, unlinkable = [], [], []
     for i, ref in enumerate(refs):
         rec = fetch(ref, cache)
         if not rec:
@@ -241,7 +317,12 @@ def main():
         if len(rec["full"]) > FULL_MAX:
             print(f"  skip (too long, {len(rec['full'])}): {ref}", file=sys.stderr)
             continue
-        entries.append({"full": normalize_full(rec["full"]), "ref": normalize_ref(rec["ref"])})
+        target = parse_target(rec["ref"], books)
+        if not target:
+            unlinkable.append(rec["ref"])
+            continue
+        entries.append({"full": normalize_full(rec["full"]),
+                        "ref": normalize_ref(rec["ref"]), **target})
 
     # dedupe by exact text (a couple of refs can resolve to the same verse)
     seen_text, deduped = set(), []
@@ -253,9 +334,16 @@ def main():
     random.seed(SHUFFLE_SEED)
     random.shuffle(deduped)
 
-    out = [{"d": i + 1, "full": e["full"], "short": make_short(e["full"]), "ref": e["ref"]}
+    out = [{"d": i + 1, "full": e["full"], "short": make_short(e["full"]), "ref": e["ref"],
+            "abbr": abbreviate(e["book"], e["ref"]),
+            "book": e["book"], "chapter": e["chapter"], **({"verse": e["verse"]} if "verse" in e else {})}
            for i, e in enumerate(deduped)]
     OUT.write_text(json.dumps(out, ensure_ascii=False, indent=0) + "\n", encoding="utf-8")
+
+    # A reference the reader cannot open is a dead tap on the Lock Screen, so it
+    # is a build failure rather than a quietly dropped verse.
+    if unlinkable:
+        sys.exit("no reader route for: " + ", ".join(unlinkable))
 
     print(f"wrote {len(out)} verses to {OUT}")
     if failed:

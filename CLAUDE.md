@@ -120,7 +120,7 @@ Auth gate in [src/app/index.tsx](src/app/index.tsx) sequences:
 | Table | Purpose |
 |---|---|
 | `users` | Profile mirror of `auth.users`. Created by `handle_new_user` trigger. Holds `couple_id`, push token, notification prefs. |
-| `couples` | Invite code + partner_a/b + paired_at + streak state + timezone. |
+| `couples` | Invite code + partner_a/b + paired_at + streak state + timezone + `anniversary` (nullable DATE, the day the couple counts from; written only via the `set_couple_anniversary` RPC because no UPDATE policy on `couples` reaches a paired member's own row). |
 | `plans` | Reading plans. Curated (M'Cheyne 365, John 21, Psalms 30, Cord 21) + couple-built custom plans (`is_curated=false`, `couple_id`, `created_by`). Browse metadata cols: `tagline/about/explore/gain/minutes_label/rhythm_label/book_label`. |
 | `plan_days` | Rows per plan-day: passage ref, text (**nullable** — custom plans store NULL and live-fetch), pull quote, reflection prompt. |
 | `couple_plans` | A couple's enrollment in a plan (current_day, start_date, status, `cadence_days`). |
@@ -266,14 +266,22 @@ hits are authoritative and never revalidate (scripture is immutable); bible-api.
 
 `ios/` is gitignored (except `ExportOptions.plist`) but hand-maintained: entitlements, `$(CURRENT_PROJECT_VERSION)` wiring, purpose strings. A stray prebuild on 2026-07-11 reset Info.plist's `CFBundleVersion` to a literal `1` and stripped `NSPhotoLibraryUsageDescription`, which burned build 10 at Apple processing. New Expo modules need only `npm install` + `pod install` (autolinking). Purpose strings are mirrored in `app.json > ios.infoPlist` as a backstop.
 
-### Home-screen widget (VerseWidget) — added 2026-07-12
+### Widgets (VerseWidget appex) — home screen 2026-07-12, lock screen 2026-07-31
 
-A native **WidgetKit + SwiftUI** app-extension: "Verse of the Day," small/medium/large, light + dark, tree-of-life emblem behind the verse. **Fully self-contained** (no App Group, no native bridge, no JS): it bundles a **curated** set of uplifting, standalone verses (`verses.json`) and picks one by calendar day-of-year (cycling if the set is shorter than the year), rolling over at local midnight. The earlier M'Cheyne-pull-quote set was dropped because it surfaced narrative fragments that mean little out of context; the curated set is every-day devotional. Tapping opens `pamwe://today`. Widget deployment target is **iOS 17.0** (uses `containerBackground` + `contentMarginsDisabled`); the app stays 16.4.
+One app-extension, `VerseWidget`, holding **two** WidgetKit widgets. Both read the same bundled `verses.json`: a **curated** set of uplifting, standalone verses picked by calendar day-of-year (cycling if the set is shorter than the year), rolling over at local midnight. The earlier M'Cheyne-pull-quote set was dropped because it surfaced narrative fragments that mean little out of context. Widget deployment target is **iOS 17.0**; the app stays 16.4.
+
+- **`VerseWidget`** — home screen, small/medium/large, light + dark, tree-of-life emblem. Still **fully self-contained** (no App Group, no bridge). Tapping opens `pamwe://today`.
+- **`LockVerseWidget`** — lock screen, `.accessoryRectangular`. Tapping opens the verse in the reader (`pamwe://bible/<Book>/<chapter>?verse=<n>`, an existing route; the book/chapter/verse fields are generated into `verses.json`, never parsed in Swift). Shows "N days together" from the couple's anniversary, which is the **one** thing that crosses the App Group (see below).
+
+**Lock Screen constraints that are not negotiable.** iOS renders these in `WidgetRenderingMode.vibrant` and flattens content into its own monochrome material, so custom tint, blur, text shadow and the Pamwe palette do nothing there: the view is built in `.primary`/`.secondary`. The only sanctioned backdrop is `AccessoryWidgetBackground()`, which is the "Clear background" toggle on `LockVerseConfiguration` (an `AppIntentConfiguration`). And `.accessoryRectangular` is only about **172 x 76pt**, roughly half the width the design was drawn at, which is why the header is a `ViewThatFits` ladder that gives up the counter's wording, then the book's full name (`abbr`, "Eccl. 4:9"), before dropping the counter.
+
+**App Group `group.com.christianmangwanda.pamwe`.** Named in *both* `ios/Pamwe/Pamwe.entitlements` and `ios/VerseWidget/VerseWidget.entitlements`; a mismatch is silent and just hides the counter. The app writes one key, `anniversary`, via the local Expo module in [modules/pamwe-widget/](modules/pamwe-widget/), called from `CoupleProvider`. It writes the **resolved** date (the couple's anniversary, else `paired_at`) so the fallback rule lives only in `src/lib/couples.ts` and the widget can never disagree with the You tab. Nothing else crosses.
 
 - **Source lives in [ios/VerseWidget/](ios/VerseWidget/) and IS git-tracked** (a `.gitignore` exception; the rest of `ios/` stays ignored). The view files (`VerseWidgetView.swift`, `Theme.swift`, `VerseData.swift`) are deliberately WidgetKit-free so they can be snapshot-rendered off device.
 - **The `.xcodeproj` target is NOT committed but is reproducible**: if `ios/` is ever regenerated, re-run `scripts/add_widget_target.rb` (via CocoaPods' bundled xcodeproj gem — see the script header) to re-splice the target, then `pod install`. `verses.json` is generated by `scripts/gen_widget_verses.py`: the curated references live in that script, and it fetches the exact WEB text from bible-api.com (the app's own Bible source), so verses are never hand-typed. Edit its `REFERENCES` list (or `verses.json` directly) to change the selection.
 - **Do not add VerseWidget to the Podfile** — it uses only system frameworks. `pod install` leaves it intact (it does stamp a harmless `RCTNewArchEnabled` into the widget Info.plist each run; leave it).
-- Fonts are bundled into the appex (`Fraunces-Italic`, `InstrumentSans-SemiBold`) and listed in the widget's `Info.plist > UIAppFonts`; referenced by PostScript name via `Font.custom`.
+- Fonts are bundled into the appex (`Fraunces-Italic` for the home verse, `Fraunces-Regular` for the lock verse, `InstrumentSans-SemiBold` for labels) and listed in the widget's `Info.plist > UIAppFonts`; referenced by PostScript name via `Font.custom`.
+- The view files import **no WidgetKit** on purpose, so they can be rendered off device with `ImageRenderer` on the Mac. That is the only way to check a lock-screen layout at its real 172x76 without a phone, and it is how the header ladder was tuned.
 
 ### Push + Sign In with Apple are LIVE (since 2026-07-11)
 
@@ -338,4 +346,5 @@ The voice recorder, audio upload, and partner-push flow only behave correctly on
 | Design tokens | [src/theme/tokens.ts](src/theme/tokens.ts) (light+dark; via `useTheme()`), [src/constants/typography.ts](src/constants/typography.ts). Legacy [src/constants/colors.ts](src/constants/colors.ts) is frozen — don't use in new code. |
 | Ask Pamwe edge function | [supabase/functions/ask-pamwe/index.ts](supabase/functions/ask-pamwe/index.ts) |
 | Seeded plan content | [supabase/seed.sql](supabase/seed.sql) (~14k lines) + `scripts/seed_{john,psalms,cord}_plan.py` |
-| Home-screen widget (WidgetKit/SwiftUI) | [ios/VerseWidget/](ios/VerseWidget/) (git-tracked source); target splice `scripts/add_widget_target.rb`, verse data `scripts/gen_widget_verses.py` |
+| Widgets, home + lock (WidgetKit/SwiftUI) | [ios/VerseWidget/](ios/VerseWidget/) (git-tracked source); target splice `scripts/add_widget_target.rb`, verse data `scripts/gen_widget_verses.py` |
+| App Group bridge (anniversary → widget) | [modules/pamwe-widget/](modules/pamwe-widget/) (local Expo module), called from [src/providers/CoupleProvider.tsx](src/providers/CoupleProvider.tsx) |

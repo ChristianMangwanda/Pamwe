@@ -90,7 +90,8 @@
           "speechRecognitionPermission": "Pamwe transcribes your voice reflections on this phone so they stay readable and searchable.",
           "microphonePermission": "Pamwe needs microphone access to record your voice reflections."
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,

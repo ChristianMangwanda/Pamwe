@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <!-- Must match ios/Pamwe/Pamwe.entitlements exactly. The app writes the
+         couple's anniversary into this suite; the Lock Screen widget reads it
+         to count "N days together". A mismatch is silent: the widget just
+         falls back to showing no counter. -->
+    <key>com.apple.security.application-groups</key>
+    <array>
+      <string>group.com.christianmangwanda.pamwe</string>
+    </array>
+  </dict>
+</plist>

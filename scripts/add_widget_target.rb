@@ -8,7 +8,9 @@
 #   GEM_HOME=/opt/homebrew/Cellar/cocoapods/<ver>/libexec \
 #     /opt/homebrew/opt/ruby/bin/ruby scripts/add_widget_target.rb
 #
-# Idempotent: bails if the VerseWidget target already exists. The widget uses
+# Idempotent: creates the target once, then on every run re-asserts the file
+# lists and the embed-phase position, so a project that has drifted self-heals
+# and adding a Swift file below is enough to get it compiled. The widget uses
 # only system frameworks (WidgetKit/SwiftUI auto-link via `import`), so it is NOT
 # added to the Podfile and `pod install` leaves it untouched.
 require "xcodeproj"
@@ -19,6 +21,25 @@ WIDGET_NAME  = "VerseWidget"
 APP_NAME     = "Pamwe"
 BUNDLE_ID    = "com.christianmangwanda.pamwe.VerseWidget"
 TEAM         = "5LX4YFCXPK"
+
+# Everything the appex compiles and carries. Paths are relative to ios/VerseWidget.
+SOURCES = %w[
+  VerseWidgetBundle.swift
+  VerseWidget.swift
+  VerseWidgetView.swift
+  LockVerseWidget.swift
+  LockVerseView.swift
+  SharedData.swift
+  Theme.swift
+  VerseData.swift
+].freeze
+RESOURCES = %w[
+  verses.json
+  Assets.xcassets
+  Fonts/Fraunces_400Regular_Italic.ttf
+  Fonts/Fraunces_400Regular.ttf
+  Fonts/InstrumentSans_600SemiBold.ttf
+].freeze
 
 project = Xcodeproj::Project.open(PROJECT_PATH)
 app_target = project.targets.find { |t| t.name == APP_NAME }
@@ -33,25 +54,6 @@ if fresh
   # 1. Extension target (creates default Debug/Release configs + build phases).
   widget = project.new_target(:app_extension, WIDGET_NAME, :ios, "17.0", nil, :swift)
 
-  # 2. Group + file references (paths are relative to ios/).
-  group = project.main_group.new_group(WIDGET_NAME, WIDGET_NAME)
-  sources = %w[
-    VerseWidgetBundle.swift
-    VerseWidget.swift
-    VerseWidgetView.swift
-    Theme.swift
-    VerseData.swift
-  ]
-  resources = %w[
-    verses.json
-    Assets.xcassets
-    Fonts/Fraunces_400Regular_Italic.ttf
-    Fonts/InstrumentSans_600SemiBold.ttf
-  ]
-  sources.each   { |f| widget.source_build_phase.add_file_reference(group.new_reference(f)) }
-  resources.each { |f| widget.resources_build_phase.add_file_reference(group.new_reference(f)) }
-  group.new_reference("Info.plist") # visible in the navigator, not built
-
   # 3. Build settings (both configurations). Version fields mirror the app so the
   #    embedded appex passes Apple's "bundle versions must match" check. The build
   #    number is read from the app target so a fresh re-splice can't drift from it.
@@ -64,6 +66,10 @@ if fresh
     bs["PRODUCT_BUNDLE_IDENTIFIER"]  = BUNDLE_ID
     bs["PRODUCT_NAME"]               = "$(TARGET_NAME)"
     bs["INFOPLIST_FILE"]             = "VerseWidget/Info.plist"
+    # App Group, shared with the app so the Lock Screen widget can read the
+    # couple's anniversary. Dropping this line does not fail the build: the
+    # widget just stops finding the suite and quietly hides its counter.
+    bs["CODE_SIGN_ENTITLEMENTS"]     = "VerseWidget/VerseWidget.entitlements"
     bs["GENERATE_INFOPLIST_FILE"]    = "NO"
     bs["IPHONEOS_DEPLOYMENT_TARGET"] = "17.0"
     bs["TARGETED_DEVICE_FAMILY"]     = "1,2"
@@ -79,6 +85,29 @@ if fresh
 
   app_target.add_dependency(widget)
 end
+
+# 2. Group + file references (paths are relative to ios/). Re-asserted every run:
+#    the arrays above are the source of truth, so a new Swift file is picked up
+#    by editing SOURCES and re-running, with no Xcode GUI step.
+group = project.main_group.find_subpath(WIDGET_NAME, true)
+group.set_source_tree("<group>")
+group.set_path(WIDGET_NAME)
+
+def sync_phase(group, phase, paths)
+  # Compare on `path`, which is exactly what the arrays above hold. hierarchy_path
+  # looks right but reports the basename for nested entries, so "Fonts/x.ttf" and
+  # "x.ttf" would never match and every run would add a second copy.
+  have = phase.files_references.map(&:path)
+  paths.each do |path|
+    next if have.include?(path)
+    ref = group.files.find { |f| f.path == path } || group.new_reference(path)
+    phase.add_file_reference(ref)
+  end
+end
+
+sync_phase(group, widget.source_build_phase, SOURCES)
+sync_phase(group, widget.resources_build_phase, RESOURCES)
+group.new_reference("Info.plist") if group.files.none? { |f| f.path == "Info.plist" }
 
 # 4. Embed the appex into the app, positioned RIGHT AFTER the Frameworks phase.
 #    It must run before the whole-app-bundle steps (Strip Local Network Keys,

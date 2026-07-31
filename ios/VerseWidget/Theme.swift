@@ -62,8 +62,11 @@ struct Palette {
     )
 }
 
-/// The two faces the widget actually uses (referenced by PostScript name).
+/// The faces the widgets use (referenced by PostScript name; see Info.plist's
+/// UIAppFonts). The Home Screen widget sets its verse in italic; the Lock Screen
+/// one is upright, which holds up better at 12.5pt over a photo.
 enum WidgetFont {
     static func verse(_ size: CGFloat) -> Font { .custom("Fraunces-Italic", size: size) }
+    static func verseUpright(_ size: CGFloat) -> Font { .custom("Fraunces-Regular", size: size) }
     static func label(_ size: CGFloat) -> Font { .custom("InstrumentSans-SemiBold", size: size) }
 }

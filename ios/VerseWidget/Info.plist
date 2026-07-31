@@ -30,6 +30,7 @@
 	<key>UIAppFonts</key>
 	<array>
 		<string>Fraunces_400Regular_Italic.ttf</string>
+		<string>Fraunces_400Regular.ttf</string>
 		<string>InstrumentSans_600SemiBold.ttf</string>
 	</array>
 </dict>

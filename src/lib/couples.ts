@@ -164,3 +164,48 @@ export function profileInitial(
   const ch = profile?.avatar_initial || profile?.display_name?.[0] || profile?.email?.[0];
   return ch ? ch.toUpperCase() : null;
 }
+
+/** The date a couple counts from: their own anniversary once they set one,
+ *  otherwise the day they paired in the app. */
+export function togetherSince(
+  couple: { anniversary?: string | null; paired_at?: string | null } | null,
+): Date | null {
+  // A DATE column arrives as 'YYYY-MM-DD', which new Date() reads as UTC
+  // midnight. Parsing the parts keeps it a local calendar day, so the count
+  // does not jump by one either side of the date line.
+  if (couple?.anniversary) {
+    const [y, m, d] = couple.anniversary.split('-').map(Number);
+    if (y && m && d) return new Date(y, m - 1, d);
+  }
+  return couple?.paired_at ? new Date(couple.paired_at) : null;
+}
+
+/** A Date as the local calendar day 'YYYY-MM-DD'. toISOString() would convert to
+ *  UTC first and hand back yesterday for anyone west of Greenwich. */
+export function toISODate(d: Date): string {
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, '0'),
+    String(d.getDate()).padStart(2, '0'),
+  ].join('-');
+}
+
+/** Whole days from togetherSince() to today, counting the first day as 1.
+ *  One rule for the You tab and the Lock Screen widget, so they never disagree. */
+export function daysTogether(
+  couple: { anniversary?: string | null; paired_at?: string | null } | null,
+  now: Date = new Date(),
+): number {
+  const since = togetherSince(couple);
+  if (!since) return 0;
+  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const days = Math.floor((startOfDay(now) - startOfDay(since)) / 86400000) + 1;
+  return Math.max(0, days);
+}
+
+/** Set (or clear, with null) the couple's anniversary. Goes through an RPC
+ *  because no UPDATE policy on couples reaches a paired member's own row. */
+export async function setAnniversary(anniversary: string | null): Promise<void> {
+  const { error } = await supabase.rpc('set_couple_anniversary', { p_anniversary: anniversary });
+  if (error) throw error;
+}

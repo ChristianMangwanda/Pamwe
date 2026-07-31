@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useAuth } from './AuthProvider';
-import { getUserCouple, getPartnerProfile } from '../lib/couples';
+import { getUserCouple, getPartnerProfile, togetherSince, toISODate } from '../lib/couples';
+import { shareAnniversary } from '../../modules/pamwe-widget';
 import { getActiveCouPlan } from '../lib/plans';
 import { supabase } from '../lib/supabase';
 
@@ -72,6 +73,20 @@ export function CoupleProvider({ children }: { children: React.ReactNode }) {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [couple?.id, refresh]);
+
+  // Hand the Lock Screen widget the date the couple counts from. Sharing the
+  // resolved date rather than the raw anniversary keeps the fallback rule in
+  // one place, so the widget can never disagree with the You tab.
+  //
+  // Gated on `loading` because couple is null while the first fetch is in
+  // flight, and syncing that would clear the widget's counter on every launch.
+  // Once loaded, a null couple is real (signed out) and should clear it.
+  const since = couple ? togetherSince(couple) : null;
+  const sinceISO = since ? toISODate(since) : null;
+  useEffect(() => {
+    if (loading) return;
+    shareAnniversary(sinceISO);
+  }, [loading, sinceISO]);
 
   return (
     <CoupleContext.Provider value={{ couple, partner, couplePlan, loading, refresh }}>
