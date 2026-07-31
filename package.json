@@ -80,7 +80,8 @@
       "<rootDir>/src/__tests__/setup.ts"
     ],
     "testPathIgnorePatterns": [
-      "<rootDir>/src/__tests__/setup.ts"
+      "<rootDir>/src/__tests__/setup.ts",
+      " \\d+\\.(ts|tsx|js|jsx)$"
     ]
   },
   "private": true
