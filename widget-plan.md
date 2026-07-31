@@ -149,6 +149,23 @@ WidgetKit, and are worth knowing before anyone tries to "fix" the fidelity:
   adding a Swift file to `SOURCES` is enough. It used to only seed them on first
   splice, which is why new files silently went uncompiled.
 
+## Bugs the off-device render caught
+
+Both would have shipped invisibly, because the layout only fails at the real
+size and neither is a compile error.
+
+**The counter never appeared.** The first header was a `ViewThatFits` of
+"full reference + 'N days together'" then "reference only". At ~164pt of usable
+width the first candidate never fits, so it fell straight through and the counter
+was silently gone, deleting the entire feature the anniversary work exists for.
+Fixed with a four-rung ladder that gives up the counter's wording, then the book's
+full name (`abbr`), before dropping the counter.
+
+**Long verses clipped mid-word.** `short` is capped at 85 characters but three
+lines only hold about 80, so the longest entries truncated to "don't be afr...".
+`minimumScaleFactor(0.78)` lets those shrink instead; a clipped verse reads as a
+mistake, a slightly smaller one does not.
+
 ## Verification (headless)
 
 - `LockVerseView` rendered off device with `ImageRenderer` at 160x72, 172x76 and

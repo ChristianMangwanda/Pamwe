@@ -1,6 +1,44 @@
 # Pamwe Build Progress Summary
 
-**Last Updated:** July 26, 2026
+**Last Updated:** July 31, 2026
+
+---
+
+## ⭐ B19 (2026-07-31): reveal ceremony, Lock Screen widget, and a Debug build that could not link
+
+Build 19 is on App Store Connect, VALID. Hosted DB is in sync (one migration,
+`couples_anniversary`). Everything below is on main as four commits.
+
+- **Reveal rebuilt as a four-act ceremony** from a new design handoff. Two orbs
+  cross in from beyond both edges, meet at centre with a glow and two rings, the
+  rose opens and grows vines and sprigs, then "Amen" alone and 240ms of silence.
+  4260ms, nine haptic marks that quicken into the meeting, a tap skips at any
+  point, and Reduce Motion has its own 1960ms crossfade variant. The cards now
+  unfurl *under* the fading veil, which the old structure could not express.
+- **Lock Screen widget** (`.accessoryRectangular`), a second widget in the
+  existing appex. Same curated daily verse, a "N days together" counter, a
+  "Clear background" toggle, and a tap that opens the verse in the reader.
+- **Couples now have an anniversary.** Nullable `couples.anniversary`, set in
+  You → Couple, written through a SECURITY DEFINER RPC rather than a policy.
+  Falls back to `paired_at` everywhere until set, and the You tab and the widget
+  read one shared rule so they cannot disagree.
+- **Prayer reminders retire on prayer** rather than pausing for a week, and the
+  pre-b14/b17 notification leftovers are cleaned up (the duplicate morning banner
+  and the nag that could not be killed). Morning reminder now greets by first name.
+- **The b17 tab cross-fade is gone**, replaced by a native splash fade. It sat on
+  an upstream race that could leave a revisited tab fully transparent.
+- **Debug builds could not link, and now can.** Every third-party Fabric pod was
+  losing `facebook::react::Sealable` because React Native's prebuilt-artifact swap
+  scripts were installing the *release* artifacts into Debug builds. Release
+  archives were never affected, which is why it looked like a broken tree from a
+  dev build and a healthy one from an archive. Fix + how to confirm it in
+  `trial-and-error.md`.
+
+Gate: tsc clean, **24 suites / 183 Jest** (17 new).
+
+**Still on Christian:** add the widget to the Lock Screen and check both toggle
+states over a busy photo and a portrait, and confirm the tap lands on the right
+chapter. The shipping art is still the handoff's prototype stand-ins.
 
 ---
 

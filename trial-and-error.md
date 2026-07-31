@@ -418,3 +418,76 @@ exception) so a regenerated `ios/` cannot silently drop it.
 should be ~63MB, and
 `nm -gU <that binary> | grep -c Sealable` should be 13. If it reads 11MB and 0,
 the release artifact is installed and the link will fail.
+
+## Release pipeline and tooling (2026-07-31, build 19)
+
+**`xcodebuild -allowProvisioningUpdates` cannot add a capability to an App ID.**
+Adding the App Group to the entitlements made every archive fail with
+`Provisioning profile "iOS Team Provisioning Profile: com.christianmangwanda.pamwe"
+doesn't match the entitlements file's value for the
+com.apple.security.application-groups entitlement`. The flag was working: it
+reached Apple and minted fresh profiles (their expiry timestamps moved to the
+minute of each attempt). It simply has no way to register a *capability* on the
+App ID, so it kept producing group-less profiles. Xcode's Signing & Capabilities
+pane does it, and so does fastlane, which is the CLI route:
+
+```
+fastlane produce associate_group -u <apple-id> \
+  -a com.christianmangwanda.pamwe             group.com.christianmangwanda.pamwe
+fastlane produce associate_group -u <apple-id> \
+  -a com.christianmangwanda.pamwe.VerseWidget group.com.christianmangwanda.pamwe
+```
+
+`associate_group` creates the group if it does not exist, so it is the only
+command needed, once per target bundle id. The Apple ID login caches a session in
+`~/.fastlane/spaceship/` for about a month, so later runs need no 2FA.
+
+**`aps-environment` reads `development` in the archive. That is correct.**
+`-exportArchive` re-signs for distribution, and the exported ipa comes out
+`production` with `beta-reports-active`. Check the ipa, not the xcarchive, before
+concluding push is broken.
+
+**Verify the ipa before uploading, not after.** `ExportOptions.plist` carries
+`destination=upload`, so the documented export command ships straight to Apple and
+a rejected build number is burned. Copy it with `destination=export` first, unzip
+the ipa and read the re-signed entitlements, then run the real one.
+
+**`fastlane pilot builds` is broken** against Apple's current API in fastlane
+2.237 (`'betaBuildMetrics' is not a valid relationship name`). To read build state,
+call spaceship directly with an explicit `includes:`, which avoids the bad default:
+
+```ruby
+Spaceship::ConnectAPI.get_builds(filter: { app: app.id },
+  includes: "preReleaseVersion", sort: "-uploadedDate", limit: 6)
+```
+
+**`scripts/add_widget_target.rb` only seeded its file lists on first splice.**
+Everything after `if fresh` ran once, so Swift files added later were never put in
+the target and silently never compiled. It now re-asserts `SOURCES`/`RESOURCES` on
+every run. Dedupe on the reference's `path`, not `hierarchy_path`: the latter
+reports the basename for nested entries, so `Fonts/x.ttf` never matches `x.ttf`
+and every run adds a second copy.
+
+**Hosted migrations: never diff by file name.** `supabase migration list` reports
+hosted names, which drift from the repo's. `20260726000002_streak_widen_window.sql`
+is on hosted as `streak_widen_window_and_count_sessions`, and three hosted entries
+have no local file at all. A name diff claimed hosted was two migrations behind
+when it was one. Confirm against schema state instead (does the column exist, does
+`compute_streak` contain `+ 4`).
+
+**`supabase migration up` cannot be used on this local DB.** Ten older migration
+files were never recorded in the tracking table, so it demands `--include-all` and
+would re-run all of them. Apply one migration directly and record it:
+
+```
+docker exec -i supabase_db_Pamwe psql -U postgres -d postgres < supabase/migrations/<file>
+docker exec -i supabase_db_Pamwe psql -U postgres -d postgres \
+  -c "insert into supabase_migrations.schema_migrations (version, name) values ('<ver>','<name>');"
+```
+
+Write migrations idempotently (`add column if not exists`, `create or replace`) so
+this stays safe.
+
+**Homebrew's install confirmation ignores piped input.** `brew install` prompts
+`Do you want to proceed? [y/n]` and loops on `Invalid input` when driven through a
+pipe. `yes | HOMEBREW_NO_AUTO_UPDATE=1 brew install <formula>` gets through it.
