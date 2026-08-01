@@ -5,7 +5,6 @@ import Animated from 'react-native-reanimated';
 import { fadeUp } from '../../lib/motion';
 import { GUTTER } from '../../theme/tokens';
 import { useTheme } from '../../providers/ThemeProvider';
-import { FAB_CLEARANCE } from '../PamweFab';
 
 interface ScreenProps extends Pick<ScrollViewProps, 'refreshControl' | 'keyboardShouldPersistTaps'> {
   children: ReactNode;
@@ -18,6 +17,11 @@ interface ScreenProps extends Pick<ScrollViewProps, 'refreshControl' | 'keyboard
 // Tab-screen wrapper: bg, safe-area top, 26px gutter. Content starts 8px below
 // the status bar. The tab bar is docked (build 8), so content lays out above it;
 // bottom padding is just scroll-end air.
+//
+// This used to pad by FAB_CLEARANCE (96) to clear the floating Ask Pamwe
+// bubble. The bubble is gone, folded into the Plans search where it was the
+// only place it earned its keep, so every tab gets its ~64pt back.
+const SCROLL_END = 32;
 export function Screen({ children, scroll = true, animated = true, ...scrollProps }: ScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
@@ -29,14 +33,14 @@ export function Screen({ children, scroll = true, animated = true, ...scrollProp
   const body = scroll ? (
     <ScrollView
       style={styles.flex}
-      contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: FAB_CLEARANCE }}
+      contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: SCROLL_END }}
       showsVerticalScrollIndicator={false}
       {...scrollProps}
     >
       {content}
     </ScrollView>
   ) : (
-    <View style={[styles.flex, { paddingTop: insets.top + 8, paddingBottom: FAB_CLEARANCE }]}>{content}</View>
+    <View style={[styles.flex, { paddingTop: insets.top + 8, paddingBottom: SCROLL_END }]}>{content}</View>
   );
 
   if (!animated) {

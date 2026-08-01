@@ -63,6 +63,9 @@ export type CustomPlanInput = {
   prompts?: string[]; // authored prompts; rotates the generic set when absent
   rhythmLabel?: string;
   bookLabel?: string;
+  /** Browse tags. Generated plans carry their own; a plan built by hand has none
+   *  until it is offered publicly, which is a separate decision. */
+  topics?: string[];
 };
 
 // Client-side custom-plan creation (no edge function): one plans row + N plan_days
@@ -87,6 +90,7 @@ export async function createCustomPlan(coupleId: string, input: CustomPlanInput)
       tagline: 'Made for you',
       book_label: input.bookLabel ?? null,
       rhythm_label: input.rhythmLabel ?? null,
+      topics: input.topics ?? [],
     })
     .select('*')
     .single();

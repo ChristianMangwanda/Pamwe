@@ -256,3 +256,114 @@ export async function switchPlan(coupleId: string, newPlanId: string, cadenceDay
   // export because the switch flow reads better at call sites.
   return enrollInPlan(coupleId, newPlanId, cadenceDays);
 }
+
+// ---------------------------------------------------------------------------
+// Browse and search
+//
+// Search is local and synchronous over plans already fetched. A couple has a
+// handful of plans and the browse list is small, so a round trip per keystroke
+// would be slower and worse. It is also pure, which makes it testable.
+export type SearchablePlan = {
+  title?: string | null;
+  subtitle?: string | null;
+  tagline?: string | null;
+  book_label?: string | null;
+  topics?: string[] | null;
+  duration_days?: number | null;
+};
+
+/** Case and punctuation insensitive tokens, so "1 Corinthians" matches "corinthians". */
+function haystack(p: SearchablePlan): string {
+  return [p.title, p.subtitle, p.tagline, p.book_label, ...(p.topics ?? [])]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+}
+
+/**
+ * Every whitespace-separated term must appear somewhere in the plan, so extra
+ * words narrow rather than widen. Returns everything for an empty query.
+ */
+export function searchPlans<T extends SearchablePlan>(plans: T[], query: string): T[] {
+  const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (terms.length === 0) return plans;
+  return plans.filter((p) => {
+    const hay = haystack(p);
+    return terms.every((t) => hay.includes(t));
+  });
+}
+
+/** Plans matching a topic tag and/or a length, for the browse chips. */
+export function filterPlans<T extends SearchablePlan>(
+  plans: T[],
+  topic: string | null,
+  days: number | null,
+): T[] {
+  return plans.filter((p) => {
+    if (topic && !(p.topics ?? []).includes(topic)) return false;
+    if (days && (p.duration_days ?? 0) !== days) return false;
+    return true;
+  });
+}
+
+/** The topics actually present in a set of plans, most common first, so the
+ *  chips never offer a filter that would return nothing. */
+export function topicsIn(plans: SearchablePlan[]): string[] {
+  const counts = new Map<string, number>();
+  for (const p of plans) {
+    for (const t of p.topics ?? []) counts.set(t, (counts.get(t) ?? 0) + 1);
+  }
+  return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([t]) => t);
+}
+
+/** Everything browsable: our curated plans plus any that have been offered
+ *  publicly. Not cached like getCuratedPlans, because the public set grows. */
+export async function getBrowsablePlans() {
+  const { data, error } = await supabase
+    .from('plans')
+    .select('*')
+    .or('is_curated.eq.true,is_public.eq.true')
+    .order('duration_days', { ascending: true })
+    .order('title', { ascending: true });
+
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** How many couples have read each plan. Goes through an RPC because
+ *  couple_plans is readable only for your own couple, and the function answers
+ *  only for plans that are actually offered publicly. */
+export async function getReaderCounts(planIds: string[]): Promise<Record<string, number>> {
+  if (planIds.length === 0) return {};
+  const { data, error } = await supabase.rpc('plan_reader_counts', { p_plan_ids: planIds });
+  if (error) return {}; // a missing count is a missing caption, never a broken page
+  const out: Record<string, number> = {};
+  for (const row of (data ?? []) as any[]) out[row.plan_id] = row.couples;
+  return out;
+}
+
+/** Mint (or reuse) the share link for a plan this couple built. */
+export async function sharePlan(planId: string): Promise<string> {
+  const { data, error } = await supabase.rpc('share_plan', { p_plan_id: planId });
+  if (error) throw error;
+  return `pamwe://plan/${data}`;
+}
+
+export type SharedPlanPreview = {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  tagline: string | null;
+  duration_days: number;
+  topics: string[];
+  couples: number;
+};
+
+/** Read a shared plan from its token, for the accept screen. Returns null when
+ *  the link is stale or wrong, which the screen reports rather than crashing. */
+export async function getSharedPlan(token: string): Promise<SharedPlanPreview | null> {
+  const { data, error } = await supabase.rpc('get_shared_plan', { p_token: token });
+  if (error) return null;
+  const row = Array.isArray(data) ? data[0] : data;
+  return row ?? null;
+}

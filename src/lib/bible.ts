@@ -297,9 +297,15 @@ export async function fetchPassage(
  * exact name → de-spaced → startsWith prefix. The verse part is parsed but the
  * jump targets the chapter. Returns null when nothing matches.
  */
-export function parseReference(query: string): { book: BibleBook; chapter?: number } | null {
+export function parseReference(
+  query: string,
+): { book: BibleBook; chapter?: number; verse?: number } | null {
   const raw = query.trim();
-  const m = raw.match(/^(\d?\s?[a-z][a-z ]*?)\s*(\d+)?(?::\d+)?$/i);
+  // Verse and range are captured, not just tolerated. Built plans cite
+  // passages like "Ruth 1:6-18", and the old pattern stopped at an optional
+  // ":6", so anything with a range failed to parse at all and the reader link
+  // fell back to the plain reading screen.
+  const m = raw.match(/^(\d?\s?[a-z][a-z ]*?)\s*(\d+)?(?::(\d+)(?:\s*-\s*\d+)?)?$/i);
   if (!m) return null;
 
   const namePart = m[1].trim().toLowerCase();
@@ -314,5 +320,7 @@ export function parseReference(query: string): { book: BibleBook; chapter?: numb
 
   let chapter = m[2] ? parseInt(m[2], 10) : undefined;
   if (chapter !== undefined) chapter = Math.max(1, Math.min(book.chapters, chapter));
-  return { book, chapter };
+  // The verse is the start of the range, so the reader can open on it.
+  const verse = m[3] ? parseInt(m[3], 10) : undefined;
+  return { book, chapter, verse };
 }

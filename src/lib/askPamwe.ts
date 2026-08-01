@@ -75,48 +75,6 @@ export async function askPamwe(query: string): Promise<PlanRecommendation[]> {
   }
 }
 
-export type HelpReference = { reference: string; note: string };
-
-export type HelpAnswer =
-  | { kind: 'answer'; answer: string; references: HelpReference[] }
-  | { kind: 'off_topic'; message: string }
-  | { kind: 'error'; message: string };
-
-const OFF_TOPIC_FALLBACK =
-  "Pamwe stays in its lane: Scripture, prayer, and the two of you. For that one, you'll want another guide.";
-
-// The quiet in-app helper (Ask Pamwe sheet). Unlike the builder, help mode has
-// no rich local fallback, so failures surface a gentle one-line message instead
-// of pretending. Only references whose book resolves are kept.
-export async function askPamweHelp(query: string): Promise<HelpAnswer> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), INVOKE_TIMEOUT_MS);
-  try {
-    const { data, error } = await supabase.functions.invoke('ask-pamwe', {
-      body: { query, mode: 'help' },
-      signal: controller.signal,
-    });
-    if (error) throw error;
-    if (data?.off_topic) {
-      return { kind: 'off_topic', message: String(data?.message ?? OFF_TOPIC_FALLBACK) };
-    }
-    const answer = typeof data?.answer === 'string' ? data.answer.trim() : '';
-    if (!answer) {
-      return { kind: 'error', message: "Pamwe couldn't find the words just now. Ask again soon." };
-    }
-    const references: HelpReference[] = Array.isArray(data?.references)
-      ? data.references
-          .filter((r: any) => r?.reference && parseReference(String(r.reference)))
-          .map((r: any) => ({ reference: String(r.reference).trim(), note: String(r?.note ?? '').trim() }))
-          .slice(0, 3)
-      : [];
-    return { kind: 'answer', answer, references };
-  } catch {
-    return { kind: 'error', message: 'Pamwe is resting for a moment. Ask again soon.' };
-  } finally {
-    clearTimeout(timer);
-  }
-}
 
 export function fallbackRecs(): PlanRecommendation[] {
   return [
@@ -163,4 +121,104 @@ export function fallbackRecs(): PlanRecommendation[] {
       ],
     },
   ];
+}
+
+// ---------------------------------------------------------------------------
+// Build mode: one plan, generated. Unlike askPamwe() above this does NOT fall
+// back to hardcoded recommendations. A build is a direct answer to something
+// the couple typed, and quietly handing them a stock Psalms plan instead would
+// be worse than saying it did not work.
+/** Shown only if the server somehow flags off-topic without sending its own
+ *  line. The server owns this wording; this is the belt. */
+const OFF_TOPIC_FALLBACK =
+  "Pamwe stays in its lane: Scripture, prayer, and the two of you. For that one, you'll want another guide.";
+
+export type BuiltReading = { day: number; reference: string; note: string };
+
+export type BuiltPlan = {
+  title: string;
+  meta: string;
+  days: number;
+  rhythm: 'passage' | 'chapter' | 'deep';
+  topics: string[];
+  readings: BuiltReading[];
+  prompts: string[];
+};
+
+export type BuildResult =
+  | { kind: 'plan'; plan: BuiltPlan }
+  | { kind: 'off_topic'; message: string }
+  | { kind: 'error'; message: string };
+
+const BUILD_TIMEOUT_MS = 30_000; // two model passes, so roughly double the one-shot budget
+
+/**
+ * Normalises a generated plan without flattening it.
+ *
+ * The older normalize() above rewrites every reading to "Book Chapter", which
+ * silently threw away the verse range. That was correct when the schema could
+ * only express chapters; here it would undo the whole point, so this one keeps
+ * the reference as written and only drops readings whose book cannot be
+ * resolved at all.
+ */
+function normalizeBuilt(raw: any): BuiltPlan | null {
+  const list = Array.isArray(raw?.readings) ? [...raw.readings] : [];
+  list.sort((a, b) => (Number(a?.day) || 0) - (Number(b?.day) || 0));
+
+  const readings: BuiltReading[] = [];
+  for (const r of list) {
+    const ref = String(r?.reference ?? '').trim();
+    if (!ref || !parseReference(ref)) continue;
+    readings.push({
+      day: readings.length + 1,
+      reference: ref,
+      note: String(r?.note ?? '').trim(),
+    });
+  }
+  if (readings.length < 3) return null;
+
+  const prompts = Array.isArray(raw?.prompts)
+    ? raw.prompts.filter((p: any) => typeof p === 'string' && p.trim()).map((p: string) => p.trim())
+    : [];
+  const topics = Array.isArray(raw?.topics)
+    ? raw.topics
+        .filter((t: any) => typeof t === 'string' && t.trim())
+        .map((t: string) => t.trim().toLowerCase())
+        .slice(0, 4)
+    : [];
+
+  return {
+    title: String(raw?.title ?? 'A plan for you').trim(),
+    meta: String(raw?.meta ?? `${readings.length} days`).trim(),
+    days: readings.length,
+    rhythm: ['passage', 'chapter', 'deep'].includes(raw?.rhythm) ? raw.rhythm : 'passage',
+    topics,
+    readings,
+    prompts,
+  };
+}
+
+export async function buildPlan(query: string): Promise<BuildResult> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), BUILD_TIMEOUT_MS);
+  try {
+    const { data, error } = await supabase.functions.invoke('ask-pamwe', {
+      body: { query, mode: 'build' },
+      signal: controller.signal,
+    });
+    if (error) throw error;
+
+    if (data?.off_topic) {
+      return { kind: 'off_topic', message: String(data.message ?? OFF_TOPIC_FALLBACK) };
+    }
+    if (data?.error) return { kind: 'error', message: String(data.error) };
+
+    const plan = normalizeBuilt(data);
+    if (!plan) return { kind: 'error', message: "Pamwe couldn't shape that one. Try saying it a different way." };
+    return { kind: 'plan', plan };
+  } catch {
+    return { kind: 'error', message: 'Pamwe is resting for a moment. Try again in a bit.' };
+  } finally {
+    clearTimeout(timer);
+  }
 }

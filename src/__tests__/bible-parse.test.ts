@@ -40,3 +40,36 @@ describe('parseReference', () => {
     expect(parseReference('jo')).toBeNull();
   });
 });
+
+// Built plans cite passages, not just chapters ("Ruth 1:6-18"). The old
+// pattern stopped at an optional ":6", so any range failed to parse at all and
+// the reader link silently fell back to the plain reading screen.
+describe('parseReference with verses and ranges', () => {
+  it('parses a verse range and keeps the start verse', () => {
+    const r = parseReference('Ruth 1:6-18');
+    expect(r?.book.name).toBe('Ruth');
+    expect(r?.chapter).toBe(1);
+    expect(r?.verse).toBe(6);
+  });
+
+  it('parses a single verse', () => {
+    expect(parseReference('John 21:15')).toMatchObject({ chapter: 21, verse: 15 });
+  });
+
+  it('parses a numbered, multi-word book with a range', () => {
+    const r = parseReference('1 Corinthians 13:4-7');
+    expect(r?.book.name).toBe('1 Corinthians');
+    expect(r?.chapter).toBe(13);
+    expect(r?.verse).toBe(4);
+  });
+
+  it('leaves verse undefined for a plain chapter', () => {
+    const r = parseReference('Psalm 23');
+    expect(r?.chapter).toBe(23);
+    expect(r?.verse).toBeUndefined();
+  });
+
+  it('tolerates spaces around the range dash', () => {
+    expect(parseReference('Psalm 62:5 - 8')).toMatchObject({ chapter: 62, verse: 5 });
+  });
+});

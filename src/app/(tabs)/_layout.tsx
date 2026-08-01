@@ -3,7 +3,6 @@ import { SunHorizon, BookOpen, Books, HandsPraying, Feather, UserCircle } from '
 import { CoupleProvider } from '../../providers/CoupleProvider';
 import { usePushRouting } from '../../hooks/usePushRouting';
 import { useDockedTabOptions } from '../../components/DockedTabBar';
-import { PamweFab } from '../../components/PamweFab';
 
 const ICON_SIZE = 21;
 
@@ -69,7 +68,6 @@ export default function TabLayout() {
           }}
         />
       </Tabs>
-      <PamweFab />
     </CoupleProvider>
   );
 }

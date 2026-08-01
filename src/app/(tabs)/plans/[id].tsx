@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Share } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated from 'react-native-reanimated';
@@ -13,7 +13,7 @@ import { GUTTER } from '../../../theme/tokens';
 import { overlayIn } from '../../../lib/motion';
 import { useTheme } from '../../../providers/ThemeProvider';
 import { useCouple } from '../../../providers/CoupleProvider';
-import { getPlan, getPlanCached, getPlanDayList, enrollInPlan, switchPlan, completePlan } from '../../../lib/plans';
+import { getPlan, getPlanCached, getPlanDayList, enrollInPlan, switchPlan, completePlan, sharePlan } from '../../../lib/plans';
 import { bannerTintForPlan } from '../../../lib/planArtwork';
 import { parseReference } from '../../../lib/bible';
 import { haptics } from '../../../lib/haptics';
@@ -31,6 +31,7 @@ export default function PlanDetailScreen() {
   const [days, setDays] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
   const isActive = !!couplePlan && couplePlan.plan_id === id;
   const dayNow = isActive ? (couplePlan.current_day ?? 1) : 1;
@@ -107,6 +108,24 @@ export default function PlanDetailScreen() {
       );
     } else {
       begin();
+    }
+  };
+
+  const canShare = !!plan && plan.is_curated === false && !!couple?.id && plan.couple_id === couple.id;
+
+  const onShare = async () => {
+    if (!plan || sharing) return;
+    setSharing(true);
+    try {
+      const link = await sharePlan(plan.id);
+      haptics.tap();
+      await Share.share({
+        message: `We're reading "${plan.title}" on Pamwe. Come read it with us: ${link}`,
+      });
+    } catch (e: any) {
+      Alert.alert("Couldn't make a link", e?.message ?? 'Try again in a moment.');
+    } finally {
+      setSharing(false);
     }
   };
 
@@ -299,6 +318,17 @@ export default function PlanDetailScreen() {
           {isActive && (
             <TouchableOpacity onPress={onMarkComplete} disabled={busy} style={styles.markComplete} hitSlop={8}>
               <Text variant="chip" color={colors.accent2} style={styles.markCompleteText}>Mark plan complete</Text>
+            </TouchableOpacity>
+          )}
+          {/* Only a plan this couple built can be shared. Curated plans are
+              already available to everyone, and a plan someone shared with you
+              is not yours to pass on under your own name. */}
+          {canShare && (
+            <TouchableOpacity onPress={onShare} disabled={sharing} style={styles.markComplete} hitSlop={8}
+              accessibilityRole="button" accessibilityLabel="Share this plan with another couple">
+              <Text variant="chip" color={colors.accent2} style={styles.markCompleteText}>
+                {sharing ? 'Making a link…' : 'Share with another couple'}
+              </Text>
             </TouchableOpacity>
           )}
         </View>
