@@ -98,13 +98,15 @@ src/app/
 └── (tabs)/                        # 6-tab DOCKED bar (DockedTabBar; the b7 glass oval is gone): Today · Bible · Plans · Prayers · Reflect · You
     ├── (today)/                   # home (tree streak, milestones, catch-up, nudge) → reading → journal → waiting → reveal → complete
     ├── bible/                     # index → [book] → [book]/[chapter] reader (6 translations, 2 sources); marks, note
-    ├── plans/                     # index (Ask Pamwe card) → [id] detail; builder (Ask Pamwe)
+    ├── plans/                     # index (search + Build/Browse) → [id] detail; build (generate), builder (by book)
     ├── prayers/                   # index = Prayers|Dreams toggle (swipe cards + detail sheet w/ reminders) → add · dream-add → timeline (answered)
     ├── reflect/                   # index (history + From-your-story card) → [id] detail (responses) → words (Their Words)
     └── you/                       # index (stats + dark toggle) → settings, recaps, couple (→ anniversary), privacy, terms, delete-account
 ```
 
-A floral **Ask Pamwe bubble** ([src/components/PamweFab.tsx](src/components/PamweFab.tsx)) floats on every non-ritual tab (never Today or the reading/journal/reveal flow) and opens [AskPamweSheet](src/components/AskPamweSheet.tsx). Screens it floats on pad their scroll end by `FAB_CLEARANCE`.
+**Ask Pamwe lives in the Plans search field, and nowhere else** (2026-08-01). The floating bubble and its sheet are gone: it was only ever used in Plans, it made the app read as an AI product, and every screen paid 96pt of scroll clearance for it. `Screen.tsx` now ends its scroll at a flat 32pt. Search filters the plans a couple can already open and offers to generate only when nothing matches, so generation is the fallback rather than the front door.
+
+A shared plan travels by link (`pamwe://plan/<token>`, [src/app/plan/[token].tsx](src/app/plan/%5Btoken%5D.tsx)), which opens a preview and never enrols anyone automatically. `plans.share_token` is minted on Share; `plans.is_public` is the separate, deliberate step of offering it in Browse. Popularity does not graduate a plan on its own.
 
 The design-handoff rebuild (2026-07) replaced the 2-tab app with this 6-tab shell. **Theming:** every screen reads colors from `useTheme()` ([src/providers/ThemeProvider.tsx](src/providers/ThemeProvider.tsx)) over the light+dark palettes in [src/theme/tokens.ts](src/theme/tokens.ts); the user toggles light/dark in the You tab. Legacy [src/constants/colors.ts](src/constants/colors.ts) is a **frozen light-only palette** kept for a few pre-auth/onboarding files only — **never import it in new code; use `useTheme()`.**
 
@@ -148,7 +150,7 @@ The core mechanic. Partner entries are invisible until both partners have submit
 - `entries` is in the `supabase_realtime` publication so the waiting screen subscription fires.
 - Other webhook functions: `notify-new-prayer`, `notify-freeze`, `delete-account` (verify_jwt=true — demote-don't-delete routine). **Push banners actually deliver since b10/b11** (APNs key on Expo).
 - **`notify-nudge`** — user-invoked (verify_jwt=true): "nudge my partner" from Today; pushes to the partner, one per sender per hour (cooldown logged in `partner_nudges`).
-- **`ask-pamwe`** (v7) — **"Pamwe points, never preaches"** (Christian's product line: no Scripture interpretation, ever; interpretation questions deflect gently). Two schema-constrained modes: `plans` (2 reading-plan recs, the builder) and `help` (short pointing answer + up to 3 references, the in-app sheet). Every schema carries a required `off_topic` flag; the server swaps flagged output for one fixed gentle line. Per-user rate limit 20/day + 10s cooldown, fail-open. **verify_jwt=true.** Anthropic SDK (`npm:@anthropic-ai/sdk`), model from env `ANTHROPIC_MODEL` (default `claude-haiku-4-5`). Secret **`ANTHROPIC_API_KEY`**: locally in gitignored `supabase/functions/.env`; hosted via `supabase secrets set`. Clients: `src/lib/askPamwe.ts` (`askPamwe` falls back to hardcoded recs; `askPamweHelp` returns a typed answer/off_topic/error).
+- **`ask-pamwe`** (v9) — **"Pamwe points, never preaches"** (Christian's product line: no Scripture interpretation, ever; interpretation questions deflect gently). Three schema-constrained modes: **`build`** (ONE plan, the Plans search), `plans` (2 recs, the by-book builder) and `help` (unreachable since the sheet was removed). **`build` runs two passes against a versioned `PLAN_SPEC`, both at temperature 0**: free text becomes a fixed brief, then the plan is generated from the brief alone, so phrasing stops steering the reading list. Its references carry **verse ranges** (`Ruth 1:6-18`), which the `plans` schema cannot express. Every generated plan is checked server-side against the 66-book canon (`validateReadings`) before it can become plan_days: no invented books, no chapter past the end of one, no backwards range, no duplicate or missing day. Every schema carries a required `off_topic` flag; the server swaps flagged output for one fixed gentle line. Per-user rate limit 20/day + 10s cooldown, fail-open. **verify_jwt=true.** Anthropic SDK (`npm:@anthropic-ai/sdk`), model from env `ANTHROPIC_MODEL` (default `claude-haiku-4-5`). Secret **`ANTHROPIC_API_KEY`**: locally in gitignored `supabase/functions/.env`; hosted via `supabase secrets set`. Clients: `src/lib/askPamwe.ts` (`buildPlan` returns a typed plan/off_topic/error and deliberately does NOT fall back to stock recs, since a build answers something the couple typed; `askPamwe` still falls back to hardcoded recs for the by-book builder).
 
 ---
 
@@ -339,7 +341,9 @@ The voice recorder, audio upload, and partner-push flow only behave correctly on
 | Shared-layer search | [src/lib/search.ts](src/lib/search.ts) |
 | Catch-up / grace days | [src/lib/catchup.ts](src/lib/catchup.ts) |
 | Streak milestones | [src/lib/milestones.ts](src/lib/milestones.ts), [src/components/MilestoneCard.tsx](src/components/MilestoneCard.tsx) |
-| Ask Pamwe bubble + sheet | [src/components/PamweFab.tsx](src/components/PamweFab.tsx), [src/components/AskPamweSheet.tsx](src/components/AskPamweSheet.tsx) |
+| Plan generation client | [src/lib/askPamwe.ts](src/lib/askPamwe.ts) (`buildPlan`), screen [plans/build.tsx](src/app/(tabs)/plans/build.tsx) |
+| Plan search, browse, sharing | [src/lib/plans.ts](src/lib/plans.ts) (`searchPlans`, `filterPlans`, `topicsIn`, `sharePlan`, `getSharedPlan`) |
+| Finished-plan rule + tree ceiling | [src/lib/planHistory.ts](src/lib/planHistory.ts) (`isFinished`), [StreakTree](src/components/ui/StreakTree.tsx) (`TREE_FULL_AT`) |
 | Docked tab bar | [src/components/DockedTabBar.tsx](src/components/DockedTabBar.tsx) |
 | Motion + haptics | [src/lib/motion.ts](src/lib/motion.ts), [src/lib/haptics.ts](src/lib/haptics.ts) |
 | Voice recorder component | [src/components/VoiceRecorder.tsx](src/components/VoiceRecorder.tsx) |
