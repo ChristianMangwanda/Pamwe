@@ -284,12 +284,31 @@ export async function fetchPassage(
   reference: string,
   translation: Exclude<Translation, 'bsb'> = 'web',
 ): Promise<string> {
-  const slug = reference.toLowerCase().replace(/ /g, '+');
-  const url = `https://bible-api.com/${slug}?translation=${translation}`;
-  const resp = await fetch(url);
-  if (!resp.ok) throw new Error(LOAD_FAILED);
-  const data = await resp.json();
-  return String(data.text ?? '').replace(/\s+/g, ' ').trim();
+  const fetchRef = async (ref: string) => {
+    const slug = ref.toLowerCase().replace(/ /g, '+');
+    const resp = await fetch(`https://bible-api.com/${slug}?translation=${translation}`);
+    if (!resp.ok) throw new Error(LOAD_FAILED);
+    const data = await resp.json();
+    // bible-api.com answers a bad reference with HTTP 200 and an `error` key
+    // ("not found", "too many chapters"), so an ok status is not enough.
+    if (data?.error) throw new Error(LOAD_FAILED);
+    const text = String(data.text ?? '').replace(/\s+/g, ' ').trim();
+    if (!text) throw new Error(LOAD_FAILED);
+    return text;
+  };
+
+  try {
+    return await fetchRef(reference);
+  } catch (err) {
+    // A generated span can name an end verse that does not exist ("John
+    // 1:1-2:99"), which the source rejects outright. Rather than show the
+    // couple a dead day, fall back to the chapter the passage starts in: a
+    // little more or less than intended still beats "couldn't load".
+    const parsed = parseReference(reference);
+    const startsAt = parsed?.chapter ? `${parsed.book.name} ${parsed.chapter}` : null;
+    if (!startsAt || startsAt.toLowerCase() === reference.trim().toLowerCase()) throw err;
+    return fetchRef(startsAt);
+  }
 }
 
 /**
@@ -301,11 +320,13 @@ export function parseReference(
   query: string,
 ): { book: BibleBook; chapter?: number; verse?: number } | null {
   const raw = query.trim();
-  // Verse and range are captured, not just tolerated. Built plans cite
-  // passages like "Ruth 1:6-18", and the old pattern stopped at an optional
-  // ":6", so anything with a range failed to parse at all and the reader link
-  // fell back to the plain reading screen.
-  const m = raw.match(/^(\d?\s?[a-z][a-z ]*?)\s*(\d+)?(?::(\d+)(?:\s*-\s*\d+)?)?$/i);
+  // Verse, range and two-chapter span are all captured, not just tolerated.
+  // Built plans cite passages like "Ruth 1:6-18" and "Matthew 5:1-6:34", and
+  // the original pattern stopped at an optional ":6", so anything with a range
+  // failed to parse at all and the reader link fell back to the plain reading
+  // screen. The reader opens one chapter, so a span resolves to where it
+  // starts.
+  const m = raw.match(/^(\d?\s?[a-z][a-z ]*?)\s*(\d+)?(?::(\d+)(?:\s*-\s*(?:\d+\s*:\s*)?\d+)?)?$/i);
   if (!m) return null;
 
   const namePart = m[1].trim().toLowerCase();

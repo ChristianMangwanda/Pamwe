@@ -106,9 +106,17 @@ const PLAN_SPEC_VERSION = "2026-08-01";
 const PLAN_SPEC = `A Pamwe plan, spec ${PLAN_SPEC_VERSION}:
 - It is read by two people, on the same day, who then write privately and reveal to each other. Write for "you two", never for one reader.
 - LENGTH: 3 to 40 days. Short is the default. Choose 7 unless the request implies otherwise; a whole book or a broad theme may justify 14 or 21; only a request that clearly asks for a long walk goes past 21.
-- RHYTHM: "passage" (a handful of verses), "chapter" (a whole chapter), or "deep" (a longer sitting).
-- REFERENCES: real passages in the 66-book Protestant canon, written as "Book Chapter", "Book Chapter:Verse", or "Book Chapter:Verse-Verse". A range must stay inside one chapter. Never invent a book, chapter or verse, and never give a range whose end is before its start.
-- A thematic plan curates verses across books. A book plan walks one book in order. Follow the brief, not your instinct.
+- RHYTHM: "passage" (a handful of verses), "chapter" (a whole chapter), or "deep" (a longer sitting). This describes the plan's usual day, not a rule every day must obey.
+- REFERENCES: real passages in the 66-book Protestant canon, in one of exactly four forms:
+    "Book Chapter"                        a whole chapter, e.g. "Romans 8"
+    "Book Chapter:Verse"                  one verse, e.g. "John 3:16"
+    "Book Chapter:Verse-Verse"            part of a chapter, e.g. "Hebrews 11:1-6"
+    "Book Chapter:Verse-Chapter:Verse"    running into the next chapter, e.g. "Matthew 5:1-6:34"
+- LENGTH IS DECIDED BY THE PASSAGE, NOT BY A QUOTA. Give a day however much it actually needs: a few verses when the thought is short, a whole chapter when the chapter is the unit, a span into the next chapter when the passage runs on. Never pad a short passage out to fill a day, and never cut a continuous one to fit inside a chapter.
+- A span may run into the NEXT chapter and no further. Three chapters at once cannot be fetched and the day would fail to load.
+- For a whole chapter always write "Book Chapter". Never spell it out as "Matthew 5:1-5:48": guessing where a chapter ends is the main way a reading fails to load. Same rule for the second chapter of a span, so prefer ending a span partway through a chapter you are sure of.
+- Never write a bare chapter range like "John 1-3". It is not a supported form.
+- A thematic plan curates passages across books. A book plan walks one book in order. Follow the brief, not your instinct.
 - NOTES: one short line per day saying what the passage IS, never what it means. "Staying when leaving would be easier", not "This teaches us that loyalty matters".
 - PROMPTS: 2 or 3 questions for the couple, second person plural, warm, specific, non-clichéd.
 - No em dashes anywhere. Commas, colons or periods.`;
@@ -279,17 +287,36 @@ function validateReadings(readings: unknown[], days: unknown): string | null {
     seen.add(day);
 
     const ref = String(r?.reference ?? "").trim();
-    // "Book Chapter", "Book Chapter:Verse", "Book Chapter:Verse-Verse"
-    const m = ref.match(/^([1-3]?\s?[A-Za-z][A-Za-z ]*?)\s+(\d+)(?::(\d+)(?:-(\d+))?)?$/);
+    // The four supported forms, in one pattern:
+    //   Book C          Book C:V          Book C:V-V          Book C:V-C:V
+    // A bare chapter range ("John 1-3") deliberately does not match, because
+    // bible-api.com answers it with "too many chapters" and the day would
+    // simply fail to load in the reader.
+    const m = ref.match(/^([1-3]?\s?[A-Za-z][A-Za-z ]*?)\s+(\d+)(?::(\d+)(?:-(?:(\d+):)?(\d+))?)?$/);
     if (!m) return `unparseable reference: ${ref}`;
 
-    const chapters = CANON[m[1].trim().toLowerCase()];
+    const book = m[1].trim();
+    const chapters = CANON[book.toLowerCase()];
     if (!chapters) return `unknown book: ${ref}`;
 
-    const chapter = parseInt(m[2], 10);
-    if (chapter < 1 || chapter > chapters) return `no chapter ${chapter} in ${m[1].trim()}`;
+    const fromChapter = parseInt(m[2], 10);
+    if (fromChapter < 1 || fromChapter > chapters) return `no chapter ${fromChapter} in ${book}`;
 
-    if (m[3] && m[4] && parseInt(m[4], 10) < parseInt(m[3], 10)) return `backwards range: ${ref}`;
+    const fromVerse = m[3] ? parseInt(m[3], 10) : null;
+    const toChapter = m[4] ? parseInt(m[4], 10) : null;
+    const toVerse = m[5] ? parseInt(m[5], 10) : null;
+
+    if (toChapter !== null) {
+      if (toChapter > chapters) return `no chapter ${toChapter} in ${book}`;
+      // The source caps a span at two chapters; a third is fetched as nothing.
+      if (toChapter < fromChapter) return `backwards span: ${ref}`;
+      if (toChapter - fromChapter > 1) return `span longer than two chapters: ${ref}`;
+      if (toChapter === fromChapter && toVerse !== null && fromVerse !== null && toVerse <= fromVerse) {
+        return `backwards range: ${ref}`;
+      }
+    } else if (fromVerse !== null && toVerse !== null && toVerse <= fromVerse) {
+      return `backwards range: ${ref}`;
+    }
   }
   if (seen.size !== days) return `missing days: have ${seen.size} of ${days}`;
   return null;

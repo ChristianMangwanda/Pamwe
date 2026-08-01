@@ -73,3 +73,26 @@ describe('parseReference with verses and ranges', () => {
     expect(parseReference('Psalm 62:5 - 8')).toMatchObject({ chapter: 62, verse: 5 });
   });
 });
+
+// A generated day can run into the next chapter ("Matthew 5:1-6:34"). The
+// reader opens one chapter at a time, so a span resolves to where it starts.
+describe('parseReference with two-chapter spans', () => {
+  it('parses a span and lands on the opening chapter and verse', () => {
+    const r = parseReference('Matthew 5:1-6:34');
+    expect(r?.book.name).toBe('Matthew');
+    expect(r?.chapter).toBe(5);
+    expect(r?.verse).toBe(1);
+  });
+
+  it('parses a span in a numbered book', () => {
+    expect(parseReference('1 Corinthians 12:1-13:13')).toMatchObject({ chapter: 12, verse: 1 });
+  });
+
+  it('still rejects a bare chapter range, which the source cannot fetch', () => {
+    // "John 1-3" answers "too many chapters", so it must never reach the reader
+    // looking like a valid reference.
+    const r = parseReference('John 1-3');
+    // It may resolve the book, but never as chapter 1 through 3.
+    expect(r?.verse).toBeUndefined();
+  });
+});
