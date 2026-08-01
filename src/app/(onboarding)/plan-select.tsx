@@ -11,6 +11,7 @@ import { fonts } from '../../constants/typography';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useCouple } from '../../providers/CoupleProvider';
 import { getCuratedPlans, enrollInPlan, switchPlan, CADENCE_OPTIONS, type Cadence } from '../../lib/plans';
+import { lastFinishedPlan } from '../../lib/planHistory';
 import { bannerTintForPlan } from '../../lib/planArtwork';
 import { getUserCouple } from '../../lib/couples';
 import { haptics } from '../../lib/haptics';
@@ -18,12 +19,22 @@ import { haptics } from '../../lib/haptics';
 export default function PlanSelectScreen() {
   const router = useRouter();
   const { colors } = useTheme();
-  const { refresh } = useCouple();
+  const { couple, refresh } = useCouple();
   const { mode } = useLocalSearchParams<{ mode?: string }>();
   const isSwitch = mode === 'change';
   const [plans, setPlans] = useState<any[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [cadence, setCadence] = useState<Cadence>(1);
+
+  // Start from the rhythm they last finished on. A couple who read every other
+  // day for a whole plan has already answered this question, and defaulting
+  // back to daily quietly signs them up for twice the pace.
+  useEffect(() => {
+    if (!couple?.id) return;
+    lastFinishedPlan(couple.id)
+      .then((p) => { if (p) setCadence((p.cadenceDays as Cadence) ?? 1); })
+      .catch(() => {});
+  }, [couple?.id]);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
 

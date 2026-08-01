@@ -10,7 +10,6 @@ import { Button } from '../../../components/ui/Button';
 import { SectionEyebrow } from '../../../components/ui/SectionEyebrow';
 import { ProgressBar } from '../../../components/ui/ProgressBar';
 import { StreakBar } from '../../../components/ui/StreakBar';
-import { StreakTree } from '../../../components/ui/StreakTree';
 import { MilestoneCard } from '../../../components/MilestoneCard';
 import { ThinkingButton } from '../../../components/ThinkingButton';
 import { Floral } from '../../../components/ui/Floral';
@@ -25,7 +24,7 @@ import { parseReference } from '../../../lib/bible';
 import { daysBehind, todayInTimezone } from '../../../lib/catchup';
 import { nudgePartner } from '../../../lib/notifications';
 import { milestoneFor, Milestone } from '../../../lib/milestones';
-import { countMyTotalSubmitted } from '../../../lib/entries';
+import { lastFinishedPlan, FinishedPlan } from '../../../lib/planHistory';
 import { haptics } from '../../../lib/haptics';
 
 export default function HomeScreen() {
@@ -38,11 +37,9 @@ export default function HomeScreen() {
   const [nudging, setNudging] = useState(false);
   const [nudged, setNudged] = useState(false);
   const [milestone, setMilestone] = useState<Milestone | null>(null);
-  // The tree grows with days READ, not with the streak. A streak resets to 1 on
-  // any missed day, which yanked a well-established tree back to a seedling and
-  // made it read as broken (a couple 7 sessions in was still showing "Planted").
-  // Days read only ever goes up, so the tree only ever grows.
-  const [daysRead, setDaysRead] = useState(0);
+  // Only read when there's no active plan, to tell "you finished something"
+  // apart from "you never started".
+  const [finished, setFinished] = useState<FinishedPlan | null>(null);
 
   // Celebrate a streak milestone once: an AsyncStorage high-water mark per
   // couple decides whether this one has already had its moment.
@@ -56,11 +53,10 @@ export default function HomeScreen() {
       .catch(() => {});
   }, [couple?.id, streakNow]);
 
-  // Re-read when the day advances so the tree moves the moment a day is sealed.
   useEffect(() => {
-    if (!couple?.id) return;
-    countMyTotalSubmitted(couple.id).then(setDaysRead).catch(() => {});
-  }, [couple?.id, dayNumber, myEntry?.submitted_at]);
+    if (!couple?.id || couplePlan) { setFinished(null); return; }
+    lastFinishedPlan(couple.id).then(setFinished).catch(() => {});
+  }, [couple?.id, couplePlan]);
 
   const dismissMilestone = () => {
     if (couple?.id && milestone) {
@@ -88,16 +84,44 @@ export default function HomeScreen() {
     );
   }
 
+  // No active plan. If they finished one, say so: this used to show the same
+  // blank "you have no plan" state a brand new couple sees, so finishing a
+  // plan read as the app having lost everything.
   if (!couplePlan || !planDay) {
+    const finishedOn = finished?.finishedOn
+      ? new Date(finished.finishedOn).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
+      : null;
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
         <View style={styles.center}>
-          <Text variant="h2" italic style={styles.centerTitle}>Ready for what's next</Text>
-          <Text color={colors.ink2} style={styles.centerText}>
-            You don't have an active reading plan right now. Choose one and begin together.
-          </Text>
+          <Floral variant="divider" style={styles.doneFloral} />
+          {finished ? (
+            <>
+              <Text variant="eyebrow" color={colors.accent2}>Plan complete</Text>
+              <Text variant="h2" italic style={styles.centerTitle}>
+                You finished {finished.title}, together
+              </Text>
+              <Text color={colors.ink2} style={styles.centerText}>
+                {finished.durationDays} days{finishedOn ? `, finished on ${finishedOn}` : ''}. Every one of them is still
+                in your reflections. Ready for what's next?
+              </Text>
+            </>
+          ) : (
+            <>
+              <Text variant="h2" italic style={styles.centerTitle}>Ready for what's next</Text>
+              <Text color={colors.ink2} style={styles.centerText}>
+                You don't have an active reading plan right now. Choose one and begin together.
+              </Text>
+            </>
+          )}
           <View style={styles.centerCta}>
-            <Button title="Choose a plan" onPress={() => router.push('/(onboarding)/plan-select')} />
+            <Button title="Pick your next plan" onPress={() => router.push('/(onboarding)/plan-select')} />
+            <Button
+              title="Build your own"
+              variant="secondary"
+              onPress={() => router.push('/(tabs)/plans/builder')}
+              style={styles.centerCta2}
+            />
           </View>
         </View>
       </SafeAreaView>
@@ -145,7 +169,7 @@ export default function HomeScreen() {
   const openReading = () => {
     const parsed = parseReference(planDay.passage_reference ?? '');
     if (!parsed) {
-      router.push('/(tabs)/(today)/reading');
+      router.push({ pathname: '/(tabs)/(today)/reading', params: { day: String(dayNumber) } });
       return;
     }
     router.push({
@@ -166,7 +190,7 @@ export default function HomeScreen() {
         go: () => router.push({ pathname: '/(tabs)/(today)/reveal', params: { day: String(dayNumber) } }),
       }
     : mySubmitted
-    ? { label: `Waiting for ${partnerName}`, go: () => router.push('/(tabs)/(today)/waiting') }
+    ? { label: `Waiting for ${partnerName}`, go: () => router.push({ pathname: '/(tabs)/(today)/waiting', params: { day: String(dayNumber) } }) }
     : { label: `Read Day ${dayNumber}`, go: openReading };
 
   const onCta = () => { haptics.tap(); cta.go(); };
@@ -248,8 +272,10 @@ export default function HomeScreen() {
           <PartnerCol initial={partnerInitial} name={partnerName} status={partnerStatus} solid={partnerSubmitted} />
         </View>
 
+        {/* The tree used to sit here above the streak bar, both telling the
+            same story. It now marks finished plans, on the completion screen
+            and in the You tab, where a rarer thing can mean more. */}
         <View style={styles.streakWrap}>
-          <StreakTree count={daysRead} />
           <StreakBar count={streakCount} />
           {streakCount > 0 && (
             <Text style={[styles.streakCount, { color: colors.muted }]}>{streakCount} day streak</Text>
@@ -301,6 +327,8 @@ const styles = StyleSheet.create({
   centerTitle: { textAlign: 'center' },
   centerText: { fontSize: 15, marginTop: 12, textAlign: 'center', lineHeight: 22 },
   centerCta: { marginTop: 28, alignSelf: 'stretch' },
+  centerCta2: { marginTop: 10 },
+  doneFloral: { width: 150, height: 26, marginBottom: 18, opacity: 0.85 },
   scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 32 },
   floral: { position: 'absolute', top: -6, left: -16, width: 116, height: 116, opacity: 0.82 },
   gearRow: { flexDirection: 'row', justifyContent: 'flex-end', zIndex: 2 },

@@ -4,40 +4,39 @@ import { Text } from './Text';
 import { fonts } from '../../constants/typography';
 import { useTheme } from '../../providers/ThemeProvider';
 
-// A quiet growth metaphor for the streak: the couple's constancy is a plant that
-// grows with the days they read together. Discrete stages tied to thresholds,
-// drawn in the app's ink/accent language so it reads in light and dark.
+// A quiet growth metaphor: the couple's constancy is a plant that grows with
+// the PLANS they finish together. Drawn in the app's ink/accent language so it
+// reads in light and dark.
+//
+// It used to grow with days read and sat on Today beside the streak bar, where
+// the two said the same thing twice and neither meant much. Finishing a plan is
+// rare (a fortnight to a year), so the tree now moves only for that, which
+// makes each step worth seeing. Christian's call, 2026-08-01.
 export type TreeStage = 0 | 1 | 2 | 3 | 4 | 5;
 
-export function treeStage(count: number): TreeStage {
-  if (count >= 30) return 5;
-  if (count >= 14) return 4;
-  if (count >= 7) return 3;
-  if (count >= 3) return 2;
-  if (count >= 1) return 1;
-  return 0;
+/** Finished plans it takes to grow the tree to full. Lives here rather than in
+ *  lib so this file stays free of the Supabase client and can be unit tested as
+ *  the pure drawing it is. One constant, so the ceiling is a one-line
+ *  recalibration once we see how it feels over a year. */
+export const TREE_FULL_AT = 3;
+
+// Stages spread evenly across the run to TREE_FULL_AT. At a ceiling of 3 a plan
+// is worth two stages (1 -> 2, 2 -> 4, 3 -> 5); at 5 it is worth one each.
+// Either way the last finished plan is what tips it into full bloom.
+
+export function treeStage(finishedPlans: number): TreeStage {
+  if (finishedPlans <= 0) return 0;
+  const ceiling = TREE_FULL_AT > 0 ? TREE_FULL_AT : 1;
+  return Math.min(5, Math.ceil((finishedPlans / ceiling) * 5)) as TreeStage;
 }
 
-// The count each stage begins at, paired with the stem height it starts from.
-// Kept in step with treeStage() above.
-const STAGE_MIN = [0, 1, 3, 7, 14, 30];
 const STAGE_STEM_TOP = [70, 62, 50, 38, 26, 20];
 
-// The stem used to snap between 6 fixed heights, so on all but 5 days of the
-// first month nothing moved and the tree read as static. It now eases toward
-// the NEXT stage's height as the days accumulate, so every day read nudges it
-// visibly, while the stage boundaries still land on exactly the old heights
-// (the leaves, bud and bloom hang off those, and the design previews and
-// treeStage tests assume them).
-export function stemTopFor(count: number): number {
-  const stage = treeStage(count);
-  if (stage >= 5) return STAGE_STEM_TOP[5];
-  const from = STAGE_STEM_TOP[stage];
-  const to = STAGE_STEM_TOP[stage + 1];
-  const lo = STAGE_MIN[stage];
-  const hi = STAGE_MIN[stage + 1];
-  const t = hi > lo ? Math.min(1, Math.max(0, (count - lo) / (hi - lo))) : 0;
-  return Math.round(from + (to - from) * t);
+// One height per stage, no interpolation. Days read could ease between stages
+// because they arrive daily; finished plans cannot, since there is no such
+// thing as being part-way through one as far as this is concerned.
+export function stemTopFor(finishedPlans: number): number {
+  return STAGE_STEM_TOP[treeStage(finishedPlans)];
 }
 
 const STAGE_WORD: Record<TreeStage, string> = {

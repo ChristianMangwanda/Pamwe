@@ -37,7 +37,7 @@ export default function RevealScreen() {
   const { day } = useLocalSearchParams<{ day?: string }>();
   const pinnedDay = day ? Number(day) : undefined;
   const { myEntry, partnerEntry, dayNumber, planDay, loading, refresh } = useTodayEntry(pinnedDay);
-  const { couplePlan, partner, refresh: refreshCouple } = useCouple();
+  const { couplePlan, partner, loading: coupleLoading, refresh: refreshCouple } = useCouple();
 
   const myInitial = (user?.user_metadata?.full_name || user?.email || 'Y')[0]?.toUpperCase() ?? 'Y';
   const partnerInitial = profileInitial(partner) ?? 'P';
@@ -111,7 +111,15 @@ export default function RevealScreen() {
     // Capture the plan before refresh: completing the final day retires it,
     // and the celebration screen needs to know what was finished.
     const completed = isFinalDay && couplePlan
-      ? { title: couplePlan.plan?.title ?? '', days: String(totalDays ?? ''), cpId: couplePlan.id }
+      ? {
+          title: couplePlan.plan?.title ?? '',
+          days: String(totalDays ?? ''),
+          cpId: couplePlan.id,
+          // Carried so "Read it again" can re-enrol at the same rhythm without
+          // asking, and without another round trip on the celebration screen.
+          planId: couplePlan.plan?.id ?? couplePlan.plan_id ?? '',
+          cadence: String(couplePlan.cadence_days ?? 1),
+        }
       : null;
     // Move to the next day here, once the reveal has actually been read. The DB
     // used to do it the instant both partners submitted, which pulled every
@@ -131,10 +139,32 @@ export default function RevealScreen() {
     else router.replace('/(tabs)/(today)');
   };
 
-  if (loading && !revealed) {
+  if ((loading || coupleLoading) && !revealed) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
         <View style={styles.centered}><PamweLoading /></View>
+      </SafeAreaView>
+    );
+  }
+
+  // No active plan, so the plan this reveal belongs to is finished and there is
+  // nothing here to load. This used to fall through to "Couldn't load your
+  // reflections. Check your connection", which blamed the network for a
+  // finished plan and read as though the reflections were gone. They are not:
+  // the history keys off the couple, not the active plan.
+  if (!couplePlan) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
+        <View style={styles.centered}>
+          <Text variant="h2" style={styles.errorTitle}>That plan is finished</Text>
+          <Text color={colors.ink2} style={styles.errorText}>
+            Every day you read together is still in your reflections. Start a new plan whenever you're both ready.
+          </Text>
+          <View style={styles.errorActions}>
+            <Button title="Read your reflections" onPress={() => router.replace('/(tabs)/reflect')} />
+            <Button title="Pick your next plan" variant="secondary" onPress={() => router.replace('/(onboarding)/plan-select')} />
+          </View>
+        </View>
       </SafeAreaView>
     );
   }

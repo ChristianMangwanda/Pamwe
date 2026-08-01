@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { AppState } from 'react-native';
 import { useAuth } from './AuthProvider';
 import { getUserCouple, getPartnerProfile, togetherSince, toISODate } from '../lib/couples';
 import { shareAnniversary } from '../../modules/pamwe-widget';
@@ -73,6 +74,18 @@ export function CoupleProvider({ children }: { children: React.ReactNode }) {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [couple?.id, refresh]);
+
+  // Realtime is not enough on its own. iOS drops the socket when the app is
+  // backgrounded and missed changes are never replayed, so a partner starting
+  // a new plan while this phone was asleep never arrived: they would begin
+  // reading and the other phone still showed the finished plan, or nothing.
+  // Re-reading couple state on foreground closes that window.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') refresh();
+    });
+    return () => sub.remove();
+  }, [refresh]);
 
   // Hand the Lock Screen widget the date the couple counts from. Sharing the
   // resolved date rather than the raw anniversary keeps the fallback rule in

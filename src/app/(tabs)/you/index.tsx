@@ -14,6 +14,8 @@ import { useCouple } from '../../../providers/CoupleProvider';
 import { profileInitial } from '../../../lib/couples';
 import { countMyTotalSubmitted, countCoupleReflections } from '../../../lib/entries';
 import { countPrayers } from '../../../lib/prayers';
+import { StreakTree, TREE_FULL_AT } from '../../../components/ui/StreakTree';
+import { finishedPlanCount } from '../../../lib/planHistory';
 import { haptics } from '../../../lib/haptics';
 
 export default function YouScreen() {
@@ -23,6 +25,7 @@ export default function YouScreen() {
   const { couple, partner } = useCouple();
 
   const [stats, setStats] = useState({ days: 0, reflections: 0, prayers: 0 });
+  const [finishedPlans, setFinishedPlans] = useState<number | null>(null);
 
   // Last-good stats from disk so a cold launch never opens on lying zeros
   // while the counts are still in flight.
@@ -58,6 +61,11 @@ export default function YouScreen() {
   }, [couple?.id]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  useEffect(() => {
+    if (!couple?.id) return;
+    finishedPlanCount(couple.id).then(setFinishedPlans).catch(() => {});
+  }, [couple?.id]);
 
   const myName = user?.user_metadata?.full_name || (user?.email ? user.email.split('@')[0] : 'You');
   const myInitial = myName[0]?.toUpperCase() ?? 'Y';
@@ -96,6 +104,26 @@ export default function YouScreen() {
           <Stat value={stats.reflections} label="Reflections" colors={colors} />
           <Stat value={stats.prayers} label="Prayers" colors={colors} />
         </View>
+
+        {/* The standing record of finished plans. It lives here as well as on
+            the completion screen so it is visible between finishes, which can
+            be a year apart. */}
+        {finishedPlans !== null && (
+          <View style={[styles.treeCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+            <StreakTree count={finishedPlans} />
+            {finishedPlans >= TREE_FULL_AT ? (
+              <View style={[styles.badge, { backgroundColor: colors.accent }]}>
+                <Text variant="chip" color={colors.bg}>Full bloom · {finishedPlans} plans</Text>
+              </View>
+            ) : (
+              <Text style={[styles.treeCaption, { color: colors.muted }]}>
+                {finishedPlans === 0
+                  ? 'Finish a plan together and your tree begins.'
+                  : `${finishedPlans} of ${TREE_FULL_AT} plans finished together.`}
+              </Text>
+            )}
+          </View>
+        )}
 
         <Text variant="eyebrow" color={colors.muted} style={styles.section}>Appearance</Text>
         <View style={[styles.appearance, { backgroundColor: colors.line2 }]}>
@@ -171,6 +199,9 @@ const styles = StyleSheet.create({
   statCard: { flex: 1, borderWidth: 1, borderRadius: 16, paddingVertical: 16, alignItems: 'center' },
   statValue: { fontFamily: fonts.serif, fontSize: 24 },
   statLabel: { fontFamily: fonts.sansSemiBold, fontSize: 9, letterSpacing: 1.2, textTransform: 'uppercase', marginTop: 2 },
+  treeCard: { alignItems: 'center', borderWidth: 1, borderRadius: 18, paddingVertical: 18, marginTop: 14 },
+  treeCaption: { fontFamily: fonts.sans, fontSize: 12, marginTop: 8, textAlign: 'center' },
+  badge: { marginTop: 10, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
   section: { marginTop: 24, marginBottom: 10 },
   appearance: { flexDirection: 'row', gap: 6, borderRadius: 14, padding: 5 },
   appOption: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: 10 },

@@ -131,7 +131,13 @@ export default function PlanDetailScreen() {
               // is no longer the active one.
               router.replace({
                 pathname: '/(tabs)/(today)/complete',
-                params: { title: plan?.title ?? '', days: String(plan?.duration_days ?? ''), cpId },
+                params: {
+                  title: plan?.title ?? '',
+                  days: String(plan?.duration_days ?? ''),
+                  cpId,
+                  planId: plan?.id ?? '',
+                  cadence: String(couplePlan?.cadence_days ?? 1),
+                },
               });
             } catch (err: any) {
               setBusy(false);
