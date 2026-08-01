@@ -237,6 +237,18 @@ export async function attachAudioToEntry(
   return data;
 }
 
+// Attach a transcript to an already-sealed voice entry. Goes through an RPC
+// because entries_update_own_draft stops at submitted_at, and the function
+// only fills a still-null transcript, so this can never revise a reflection.
+// Best-effort by design: a failure leaves the entry exactly as it shipped.
+export async function saveTranscript(entryId: string, transcript: string) {
+  const { error } = await supabase.rpc('set_entry_transcript', {
+    p_entry_id: entryId,
+    p_transcript: transcript,
+  });
+  if (error) throw error;
+}
+
 export async function countMySubmittedEntries(couplePlanId: string) {
   const { data: { session } } = await supabase.auth.getSession();
   const user = session?.user;

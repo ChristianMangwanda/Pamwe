@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Text } from '../../../components/ui/Text';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
@@ -17,7 +17,11 @@ import { savePlanDayPassage } from '../../../lib/plans';
 export default function ReadingScreen() {
   const router = useRouter();
   const { colors } = useTheme();
-  const { planDay, dayNumber } = useTodayEntry();
+  // Pinned to the day we opened on, so a partner's Amen advancing current_day
+  // can't swap the passage out mid-read. Unpinned only when opened without a
+  // day (a push notification), where following the live day is right.
+  const { day } = useLocalSearchParams<{ day?: string }>();
+  const { planDay, dayNumber } = useTodayEntry(day ? Number(day) : undefined);
 
   // Curated plans ship seeded passage_text; custom (builder) plans store NULL and
   // live-fetch the passage from bible-api.com on the fly.
@@ -86,7 +90,10 @@ export default function ReadingScreen() {
           </Card>
         ) : null}
 
-        <Button title="Write your reflection" onPress={() => router.push('/(tabs)/(today)/journal')} />
+        <Button
+          title="Write your reflection"
+          onPress={() => router.push({ pathname: '/(tabs)/(today)/journal', params: { day: String(dayNumber) } })}
+        />
       </ScrollView>
     </SafeAreaView>
   );

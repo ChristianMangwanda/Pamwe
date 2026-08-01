@@ -10,7 +10,11 @@ export default function BibleStackLayout() {
       <Stack.Screen name="[book]/[chapter]" />
       <Stack.Screen name="marks" />
       <Stack.Screen name="search" />
-      <Stack.Screen name="note" options={{ presentation: 'modal' }} />
+      {/* fullScreenModal, not modal: KeyboardAvoidingView measures its frame
+          relative to its parent while the keyboard reports in window
+          coordinates. In a page-sheet those differ by the sheet's top inset,
+          so it under-padded and the keyboard sat over the note. */}
+      <Stack.Screen name="note" options={{ presentation: 'fullScreenModal' }} />
     </Stack>
   );
 }

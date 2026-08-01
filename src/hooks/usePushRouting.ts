@@ -38,6 +38,13 @@ export function usePushRouting() {
         // Dreams live behind the toggle on the prayers tab; the param opens it.
         router.push({ pathname: '/(tabs)/prayers', params: { tab: 'dreams' } } as any);
         break;
+      case 'note':
+        // Straight to the verse the note is on, with it flashed in the reader.
+        router.push({
+          pathname: '/(tabs)/bible/[book]/[chapter]',
+          params: { book: String(data.book), chapter: String(data.chapter), verse: String(data.verse) },
+        } as any);
+        break;
       case 'recap':
         router.push('/(tabs)/you/recaps' as any);
         break;

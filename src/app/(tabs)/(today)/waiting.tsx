@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated from 'react-native-reanimated';
 import { Check } from 'phosphor-react-native';
 import { Text } from '../../../components/ui/Text';
@@ -21,7 +21,11 @@ export default function WaitingScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { couplePlan, partner } = useCouple();
-  const { partnerEntry, dayNumber, refresh, error } = useTodayEntry();
+  // Pinned: if the partner submits and amens while this screen is open, an
+  // unpinned wait would follow current_day onto the next day and sit there
+  // waiting forever on a day neither partner has read.
+  const { day } = useLocalSearchParams<{ day?: string }>();
+  const { partnerEntry, dayNumber, refresh, error } = useTodayEntry(day ? Number(day) : undefined);
   const partnerName = partner?.display_name ?? 'Your partner';
   const partnerInitial = profileInitial(partner) ?? '?';
 

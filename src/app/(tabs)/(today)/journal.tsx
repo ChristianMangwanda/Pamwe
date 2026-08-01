@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { View, StyleSheet, TextInput, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Sentry from '@sentry/react-native';
 import { LockSimple } from 'phosphor-react-native';
 import { Text } from '../../../components/ui/Text';
@@ -22,6 +22,7 @@ import {
   ensureVoiceDraft,
   uploadVoiceRecording,
   attachAudioToEntry,
+  saveTranscript,
   getMyEntry,
 } from '../../../lib/entries';
 
@@ -36,7 +37,12 @@ export default function JournalScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { couplePlan, partner } = useCouple();
-  const { myEntry, dayNumber, planDay, refresh } = useTodayEntry();
+  // Pinned to the day this reflection is for. Unpinned, a partner tapping Amen
+  // moved current_day out from under the open journal, and the next autosave
+  // wrote these words into the NEXT day's entry, a day neither partner had
+  // read, leaving the real day holding an older draft.
+  const { day } = useLocalSearchParams<{ day?: string }>();
+  const { myEntry, dayNumber, planDay, refresh } = useTodayEntry(day ? Number(day) : undefined);
   const partnerName = partner?.display_name ?? 'your partner';
   const planTitle = couplePlan?.plan?.title ?? 'Reading plan';
 
@@ -88,7 +94,7 @@ export default function JournalScreen() {
       const actual = await getMyEntry(couplePlan.id, dayNumber);
       if (!actual?.submitted_at) return false;
       await refresh();
-      router.replace('/(tabs)/(today)/waiting');
+      router.replace({ pathname: '/(tabs)/(today)/waiting', params: { day: String(dayNumber) } });
       return true;
     } catch {
       return false;
@@ -109,7 +115,7 @@ export default function JournalScreen() {
             entryIdRef.current = entry.id;
             await submitEntry(entry.id);
             await refresh();
-            router.replace('/(tabs)/(today)/waiting');
+            router.replace({ pathname: '/(tabs)/(today)/waiting', params: { day: String(dayNumber) } });
           } catch (err: any) {
             if (await landedAnyway()) return;
             Sentry.captureException(err);
@@ -133,16 +139,20 @@ export default function JournalScreen() {
       setUploadingVoice(true);
       haptics.medium();
       const draft = await ensureVoiceDraft(couplePlan.id, dayNumber);
-      // Transcription runs on-device in parallel with the upload; it is
-      // best-effort (null on any failure) and never blocks the entry.
-      const [objectPath, transcript] = await Promise.all([
-        uploadVoiceRecording(couplePlan.id, dayNumber, result.uri),
-        transcribeRecording(result.uri),
-      ]);
-      await attachAudioToEntry(draft.id, objectPath, result.durationSeconds, transcript);
+      const objectPath = await uploadVoiceRecording(couplePlan.id, dayNumber, result.uri);
+      await attachAudioToEntry(draft.id, objectPath, result.durationSeconds, null);
       await submitEntry(draft.id);
+      // Transcription is deliberately NOT awaited. It runs the recognizer over
+      // the whole recording with a 45s ceiling, and sending used to wait for
+      // it, so the slowest part of sharing a reflection was an optional field.
+      // The entry is sealed and delivered above; the transcript catches up.
+      // Detached on purpose: this outlives the screen, so it must not touch
+      // component state, and a failure leaves the entry as it already shipped.
+      transcribeRecording(result.uri)
+        .then((t) => (t ? saveTranscript(draft.id, t) : undefined))
+        .catch(() => {});
       await refresh();
-      router.replace('/(tabs)/(today)/waiting');
+      router.replace({ pathname: '/(tabs)/(today)/waiting', params: { day: String(dayNumber) } });
     } catch (err: any) {
       if (await landedAnyway()) return;
       Sentry.captureException(err);

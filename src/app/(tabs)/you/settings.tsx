@@ -142,6 +142,8 @@ export default function SettingsScreen() {
           <View style={[styles.divider, { backgroundColor: colors.line }]} />
           <ToggleRow label="New dreams" description="When your partner writes down a dream." value={prefs?.notification_dream ?? true} onChange={(v) => savePref({ notification_dream: v })} colors={colors} />
           <View style={[styles.divider, { backgroundColor: colors.line }]} />
+          <ToggleRow label="Verse notes" description="When your partner takes note of a verse. Once per verse, not on every edit." value={prefs?.notification_note ?? true} onChange={(v) => savePref({ notification_note: v })} colors={colors} />
+          <View style={[styles.divider, { backgroundColor: colors.line }]} />
           <ToggleRow
             label="Weekly recap"
             description="Sunday morning, a look back at your week."

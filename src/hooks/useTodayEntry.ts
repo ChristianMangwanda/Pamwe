@@ -17,9 +17,12 @@ type TodayState = {
  * Today's plan day and both entries for it.
  *
  * `dayOverride` pins the hook to one day instead of following the couple's live
- * current_day. The reveal needs this: current_day advances when a partner taps
- * Amen and realtime delivers that to both phones, so an unpinned reveal would
- * jump to the next (empty) day mid-read the instant the other partner amened.
+ * current_day. current_day advances when a partner taps Amen and realtime
+ * delivers that to both phones, so every screen in the ritual (reading,
+ * journal, waiting, reveal) pins the day it opened on. Unpinned, the journal
+ * would autosave your words into the next day's entry the moment your partner
+ * amened, and the waiting screen would sit waiting on a day nobody had read.
+ * Today itself stays unpinned: following the live day is its job.
  */
 export function useTodayEntry(dayOverride?: number): TodayState {
   const { couplePlan } = useCouple();
@@ -34,19 +37,25 @@ export function useTodayEntry(dayOverride?: number): TodayState {
 
   const dayNumber = dayOverride ?? couplePlan?.current_day ?? 1;
 
+  // Keyed on ids, NOT the couplePlan object: CoupleProvider hands back a fresh
+  // object on every refresh, and it refreshes on any couples/couple_plans
+  // change. Depending on the object re-ran all three queries on every streak
+  // recompute and every unrelated couple write, on every screen at once.
+  const couplePlanId = couplePlan?.id ?? null;
+  const planId = couplePlan?.plan?.id ?? couplePlan?.plan_id ?? null;
+
   const refresh = useCallback(async () => {
-    if (!couplePlan) {
+    if (!couplePlanId) {
       setLoading(false);
       return;
     }
 
     try {
       if (!loadedOnce.current) setLoading(true);
-      const planId = couplePlan.plan?.id ?? couplePlan.plan_id;
       const [pd, mine, partner] = await Promise.all([
         getPlanDay(planId, dayNumber),
-        getMyEntry(couplePlan.id, dayNumber),
-        getPartnerEntry(couplePlan.id, dayNumber),
+        getMyEntry(couplePlanId, dayNumber),
+        getPartnerEntry(couplePlanId, dayNumber),
       ]);
       setPlanDay(pd);
       setMyEntry(mine);
@@ -58,7 +67,7 @@ export function useTodayEntry(dayOverride?: number): TodayState {
     } finally {
       setLoading(false);
     }
-  }, [couplePlan, dayNumber]);
+  }, [couplePlanId, planId, dayNumber]);
 
   useEffect(() => {
     refresh();

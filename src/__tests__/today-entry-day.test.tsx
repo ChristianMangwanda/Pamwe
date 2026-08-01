@@ -2,7 +2,7 @@ jest.mock('../lib/plans', () => ({ getPlanDay: jest.fn() }));
 jest.mock('../lib/entries', () => ({ getMyEntry: jest.fn(), getPartnerEntry: jest.fn() }));
 jest.mock('../providers/CoupleProvider', () => ({ useCouple: jest.fn() }));
 
-import { renderHook, waitFor } from '@testing-library/react-native';
+import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { useTodayEntry } from '../hooks/useTodayEntry';
 import { useCouple } from '../providers/CoupleProvider';
 import { getPlanDay } from '../lib/plans';
@@ -55,5 +55,24 @@ describe('useTodayEntry day selection', () => {
 
     await waitFor(() => expect(result.current.dayNumber).toBe(2));
     expect(getPartnerEntry).not.toHaveBeenCalledWith('cp1', 3);
+  });
+
+  // CoupleProvider returns a fresh couplePlan object on every refresh, and it
+  // refreshes on any couples or couple_plans change. Keyed on the object rather
+  // than its ids, an unrelated write (a streak recompute, the anniversary) re-ran
+  // all three queries on every screen using this hook at once.
+  it('does not refetch when couplePlan identity changes but its ids and day do not', async () => {
+    couplePlanOnDay(3);
+    const { result, rerender } = renderHook(() => useTodayEntry());
+    await waitFor(() => expect(result.current.dayNumber).toBe(3));
+    const before = (getPartnerEntry as jest.Mock).mock.calls.length;
+
+    // A new object carrying the same ids and the same day, as a streak write
+    // would produce.
+    couplePlanOnDay(3);
+    rerender({});
+    await act(() => Promise.resolve());
+
+    expect((getPartnerEntry as jest.Mock).mock.calls.length).toBe(before);
   });
 });

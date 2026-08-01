@@ -296,6 +296,7 @@ export type NotificationPrefs = {
   notification_partner: boolean;
   notification_prayer: boolean;
   notification_dream: boolean;
+  notification_note: boolean;
   notification_recap: boolean;
 };
 
@@ -306,7 +307,7 @@ export async function getNotificationPrefs(): Promise<NotificationPrefs | null> 
 
   const { data, error } = await supabase
     .from('users')
-    .select('notification_morning_time, notification_partner, notification_prayer, notification_dream, notification_recap')
+    .select('notification_morning_time, notification_partner, notification_prayer, notification_dream, notification_note, notification_recap')
     .eq('id', user.id)
     .single();
 
