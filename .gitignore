@@ -57,6 +57,21 @@ example
 .env
 env.hosted.backup
 
+# .env.production was tracked until 2026-08-02, which put the hosted anon key,
+# the Google client IDs and the Sentry DSN in a PUBLIC repo. Every value in it
+# is EXPO_PUBLIC_ and therefore ships inside the app bundle anyway, so nothing
+# secret leaked, but a public repo is no place for it and the DSN invites event
+# spam. Untracked now; the file itself must STAY on disk and keep this exact
+# name, because Expo loads it automatically for Release bundling (see the
+# TestFlight pipeline in CLAUDE.md). A fresh clone will not have it: rebuild it
+# from env.hosted.backup before archiving, or Release will bundle an undefined
+# Supabase URL.
+.env.production
+
+# generated privacy-policy page. The workflow builds it fresh on every publish;
+# the source of truth is docs/privacy-policy.md.
+_site/
+
 # personal files in the working dir, not part of the app
 SteriCycle/
 CLAUDE 2.md

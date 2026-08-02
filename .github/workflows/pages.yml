@@ -1,0 +1,67 @@
+name: Publish privacy policy
+
+# Publishes docs/privacy-policy.md to GitHub Pages as a plain static page.
+# The Markdown is rendered at build time, so the published page needs no
+# JavaScript and no CDN to display: it is the policy, in HTML, and it renders
+# even if everything else on the internet is having a bad day.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/privacy-policy.md'
+      - 'docs/template.html'
+      - 'scripts/build-policy-site.mjs'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two publishes race. Do not cancel one in flight: a half-deployed
+# legal page is worse than a slightly stale one.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Fails the build if [CONTACT EMAIL] or [LEGAL ENTITY NAME] are still in
+      # the policy. Also strips the TODO block if it was left behind.
+      - name: Check the policy is ready to publish
+        run: node scripts/build-policy-site.mjs prepare /tmp/policy.md
+
+      # npx fetches marked into its own cache. It does not read or install the
+      # app's dependencies, so the React Native tree and its patches stay out
+      # of this entirely.
+      - name: Render Markdown to HTML
+        run: npx --yes marked@15 --gfm --input /tmp/policy.md --output /tmp/body.html
+
+      - name: Wrap in the page template
+        run: node scripts/build-policy-site.mjs wrap /tmp/body.html
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
