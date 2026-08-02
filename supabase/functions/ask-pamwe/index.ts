@@ -104,11 +104,10 @@ const PLANS_SCHEMA = {
 // the server maps back to references itself. An invented reference has
 // nowhere to enter the pipeline.
 //
-// Day notes are the catalogue's own passage summaries. Preview prompts come
-// from the passage_prompts library. meta and rhythm are computed. The models
-// write exactly three things: the intake fields, the title, and the order of
-// the days.
-const BUILD_VERSION = "2026-08-02";
+// Day notes are the catalogue's own passage summaries. meta and rhythm are
+// computed. The models write exactly three things: the intake fields, the
+// title, and the order of the days.
+const BUILD_VERSION = "2026-08-02b";
 const OPENAI_MODEL = Deno.env.get("OPENAI_MODEL") ?? "gpt-5.6-luna";
 
 async function luna(
@@ -240,33 +239,6 @@ const metaFor = (books: string[], days: number) => {
       : `${uniq[0]}, ${uniq[1]} and more`;
   return `${label} · ${days} days`;
 };
-
-// passage_prompts keys the psalter as 'Psalm N' (what plan_days stores); the
-// catalogue says 'Psalms'. Normalise at the join.
-const promptBook = (book: string) => (book === "Psalms" ? "Psalm" : book);
-
-// The "You will be asked" preview on the build screen: the first few REAL
-// questions from the chapter-keyed library, the ones the plan will actually
-// ask, rather than fresh ones invented for the preview.
-// deno-lint-ignore no-explicit-any
-async function promptPreview(admin: any, days: { book: string; chapter: number }[]) {
-  const seen = new Set<string>();
-  const chapters: { book: string; chapter: number }[] = [];
-  for (const d of days) {
-    const k = `${d.book}|${d.chapter}`;
-    if (!seen.has(k)) {
-      seen.add(k);
-      chapters.push(d);
-    }
-    if (chapters.length === 3) break;
-  }
-  const rows = await Promise.all(chapters.map((c) =>
-    admin.from("passage_prompts").select("prompt")
-      .eq("book", promptBook(c.book)).eq("chapter", c.chapter).maybeSingle()
-  ));
-  // deno-lint-ignore no-explicit-any
-  return rows.map((r: any) => r.data?.prompt).filter((p: unknown): p is string => !!p);
-}
 
 const HELP_SCHEMA = {
   type: "object",
@@ -517,18 +489,20 @@ Deno.serve(async (req) => {
           console.error("ask-pamwe build rejected:", bad);
           return json({ error: "Pamwe put that one together wrong. Try asking again." }, 502);
         }
-        return promptPreview(admin, chapters).then((prompts) =>
-          json({
-            title,
-            meta: metaFor(chapters.map((c) => c.book), readings.length),
-            days: readings.length,
-            rhythm,
-            topics: topics.slice(0, 4),
-            readings,
-            prompts,
-            spec: BUILD_VERSION,
-          }, 200)
-        );
+        // No prompt preview. It cost up to three more round trips before the
+        // couple saw anything, to show questions the plan screen shows anyway
+        // once they start it. createCustomPlan still resolves the real prompts
+        // from passage_prompts at creation, so nothing about the plan changes.
+        return json({
+          title,
+          meta: metaFor(chapters.map((c) => c.book), readings.length),
+          days: readings.length,
+          rhythm,
+          topics: topics.slice(0, 4),
+          readings,
+          prompts: [],
+          spec: BUILD_VERSION,
+        }, 200);
       };
 
       // A named book is a walk, and a walk is arithmetic, not generation.

@@ -34,6 +34,7 @@ export default function BuildPlanScreen() {
   const [plan, setPlan] = useState<BuiltPlan | null>(null);
   const [busy, setBusy] = useState(false);
   const [starting, setStarting] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   // A seed from the search field builds once on arrival, never again on
   // re-render, so editing the text does not fire a second generation.
@@ -57,19 +58,25 @@ export default function BuildPlanScreen() {
     generate(q);
   }, [q, generate]);
 
+  const persist = () => {
+    if (!couple?.id || !plan) return null;
+    return createCustomPlan(couple.id, {
+      name: plan.title,
+      days: plan.days,
+      readings: plan.readings.map((r) => r.reference),
+      prompts: plan.prompts,
+      rhythmLabel: plan.meta,
+      bookLabel: plan.meta.split('·')[0]?.trim() || undefined,
+      topics: plan.topics,
+    });
+  };
+
   const start = async () => {
-    if (!couple?.id || !plan || starting) return;
+    if (!couple?.id || !plan || starting || saving) return;
     setStarting(true);
     try {
-      const created = await createCustomPlan(couple.id, {
-        name: plan.title,
-        days: plan.days,
-        readings: plan.readings.map((r) => r.reference),
-        prompts: plan.prompts,
-        rhythmLabel: plan.meta,
-        bookLabel: plan.meta.split('·')[0]?.trim() || undefined,
-        topics: plan.topics,
-      });
+      const created = await persist();
+      if (!created) return;
       await enrollInPlan(couple.id, created.id, 1 as Cadence);
       await refreshCouple();
       haptics.celebrate();
@@ -77,6 +84,22 @@ export default function BuildPlanScreen() {
     } catch (e: any) {
       setStarting(false);
       Alert.alert("Couldn't start it", e?.message ?? 'Try again in a moment.');
+    }
+  };
+
+  // Save writes the plan but no enrolment. Starting retires whatever the couple
+  // is reading now, so a good plan built at the wrong moment used to have to be
+  // thrown away: the result only ever lived in this screen's state.
+  const save = async () => {
+    if (!couple?.id || !plan || starting || saving) return;
+    setSaving(true);
+    try {
+      await persist();
+      haptics.success();
+      router.replace('/(tabs)/plans');
+    } catch (e: any) {
+      setSaving(false);
+      Alert.alert("Couldn't save it", e?.message ?? 'Try again in a moment.');
     }
   };
 
@@ -158,16 +181,8 @@ export default function BuildPlanScreen() {
                 </View>
               ))}
 
-              {plan.prompts.length > 0 && (
-                <>
-                  <Text variant="eyebrow" color={colors.muted} style={styles.promptsLabel}>You will be asked</Text>
-                  {plan.prompts.map((p) => (
-                    <Text key={p} style={[styles.prompt, { color: colors.ink2 }]}>“{p}”</Text>
-                  ))}
-                </>
-              )}
-
-              <Button title="Start together" onPress={start} loading={starting} style={styles.start} />
+              <Button title="Start together" onPress={start} loading={starting} disabled={saving} style={styles.start} />
+              <Button title="Save for later" variant="secondary" onPress={save} loading={saving} disabled={starting} style={styles.save} />
               <TouchableOpacity onPress={() => generate(text)} activeOpacity={0.7} style={styles.again}
                 accessibilityRole="button" accessibilityLabel="Build a different plan">
                 <ArrowClockwise size={13} color={colors.accent2} weight="bold" />
@@ -207,8 +222,7 @@ const styles = StyleSheet.create({
   dayNum: { fontFamily: fonts.sansSemiBold, fontSize: 9.5, letterSpacing: 1.3, textTransform: 'uppercase', width: 44, paddingTop: 3 },
   dayRef: { fontFamily: fonts.serif, fontSize: 15 },
   dayNote: { fontFamily: fonts.sans, fontSize: 11.5, lineHeight: 17, marginTop: 2 },
-  promptsLabel: { marginTop: 18, marginBottom: 6 },
-  prompt: { fontFamily: fonts.serifItalic, fontSize: 14, lineHeight: 22, marginTop: 4 },
   start: { marginTop: 20 },
+  save: { marginTop: 10 },
   again: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 14 },
 });
