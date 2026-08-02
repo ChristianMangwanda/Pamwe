@@ -6,6 +6,9 @@ import { BackLink } from '../../../components/ui/BackLink';
 import { GUTTER } from '../../../theme/tokens';
 import { useTheme } from '../../../providers/ThemeProvider';
 
+// Kept in step with docs/privacy-policy.md, which is the published version at
+// the App Store listing's privacy URL. Apple reads both, and a contradiction
+// between them is a rejection. If you edit one, edit the other.
 export default function PrivacyScreen() {
   const router = useRouter();
   const { colors } = useTheme();
@@ -22,7 +25,7 @@ export default function PrivacyScreen() {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <BackLink label="You" onPress={() => router.back()} />
         <Text variant="h2" style={styles.title}>Privacy policy</Text>
-        <Text variant="body" color={colors.muted} style={styles.updated}>Last updated July 9, 2026</Text>
+        <Text variant="body" color={colors.muted} style={styles.updated}>Last updated August 2, 2026</Text>
 
         <Text variant="body" color={colors.ink} style={styles.para}>
           Pamwe is a private devotional space for you and your partner. This policy explains,
@@ -37,13 +40,14 @@ export default function PrivacyScreen() {
           email those services share. Your display name and avatar initial.
         </P>
         <P>
-          Content you create: written reflections, voice reflections (audio recordings),
-          prayers and "I prayed" marks, verse highlights and notes, and any custom reading
-          plans you build.
+          Content you create: written reflections, voice reflections and their transcripts,
+          replies and kept lines you leave on your partner's reflection, prayers and "I prayed"
+          marks, dreams, verse highlights and verse notes, and any reading plans you build.
         </P>
         <P>
-          Progress: your reading plan, current day, streak, and the timezone captured once
-          when your couple was created (used to know when a day rolls over).
+          Progress: your reading plan, current day, streak, your anniversary if you set one,
+          and the timezone captured once when your couple was created (used to know when a day
+          rolls over).
         </P>
         <P>
           Device: if you allow notifications, a push token and your notification preferences.
@@ -56,30 +60,63 @@ export default function PrivacyScreen() {
           of you have submitted for the same day; then it is revealed to both of you at once.
           This rule is enforced by the database itself (row-level security), not just by the
           app's screens. Voice recordings live in private storage governed by the same rule.
-          Prayers, highlights, and notes are shared between the two of you only.
+        </P>
+        <P>
+          Prayers, dreams, highlights and verse notes are shared between the two of you the
+          moment you save them. They are not held back until anything unlocks.
+        </P>
+
+        <H>Notifications can show what your partner wrote</H>
+        <P>
+          Some notifications include the words your partner wrote: a new prayer shows the start
+          of the prayer, a reply to your reflection shows the start of the reply, and a verse
+          note shows their name and the verse. These can appear on your lock screen, where
+          anyone holding your phone could read them.
+        </P>
+        <P>
+          The two reflection notifications never quote anything. They only tell you your partner
+          has written, or that both of you are ready. You can turn any notification off in
+          Settings.
+        </P>
+
+        <H>Plans you share or make public</H>
+        <P>
+          A plan you build starts private to the two of you. Sharing it creates a link, and
+          anyone with that link can open it. Making it public is a separate step that lists it
+          in Browse for every Pamwe user. Neither happens on its own. Your reflections, prayers,
+          dreams and notes are never part of a shared plan.
+        </P>
+
+        <H>Religious content</H>
+        <P>
+          Almost everything you write here reveals your religious beliefs, and prayers and dreams
+          often carry more: illness, family, money, grief. Under UK and EU rules this is a special
+          category of data with extra protection. We hold it because you gave explicit consent,
+          and you can withdraw that by deleting your account. We never use it to profile you or
+          to train AI models.
         </P>
 
         <H>Services Pamwe relies on</H>
         <P>
-          Supabase stores your account, content, and voice recordings, encrypted in transit.
+          Supabase stores your account, content, and voice recordings, in the United States,
+          encrypted in transit and at rest.
         </P>
         <P>
-          Apple (and Google, if you use Google sign-in) handle sign-in; Apple and Expo deliver
-          push notifications. Notification content is minimal, e.g. that your partner has
-          reflected, never what they wrote.
+          Apple (and Google, if you use Google sign-in) handle sign-in. Apple and Expo deliver
+          push notifications, including the ones that quote text.
         </P>
         <P>
-          Anthropic powers "Ask Pamwe", the reading-plan builder. When you use it, the request
-          you type (e.g. "a plan about patience") is sent to Anthropic's AI service to generate
-          plan suggestions. Your reflections, prayers, and notes are never sent.
+          OpenAI builds a plan when you ask for one in Plans search. Anthropic suggests plans in
+          the by-book builder. Only the words you type are sent. Your reflections, prayers,
+          dreams and notes never are, and neither service may train on them.
         </P>
         <P>
-          Bible text is fetched from bible-api.com by chapter reference. The request contains
-          only the passage being read, nothing about you.
+          Bible text is fetched from bible-api.com and bible.helloao.org by passage reference.
+          The request contains nothing about you.
         </P>
         <P>
-          If crash reporting is enabled, technical crash data goes to Sentry to help fix bugs.
-          It does not include the content of your reflections or prayers.
+          Crash reports go to Sentry to help fix bugs. They carry no reflections, prayers,
+          dreams or notes, and are not linked to your account.
         </P>
 
         <H>What Pamwe does not do</H>
@@ -97,16 +134,17 @@ export default function PrivacyScreen() {
 
         <H>Deleting your data</H>
         <P>
-          You can delete your account any time in Settings → Delete account. This permanently
-          removes your reflections, voice recordings, prayers, prayer marks, highlights, notes,
-          and account details. Your partner is unpaired and keeps their own reflections and
-          prayers. Deletion is not reversible.
+          You can delete your account any time in Settings, then Delete account. This permanently
+          removes your reflections, voice recordings and transcripts, prayers, prayer marks,
+          dreams, highlights, verse notes, replies, and account details. Your partner is unpaired
+          and keeps everything they wrote. A plan the two of you built stays with them, without
+          your name on it. Deletion is not reversible.
         </P>
 
         <H>Children</H>
         <P>
-          Pamwe is not directed at children under 13, and we don't knowingly collect their
-          data. If you believe a child has created an account, contact us and we'll delete it.
+          You must be at least 13 to use Pamwe, and we don't knowingly collect data from anyone
+          under 13. If you believe a child has created an account, contact us and we'll delete it.
         </P>
 
         <H>Changes to this policy</H>

@@ -67,10 +67,23 @@ Deno.serve(async (req) => {
 
   // 3. Delete the departing user's OWN content. None of these cascade from
   //    auth.users, so they must be removed by hand before the auth-row delete.
+  //    The verse marks were missing until 2026-08-02, and because their FKs
+  //    were NO ACTION, one highlighted verse was enough to make the auth-row
+  //    delete below fail and the whole request 500. Migration
+  //    20260802000006 made those two keys CASCADE as a backstop; they are
+  //    deleted here too so the privacy promise reads off this routine.
   await admin.from("prayer_marks").delete().eq("user_id", userId);
   await admin.from("entries").delete().eq("user_id", userId);
   await admin.from("prayers").delete().eq("author_id", userId);
   await admin.from("dreams").delete().eq("author_id", userId);
+  await admin.from("verse_highlights").delete().eq("user_id", userId);
+  await admin.from("verse_notes").delete().eq("user_id", userId);
+
+  // A plan the couple BUILT is not the departing user's alone: the survivor may
+  // be reading it right now, and deleting it would take their enrollment with
+  // it. Authorship leaves, the plan stays. (plans_created_by_fkey is now ON
+  // DELETE SET NULL, so this is belt and braces.)
+  await admin.from("plans").update({ created_by: null }).eq("created_by", userId);
 
   // 4. Demote the couple — never DELETE the couples row, because
   //    couples -> couple_plans -> entries and couples -> prayers cascade would
