@@ -66,14 +66,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!session?.user?.id) return;
     // Not gated on the push token: these are local notifications, and the
     // pre-b14/b17 repeating leftovers keep firing whether or not push registers.
+    // They sat inside the `if (token)` below until 2026-08-02, which meant a
+    // phone that failed APNs registration silently got no morning reminder and
+    // no weekly recap either. Each one checks permission itself.
     cleanupLegacyScheduled();
+    scheduleMorningFromPrefs();
+    scheduleRecapFromPrefs();
+    schedulePrayerReviewFromPrefs();
     registerForPushNotifications().then((token) => {
-      if (token) {
-        savePushToken(token);
-        scheduleMorningFromPrefs();
-        scheduleRecapFromPrefs();
-        schedulePrayerReviewFromPrefs();
-      }
+      if (token) savePushToken(token);
     });
     const rotationSub = watchPushTokenRotation();
     return () => rotationSub.remove();
