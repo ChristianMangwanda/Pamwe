@@ -79,7 +79,11 @@ supabase status                        # local URLs/keys · Studio http://127.0.
 #    embedded widget appex CFBundleVersion MUST equal the app's or Apple processing
 #    rejects the build. (CFBundleShortVersionString is the literal 1.0.0 in both
 #    Info.plists; bump both if the marketing version ever changes.)
-# 2. Archive (Release bundles .env.production = hosted Supabase + Sentry DSN):
+# 2. Archive (Release bundles .env.production = hosted Supabase + Sentry DSN).
+#    ⚠️ .env.production is GITIGNORED since 2026-08-02 (it was tracked in a public
+#    repo). It must exist on disk under that exact name or Release bundles an
+#    undefined Supabase URL and step 3's grep returns 0. A fresh clone has to
+#    rebuild it from env.hosted.backup first.
 cd ios && xcodebuild -workspace Pamwe.xcworkspace -scheme Pamwe -configuration Release \
   -destination "generic/platform=iOS" -archivePath /tmp/Pamwe.xcarchive \
   -allowProvisioningUpdates DEVELOPMENT_TEAM=5LX4YFCXPK archive
@@ -113,10 +117,10 @@ src/app/
 └── (tabs)/                        # 6-tab DOCKED bar (DockedTabBar; the b7 glass oval is gone): Today · Bible · Plans · Prayers · Reflect · You
     ├── (today)/                   # home (tree streak, milestones, catch-up, nudge) → reading → journal → waiting → reveal → complete
     ├── bible/                     # index → [book] → [book]/[chapter] reader (6 translations, 2 sources); marks, note
-    ├── plans/                     # index (search + Build/Browse) → [id] detail; build (generate), builder (by book)
+    ├── plans/                     # index (search + Build/Browse doors, Your plans / Saved for later) → [id] detail; build (generate + save), builder (by book), browse (topic/length grid), finished (list)
     ├── prayers/                   # index = Prayers|Dreams toggle (swipe cards + detail sheet w/ reminders) → add · dream-add → timeline (answered)
     ├── reflect/                   # index (history + From-your-story card) → [id] detail (responses) → words (Their Words)
-    └── you/                       # index (stats + dark toggle) → settings, recaps, couple (→ anniversary), privacy, terms, delete-account
+    └── you/                       # index (stats + dark toggle) → settings, recaps, grove (tree awards), couple (→ anniversary), privacy, terms, delete-account
 ```
 
 **Ask Pamwe lives in the Plans search field, and nowhere else** (2026-08-01). The floating bubble and its sheet are gone: it was only ever used in Plans, it made the app read as an AI product, and every screen paid 96pt of scroll clearance for it. `Screen.tsx` now ends its scroll at a flat 32pt. Search filters the plans a couple can already open and offers to generate only when nothing matches, so generation is the fallback rather than the front door.
@@ -145,7 +149,7 @@ Auth gate in [src/app/index.tsx](src/app/index.tsx) sequences:
 | `entry_responses` | Hearts/amens/replies/kept-lines a partner leaves on a revealed reflection (`kind`: heart/amen/reply/quote). RLS mirrors locked-reveal via `can_respond_to_entry()`; in the realtime publication. |
 | `prayers` / `prayer_marks` | Shared prayer requests with "I prayed today" marks. `prayers.category` (family/health/work/guidance/thanks/other); author-only update/delete. |
 | `dreams` | Couple-shared dream journal (both partners read, author-only edit/delete). **Pamwe never interprets a dream** (see the rule below). |
-| `verse_highlights` / `verse_notes` | Per-couple shared study layer over the Bible reader (one highlight + one note per verse per couple; `user_id` = authorship). |
+| `verse_highlights` / `verse_notes` | Per-couple shared study layer over the Bible reader (one highlight + one note per verse per couple; `user_id` = authorship, last-writer-wins via the upsert). Both are in the realtime publication since 2026-08-02, so a partner's mark appears while you are both in the same chapter; the reader carries **their initial** on what they marked, and a written note pushes them (`notify-new-note`; plain highlights stay silent, deliberately). |
 | `ask_pamwe_usage` / `partner_nudges` | Service-role-only bookkeeping (RLS on, zero policies): Ask Pamwe rate limiting (20/day + cooldown via `bump_ask_pamwe_usage` RPC) and nudge cooldowns (1/hour). |
 | `passage_prompts` | Chapter-keyed reflection questions, one per chapter, all 1,189. Keyed `'Psalm N'` like plan_days, NOT `'Psalms'` like the catalogue: normalise at any join. Its DDL lived only on hosted until the 2026-08-02 backfill migration. |
 | **catalogue** (5 tables) | `bible_books` / `bible_chapters` / `bible_verses` / `bible_passages` / `bible_vocabulary`. Reference data: SELECT for authenticated, writes service-role only. See below. |
@@ -207,7 +211,7 @@ The core mechanic. Partner entries are invisible until both partners have submit
 - **`notify-nudge`** — user-invoked (verify_jwt=true): "nudge my partner" from Today; pushes to the partner, one per sender per hour (cooldown logged in `partner_nudges`).
 - **`ask-pamwe`** (build v9, 2026-08-02) — **"Pamwe points, never preaches"** (Christian's product line: no Scripture interpretation, ever; interpretation questions deflect gently). Three schema-constrained modes: **`build`** (ONE plan, the Plans search), `plans` (2 recs, the by-book builder) and `help` (unreachable since the sheet was removed). Every schema carries a required `off_topic` flag; the server swaps flagged output for one fixed gentle line. Per-user rate limit 20/day + 10s cooldown, fail-open. **verify_jwt=true.**
 
-  **`build` never asks a model for a Bible reference.** It reads the [Bible catalogue](#the-bible-catalogue) instead, in three steps: **intake** maps what a couple typed onto the closed theme vocabulary (so "we lost our dog" becomes `grief` without anyone having predicted dogs) and decides which `caution` flags to unlock; **`retrieve_passages()`** picks the candidate pool in plain SQL; then the **arranger** answers with candidate **indices into that pool**, schema-constrained to `0..poolSize-1`, and the server maps them back to references itself. An invented reference has nowhere to enter the pipeline, structurally rather than by instruction. Day notes are catalogue summaries, the prompt preview comes from `passage_prompts`, and `meta`/`rhythm` are computed. A named book skips the models entirely and walks its chapters. `validateReadings` still runs on the assembled result as a backstop, since a plan day that cannot load is the one failure the app cannot recover from.
+  **`build` never asks a model for a Bible reference.** It reads the [Bible catalogue](#the-bible-catalogue) instead, in three steps: **intake** maps what a couple typed onto the closed theme vocabulary (so "we lost our dog" becomes `grief` without anyone having predicted dogs) and decides which `caution` flags to unlock; **`retrieve_passages()`** picks the candidate pool in plain SQL; then the **arranger** answers with candidate **indices into that pool**, schema-constrained to `0..poolSize-1`, and the server maps them back to references itself. An invented reference has nowhere to enter the pipeline, structurally rather than by instruction. Day notes are catalogue summaries and `meta`/`rhythm` are computed. (The "You will be asked" preview was **removed 2026-08-02**: it cost up to three extra `passage_prompts` round trips before the couple saw anything, to show questions the plan screen shows anyway. `build` now returns `prompts: []`; `createCustomPlan` still resolves the real prompts from `passage_prompts` at creation.) A named book skips the models entirely and walks its chapters. `validateReadings` still runs on the assembled result as a backstop, since a plan day that cannot load is the one failure the app cannot recover from.
 
   v8's two-pass `PLAN_SPEC` brief is **deleted**: it asked a model to write references and needed an ever-growing rulebook to keep them loadable. Build runs on **OpenAI** (`OPENAI_API_KEY`, model `OPENAI_MODEL`, default `gpt-5.6-luna`, the family that tagged the catalogue); `plans`/`help` still run on the Anthropic SDK (`ANTHROPIC_MODEL`, default `claude-haiku-4-5`). Both keys live locally in gitignored `supabase/functions/.env`; hosted they are dashboard secrets (the CLI cannot reach the project, see the identity block above). Clients: `src/lib/askPamwe.ts` (`buildPlan` returns a typed plan/off_topic/error and deliberately does NOT fall back to stock recs, since a build answers something the couple typed; `askPamwe` still falls back to hardcoded recs for the by-book builder).
 
@@ -283,6 +287,29 @@ The one connection between the two halves is `handleDreamPray`: it carries the
 dream text into the add-prayer screen, trimmed to the prayers table's 280-char
 check, for the couple to word themselves.
 
+### A notification that pushes into a nested stack must carry an anchor
+
+[usePushRouting.ts](src/hooks/usePushRouting.ts) routes taps by `data.type`. Any
+push into a screen that is **not** its tab's root must pass `{ withAnchor: true }`,
+and that tab's `_layout.tsx` must declare
+`export const unstable_settings = { initialRouteName: 'index' }` (the `you`,
+`bible` and `(today)` stacks do). Without both, a cold start from the banner
+mounts the pushed screen as the stack's ONLY route: its back link falls through
+to the tab navigator, lands on Today, and **that tab stays stuck on the pushed
+screen until the app restarts**, with no in-app way back. Fixed 2026-08-02, after
+it was hit through the weekly recap. Tab-root pushes (`reflect`, `prayers`,
+`(today)`) need nothing.
+
+### The tree awards grow without a ceiling
+
+Finished plans earn a tree, from fig up to redwood
+([src/lib/treeAwards.ts](src/lib/treeAwards.ts)). The ladder replaced
+`TREE_FULL_AT = 3`, which let a couple exhaust the app's one real milestone in a
+season and then read "In full bloom" forever. `StreakTree` is now only the
+drawing: it has six stages, so the picture saturates at the oak while the tree's
+NAME keeps going. Adding a rung is one entry in `TREE_AWARDS`; nothing else
+changes, and the count stays derived (`finishedPlanCount`), never stored.
+
 ### Auth: getSession(), not getUser(); every sign-in success must route through the gate
 
 All of src/lib reads identity via `supabase.auth.getSession()` (local) — `getUser()` is a network call that hangs after fresh sign-ins. Any new sign-in path must end with `router.replace('/')` (see `sign-in.test.tsx`). CoupleProvider stays live via realtime + explicit `refresh()` at onboarding transitions — screens must clear their loading state when `couple` is null. **App Review path:** emails ending `@review.pamwe.app` get a password field on the sign-in screen (production, for Apple reviewers; demo couple seeded by `scripts/seed_review_accounts.sql`) — don't remove it thinking it's dev-only.
@@ -332,7 +359,7 @@ hits are authoritative and never revalidate (scripture is immutable); bible-api.
 One app-extension, `VerseWidget`, holding **two** WidgetKit widgets. Both read the same bundled `verses.json`: a **curated** set of uplifting, standalone verses picked by calendar day-of-year (cycling if the set is shorter than the year), rolling over at local midnight. The earlier M'Cheyne-pull-quote set was dropped because it surfaced narrative fragments that mean little out of context. Widget deployment target is **iOS 17.0**; the app stays 16.4.
 
 - **`VerseWidget`** — home screen, small/medium/large, light + dark, tree-of-life emblem. Still **fully self-contained** (no App Group, no bridge). Tapping opens `pamwe://today`.
-- **`LockVerseWidget`** — lock screen, `.accessoryRectangular`. Tapping opens the verse in the reader (`pamwe://bible/<Book>/<chapter>?verse=<n>`, an existing route; the book/chapter/verse fields are generated into `verses.json`, never parsed in Swift). Shows "N days together" from the couple's anniversary, which is the **one** thing that crosses the App Group (see below).
+- **`LockVerseWidget`** — lock screen, `.accessoryRectangular`. Tapping opens the verse in the reader (`pamwe://bible/<Book>/<chapter>?verse=<n>`, an existing route; the book/chapter/verse fields are generated into `verses.json`, never parsed in Swift). Shows the reference **and** "In love N days" from the couple's anniversary, which is the **one** thing that crosses the App Group (see below). The phrase never degrades; the reference gives way if the line ever runs out. The old ladder dropped the words first, so it rendered a bare "126 DAYS" and eventually "126D", a number on a lock screen with nothing saying what it counted. **Header type is per rung, and that is what makes both fit.** The slot cannot be enlarged (iOS fixes `.accessoryRectangular` at ~172x76), so size is the only lever: rungs carrying *both* labels render at 8pt/0.2 tracking, and rungs carrying one render at the 9pt/0.9 an eyebrow uses everywhere else, since they have room to spare. Font and tracking therefore live on `headerRow`, not on the `ViewThatFits`, so each candidate is **measured at the size it will actually draw at**. Verified off device against the worst pairing in `verses.json` ("1 Chron. 16:34" beside "IN LOVE 12,540 DAYS"), verse keeping all three lines.
 
 **Lock Screen constraints that are not negotiable.** iOS renders these in `WidgetRenderingMode.vibrant` and flattens content into its own monochrome material, so custom tint, blur, text shadow and the Pamwe palette do nothing there: the view is built in `.primary`/`.secondary`. The only sanctioned backdrop is `AccessoryWidgetBackground()`, which is the "Clear background" toggle on `LockVerseConfiguration` (an `AppIntentConfiguration`). And `.accessoryRectangular` is only about **172 x 76pt**, roughly half the width the design was drawn at, which is why the header is a `ViewThatFits` ladder that gives up the counter's wording, then the book's full name (`abbr`, "Eccl. 4:9"), before dropping the counter.
 
@@ -391,7 +418,7 @@ The voice recorder, audio upload, and partner-push flow only behave correctly on
 | Plans + custom-plan builder | [src/lib/plans.ts](src/lib/plans.ts), [src/lib/planBuilder.ts](src/lib/planBuilder.ts) |
 | Ask Pamwe AI client | [src/lib/askPamwe.ts](src/lib/askPamwe.ts) |
 | Bible fetch/parse + verse marks | [src/lib/bible.ts](src/lib/bible.ts), [src/lib/verseMarks.ts](src/lib/verseMarks.ts) |
-| Reflections history + recaps + on-this-day | [src/lib/reflections.ts](src/lib/reflections.ts), [src/lib/recaps.ts](src/lib/recaps.ts) |
+| Reflections history + recaps + on-this-day | [src/lib/reflections.ts](src/lib/reflections.ts), [src/lib/recaps.ts](src/lib/recaps.ts) (returns tappable ITEMS, not joined strings; copy helpers `recapHeadline`/`recapEncouragement`/`recapInsight` are pure and tested) |
 | Reflection responses + kept lines | [src/lib/entryResponses.ts](src/lib/entryResponses.ts), [src/components/ReflectionResponses.tsx](src/components/ReflectionResponses.tsx) |
 | Prayers (category, edit/delete) + reminders | [src/lib/prayers.ts](src/lib/prayers.ts), [src/lib/prayerReminders.ts](src/lib/prayerReminders.ts) |
 | Dreams (couple-shared journal) | [src/lib/dreams.ts](src/lib/dreams.ts), [src/components/DreamCard.tsx](src/components/DreamCard.tsx) |
@@ -402,7 +429,7 @@ The voice recorder, audio upload, and partner-push flow only behave correctly on
 | Streak milestones | [src/lib/milestones.ts](src/lib/milestones.ts), [src/components/MilestoneCard.tsx](src/components/MilestoneCard.tsx) |
 | Plan generation client | [src/lib/askPamwe.ts](src/lib/askPamwe.ts) (`buildPlan`), screen [plans/build.tsx](src/app/(tabs)/plans/build.tsx) |
 | Plan search, browse, sharing | [src/lib/plans.ts](src/lib/plans.ts) (`searchPlans`, `filterPlans`, `topicsIn`, `sharePlan`, `getSharedPlan`) |
-| Finished-plan rule + tree ceiling | [src/lib/planHistory.ts](src/lib/planHistory.ts) (`isFinished`), [StreakTree](src/components/ui/StreakTree.tsx) (`TREE_FULL_AT`) |
+| Finished-plan rule + tree awards | [src/lib/planHistory.ts](src/lib/planHistory.ts) (`isFinished`, `finishedPlans`), [src/lib/treeAwards.ts](src/lib/treeAwards.ts) (`TREE_AWARDS` ladder), [StreakTree](src/components/ui/StreakTree.tsx) (the drawing only) |
 | Docked tab bar | [src/components/DockedTabBar.tsx](src/components/DockedTabBar.tsx) |
 | Motion + haptics | [src/lib/motion.ts](src/lib/motion.ts), [src/lib/haptics.ts](src/lib/haptics.ts) |
 | Voice recorder component | [src/components/VoiceRecorder.tsx](src/components/VoiceRecorder.tsx) |

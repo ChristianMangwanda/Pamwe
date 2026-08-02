@@ -397,9 +397,22 @@ verify_jwt = false
 [functions.delete-account]
 verify_jwt = true
 
+[functions.notify-new-note]
+verify_jwt = false
+
+[functions.notify-new-dream]
+verify_jwt = false
+
+[functions.notify-new-response]
+verify_jwt = false
+
 # User-invoked: a couple member nudges their partner to read. JWT identifies
 # the sender; the function enforces a one-per-hour cooldown.
 [functions.notify-nudge]
+verify_jwt = true
+
+# Also user-invoked, same shape as notify-nudge.
+[functions.notify-thinking]
 verify_jwt = true
 
 [analytics]
