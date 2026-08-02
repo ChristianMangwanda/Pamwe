@@ -394,9 +394,6 @@ verify_jwt = false
 [functions.notify-new-prayer]
 verify_jwt = false
 
-[functions.notify-freeze]
-verify_jwt = false
-
 [functions.delete-account]
 verify_jwt = true
 

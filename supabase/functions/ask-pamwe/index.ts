@@ -1,14 +1,17 @@
-// Ask Pamwe: Claude-powered plan generation, behind the Plans search field.
+// Ask Pamwe: plan generation behind the Plans search field.
 //
 // User-invoked (verify_jwt = true). The app calls it via
 // supabase.functions.invoke('ask-pamwe', { body: { query, mode } }).
 //
 // Three modes, all structured output so a jailbreak can never surface freeform
 // text in the app:
-//   - 'build': ONE plan, generated in two passes (see PLAN_SPEC below). This is
-//     what the Plans search offers when nothing saved matches. Verse ranges.
+//   - 'build': ONE plan, built ON the Bible catalogue (v9, see BUILD MODE
+//     below). Intake maps the request onto the catalogue's closed theme
+//     vocabulary, retrieve_passages() picks candidates in plain SQL, and an
+//     arranger orders them by NUMBER. No model in this path ever writes a
+//     Bible reference.
 //   - 'plans' (default): 2 reading-plan recommendations, for the older builder
-//     screen. Chapter-level only.
+//     screen. Chapter-level only. Still Anthropic.
 //   - 'help': a short pointing answer. The in-app sheet that called this was
 //     removed when the floating bubble went, so nothing invokes it today.
 //
@@ -25,8 +28,9 @@
 //   4. Per-user rate limit (bump_ask_pamwe_usage): 20/day + 10s cooldown.
 //   5. 300-char query cap.
 //
-// Secrets: ANTHROPIC_API_KEY (supabase secrets / functions/.env). Model from
-// ANTHROPIC_MODEL (default claude-haiku-4-5). SUPABASE_URL and
+// Secrets: OPENAI_API_KEY for build (model from OPENAI_MODEL, default
+// gpt-5.6-luna, the family that tagged the catalogue); ANTHROPIC_API_KEY for
+// plans/help (ANTHROPIC_MODEL, default claude-haiku-4-5). SUPABASE_URL and
 // SUPABASE_SERVICE_ROLE_KEY are injected automatically by the platform.
 
 import Anthropic from "npm:@anthropic-ai/sdk@0.68.0";
@@ -89,80 +93,180 @@ const PLANS_SCHEMA = {
 };
 
 // ---------------------------------------------------------------------------
-// BUILD MODE (v8): one plan, in two deterministic passes.
+// BUILD MODE (v9): retrieval over the Bible catalogue, then arrangement.
 //
-// Free text goes in, a fixed BRIEF comes out, and the plan is generated from
-// the brief alone. Splitting it this way is the point: the wording someone
-// happens to use stops leaking into the shape of the plan, so two couples who
-// mean the same thing get the same kind of plan. Both passes are pinned to one
-// spec, versioned below, and run at temperature 0.
+// v8 asked a model to write references from a brief, and shipped a growing
+// rulebook trying to keep those references loadable. v9 never asks a model for
+// a reference at all. Intake maps the couple's words onto the catalogue's
+// closed theme vocabulary ("we lost our dog" becomes grief without anyone
+// having predicted dogs), retrieve_passages() returns a deterministic
+// candidate pool in SQL, and the arranger answers with candidate NUMBERS that
+// the server maps back to references itself. An invented reference has
+// nowhere to enter the pipeline.
 //
-// The old single pass could not express what this is for. Its readings were
-// "Book Chapter" with a "prefer whole chapters" instruction, so "show us what
-// the New Testament says about faith" could only ever return whole chapters.
-// References here carry verse ranges.
-const PLAN_SPEC_VERSION = "2026-08-01";
+// Day notes are the catalogue's own passage summaries. Preview prompts come
+// from the passage_prompts library. meta and rhythm are computed. The models
+// write exactly three things: the intake fields, the title, and the order of
+// the days.
+const BUILD_VERSION = "2026-08-02";
+const OPENAI_MODEL = Deno.env.get("OPENAI_MODEL") ?? "gpt-5.6-luna";
 
-const PLAN_SPEC = `A Pamwe plan, spec ${PLAN_SPEC_VERSION}:
-- It is read by two people, on the same day, who then write privately and reveal to each other. Write for "you two", never for one reader.
-- LENGTH: 3 to 40 days. Short is the default. Choose 7 unless the request implies otherwise; a whole book or a broad theme may justify 14 or 21; only a request that clearly asks for a long walk goes past 21.
-- RHYTHM: "passage" (a handful of verses), "chapter" (a whole chapter), or "deep" (a longer sitting). This describes the plan's usual day, not a rule every day must obey.
-- REFERENCES: real passages in the 66-book Protestant canon, in one of exactly four forms:
-    "Book Chapter"                        a whole chapter, e.g. "Romans 8"
-    "Book Chapter:Verse"                  one verse, e.g. "John 3:16"
-    "Book Chapter:Verse-Verse"            part of a chapter, e.g. "Hebrews 11:1-6"
-    "Book Chapter:Verse-Chapter:Verse"    running into the next chapter, e.g. "Matthew 5:1-6:34"
-- LENGTH IS DECIDED BY THE PASSAGE, NOT BY A QUOTA. Give a day however much it actually needs: a few verses when the thought is short, a whole chapter when the chapter is the unit, a span into the next chapter when the passage runs on. Never pad a short passage out to fill a day, and never cut a continuous one to fit inside a chapter.
-- A span may run into the NEXT chapter and no further. Three chapters at once cannot be fetched and the day would fail to load.
-- For a whole chapter always write "Book Chapter". Never spell it out as "Matthew 5:1-5:48": guessing where a chapter ends is the main way a reading fails to load. Same rule for the second chapter of a span, so prefer ending a span partway through a chapter you are sure of.
-- Never write a bare chapter range like "John 1-3". It is not a supported form.
-- A thematic plan curates passages across books. A book plan walks one book in order. Follow the brief, not your instinct.
-- NOTES: one short line per day saying what the passage IS, never what it means. "Staying when leaving would be easier", not "This teaches us that loyalty matters".
-- PROMPTS: 2 or 3 questions for the couple, second person plural, warm, specific, non-clichéd.
-- No em dashes anywhere. Commas, colons or periods.`;
+async function luna(
+  key: string,
+  system: string,
+  user: string,
+  name: string,
+  schema: unknown,
+): Promise<Record<string, unknown>> {
+  const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+    body: JSON.stringify({
+      model: OPENAI_MODEL,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
+      response_format: { type: "json_schema", json_schema: { name, strict: true, schema } },
+    }),
+  });
+  if (!resp.ok) throw new Error(`openai ${resp.status}: ${(await resp.text()).slice(0, 200)}`);
+  const data = await resp.json();
+  const msg = data?.choices?.[0]?.message;
+  if (!msg?.content || msg.refusal) throw new Error("refusal");
+  return JSON.parse(msg.content);
+}
 
-const BRIEF_SCHEMA = {
+// The vocabulary and book list come from the catalogue tables, not a copy in
+// this file: the DB is the source of truth for what a theme is. Cached for the
+// life of the instance; both tables are seed data that changes by migration.
+type Vocab = { term: string; gloss: string }[];
+type Catalogue = {
+  themes: Vocab;
+  cautions: Vocab;
+  books: Map<string, { book: string; chapters: number }>;
+};
+let catalogue: Catalogue | null = null;
+
+// deno-lint-ignore no-explicit-any
+async function loadCatalogue(admin: any): Promise<Catalogue | null> {
+  if (catalogue) return catalogue;
+  const [vocab, books] = await Promise.all([
+    admin.from("bible_vocabulary").select("kind, term, gloss").in("kind", ["theme", "caution"]),
+    admin.from("bible_books").select("book, chapters"),
+  ]);
+  if (!vocab.data?.length || !books.data?.length) {
+    console.error("ask-pamwe catalogue load failed:", vocab.error?.message, books.error?.message);
+    return null;
+  }
+  catalogue = {
+    // deno-lint-ignore no-explicit-any
+    themes: vocab.data.filter((v: any) => v.kind === "theme"),
+    // deno-lint-ignore no-explicit-any
+    cautions: vocab.data.filter((v: any) => v.kind === "caution"),
+    // deno-lint-ignore no-explicit-any
+    books: new Map(books.data.map((b: any) => [String(b.book).toLowerCase(), b])),
+  };
+  return catalogue;
+}
+
+const intakeSchema = (themes: string[], cautions: string[]) => ({
   type: "object",
   additionalProperties: false,
   properties: {
     off_topic: { type: "boolean" },
-    theme: { type: "string" },
-    scope: { type: "string" },
-    days: { type: "integer", minimum: 3, maximum: 40 },
-    rhythm: { type: "string", enum: ["passage", "chapter", "deep"] },
-    verse_level: { type: "boolean" },
+    kind: { type: "string", enum: ["theme", "book"] },
+    book: { type: "string" },
+    themes: { type: "array", items: { type: "string", enum: themes } },
+    allow_cautions: { type: "array", items: { type: "string", enum: cautions } },
+    stated_days: { type: "integer", minimum: 0, maximum: 40 },
     title: { type: "string" },
   },
-  required: ["off_topic", "theme", "scope", "days", "rhythm", "verse_level", "title"],
-};
+  required: ["off_topic", "kind", "book", "themes", "allow_cautions", "stated_days", "title"],
+});
 
-const BUILD_SCHEMA = {
+// Built per request: the candidate indices are constrained to the pool that
+// retrieval actually returned, which is what makes invention impossible.
+const agentSchema = (poolSize: number, exactDays: number | null) => ({
   type: "object",
   additionalProperties: false,
   properties: {
     off_topic: { type: "boolean" },
     title: { type: "string" },
-    meta: { type: "string" },
-    days: { type: "integer", minimum: 3, maximum: 40 },
-    rhythm: { type: "string", enum: ["passage", "chapter", "deep"] },
-    topics: { type: "array", items: { type: "string" } },
-    readings: {
+    days: {
       type: "array",
-      items: {
-        type: "object",
-        additionalProperties: false,
-        properties: {
-          day: { type: "integer" },
-          reference: { type: "string" },
-          note: { type: "string" },
-        },
-        required: ["day", "reference", "note"],
-      },
+      items: { type: "integer", minimum: 0, maximum: poolSize - 1 },
+      minItems: exactDays ?? 5,
+      maxItems: exactDays ?? 21,
     },
-    prompts: { type: "array", items: { type: "string" } },
   },
-  required: ["off_topic", "title", "meta", "days", "rhythm", "topics", "readings", "prompts"],
+  required: ["off_topic", "title", "days"],
+});
+
+type PassageRow = {
+  book: string;
+  chapter: number;
+  verse_start: number;
+  verse_end: number;
+  chapter_verses: number;
+  summary: string;
+  tone: string;
 };
+
+// The reference forms the reader can load. Catalogue passages never cross a
+// chapter, so the two-chapter span form is never needed here.
+const referenceFor = (r: PassageRow) =>
+  r.verse_start === 1 && r.verse_end === r.chapter_verses
+    ? `${r.book} ${r.chapter}`
+    : r.verse_start === r.verse_end
+      ? `${r.book} ${r.chapter}:${r.verse_start}`
+      : `${r.book} ${r.chapter}:${r.verse_start}-${r.verse_end}`;
+
+// Day notes are catalogue summaries: what the passage IS, written once and
+// identical for every couple. First sentence, em dashes scrubbed (house rule).
+const noteFor = (summary: string) => {
+  const clean = String(summary ?? "").replace(/\s*—\s*/g, ", ");
+  const first = clean.split(". ")[0];
+  const line = first.length < clean.length ? `${first}.` : clean;
+  return line.length > 120 ? line.slice(0, 117).trimEnd() + "..." : line;
+};
+
+const metaFor = (books: string[], days: number) => {
+  const uniq = [...new Set(books)];
+  const label = uniq.length === 1
+    ? uniq[0]
+    : uniq.length === 2
+      ? `${uniq[0]} and ${uniq[1]}`
+      : `${uniq[0]}, ${uniq[1]} and more`;
+  return `${label} · ${days} days`;
+};
+
+// passage_prompts keys the psalter as 'Psalm N' (what plan_days stores); the
+// catalogue says 'Psalms'. Normalise at the join.
+const promptBook = (book: string) => (book === "Psalms" ? "Psalm" : book);
+
+// The "You will be asked" preview on the build screen: the first few REAL
+// questions from the chapter-keyed library, the ones the plan will actually
+// ask, rather than fresh ones invented for the preview.
+// deno-lint-ignore no-explicit-any
+async function promptPreview(admin: any, days: { book: string; chapter: number }[]) {
+  const seen = new Set<string>();
+  const chapters: { book: string; chapter: number }[] = [];
+  for (const d of days) {
+    const k = `${d.book}|${d.chapter}`;
+    if (!seen.has(k)) {
+      seen.add(k);
+      chapters.push(d);
+    }
+    if (chapters.length === 3) break;
+  }
+  const rows = await Promise.all(chapters.map((c) =>
+    admin.from("passage_prompts").select("prompt")
+      .eq("book", promptBook(c.book)).eq("chapter", c.chapter).maybeSingle()
+  ));
+  // deno-lint-ignore no-explicit-any
+  return rows.map((r: any) => r.data?.prompt).filter((p: unknown): p is string => !!p);
+}
 
 const HELP_SCHEMA = {
   type: "object",
@@ -209,39 +313,47 @@ Rules for every recommendation:
 
 Keep it grounded in Scripture, tender, and marriage-aware. Never invent books or chapters that don't exist.`;
 
-// Pass 1. Reads intent, writes nothing. Deliberately forbidden from choosing
-// references: keeping selection out of intake is what stops one couple's
-// phrasing from steering the reading list.
-const SYSTEM_BRIEF = `${SYSTEM_CORE}
+// Intake for v9. It classifies and maps onto the catalogue vocabulary; it
+// never chooses passages, so the couple's phrasing cannot steer the reading
+// list, and the arranger downstream is never shown the raw text.
+const systemIntake = (themes: Vocab, cautions: Vocab) => `${SYSTEM_CORE}
 
-${PLAN_SPEC}
+YOUR JOB
+Intake for the plan builder. A couple typed a request. You map it onto Pamwe's catalogue so a retrieval query and an arranger can build the plan. You never choose passages. Two couples who mean the same thing must produce the same fields. Normalise, never echo.
 
-A couple describes a season, feeling, question, book, or theme. Turn it into a brief. Do not choose passages and do not write the plan; that happens later from this brief alone.
+kind and book:
+- "book" when they name a book of the Bible to walk together ("Philippians", "read John with us"). Set book to its exact canonical name, like "John", "1 Samuel", "Song of Solomon". Otherwise book is "".
+- "theme" for everything else: a season, a feeling, a struggle, a question, or a passage they want to sit with.
 
-- theme: the need in 2 to 6 plain words, normalised. "learning to trust again after a hard year" becomes "rebuilding trust".
-- scope: where in Scripture this should be read, as book names or a testament, e.g. "Ruth, Psalms, John" or "the Gospels" or "Philippians".
-- days: follow the LENGTH rule in the spec.
-- rhythm: per the spec.
-- verse_level: true when the theme is best served by curated passages across books, false when the couple should walk whole chapters or a book in order.
-- title: warm, specific, 2 to 6 words, no colon, not a Bible reference.
+themes: 1 to 4 tags from this list for what the request is actually about, ALWAYS filled, even for a book request. Find the need beneath the wording: "we lost our dog" is grief, "we keep fighting about money" is conflict and wealth, "how do we pray together" is prayer. Never force a tag that is not there.
+${themes.map((t) => `  ${t.term}: ${t.gloss}`).join("\n")}
 
-If the request is out of scope, set off_topic true and leave every other field short and harmless.`;
+allow_cautions: normally empty. The catalogue holds back passages carrying these flags, because met unprepared they can wound:
+${cautions.map((c) => `  ${c.term}: ${c.gloss}`).join("\n")}
+Add a flag ONLY when the request is squarely about that ground, so those passages become the point instead of an ambush. A couple who cannot conceive should meet Hannah, so "struggling to conceive" allows infertility. General sadness allows nothing.
 
-// Pass 2. Sees the brief, never the raw request, so the plan is a function of
-// the brief and nothing else.
-const SYSTEM_BUILD = `${SYSTEM_CORE}
+stated_days: the number of days they asked for, or 0 when they did not ask. "two weeks" is 14, "a month" is 30, "a few days" is 0 because it is not a number.
 
-${PLAN_SPEC}
+title: 2 to 6 words, warm and specific. No colon, no Bible reference, not a question. It names what the couple is walking through, not what the passage says. "When Trust Has To Be Rebuilt", not "Trust: A Study in Ruth".
 
-You are given a brief. Build exactly the plan it describes, and nothing else.
+WHEN THEY ASK WHAT SOMETHING MEANS
+Still on topic. Map it to the themes that passage carries and let them read it slowly together. You do not interpret it and neither does the plan.
 
-- Honour days and rhythm from the brief exactly. Do not round them.
-- Stay inside the brief's scope.
-- If verse_level is true, curate passages across the scope, using verse ranges. If it is false, walk whole chapters in canonical order.
-- readings: one entry per day, numbered 1 to days, with no gaps and no repeats.
-- meta: one short line, e.g. "Ruth, Psalms and John · 14 days".
-- topics: 2 to 4 lowercase single-word tags for browsing, e.g. ["trust","marriage","waiting"].
-- Set off_topic false. You are past the point where that decision is made.`;
+OFF TOPIC
+Set off_topic true only when the request is genuinely outside Scripture, prayer, faith, and the two of them. Keep every other field short and harmless when you do. An awkward, sad, or angry request is not off topic; it is usually the most important kind.`;
+
+// The arranger. It answers with candidate numbers, so sequencing is the only
+// judgement it owns.
+const SYSTEM_AGENT = `${SYSTEM_CORE}
+
+YOUR JOB
+Arrange a reading plan from a fixed list of candidate passages. Each candidate has a number, a reference, a tone, and a line saying what it contains. Choose which candidates become days and in what order, and answer with their numbers. You cannot edit a candidate and you cannot add anything that is not on the list.
+
+- Use a candidate at most once.
+- The order is the couple's walk through the days. Meet them where they are, vary book and register from day to day, and when the material offers it, let the later days settle toward hope or rest. That is sequencing, not interpretation.
+- days: exactly the count you are asked for; when given a range instead, the natural length the material supports.
+- title: 2 to 6 words, warm and specific. No colon, no Bible reference, not a question. It names what the couple is walking through.
+- Set off_topic false. That decision was made before you.`;
 
 const SYSTEM_HELP = `${SYSTEM_CORE}
 
@@ -326,8 +438,9 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
-  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-  if (!apiKey) return json({ error: "Ask Pamwe isn't configured yet." }, 503);
+  // build runs on OpenAI; plans/help still run on Anthropic until retired.
+  const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
+  const openaiKey = Deno.env.get("OPENAI_API_KEY");
 
   let query = "";
   let mode: "plans" | "help" | "build" = "plans";
@@ -342,16 +455,19 @@ Deno.serve(async (req) => {
 
   if (!query) return json({ error: "Tell Pamwe what you'd like to read about." }, 400);
   if (query.length > MAX_QUERY) return json({ error: `Keep it under ${MAX_QUERY} characters.` }, 400);
+  if (mode === "build" ? !openaiKey : !anthropicKey) {
+    return json({ error: "Ask Pamwe isn't configured yet." }, 503);
+  }
 
   // Rate limit per user. The gateway has already verified the JWT
   // (verify_jwt = true), so its sub claim is trustworthy here.
+  const admin = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
   try {
     const jwt = req.headers.get("Authorization")?.replace("Bearer ", "") ?? "";
     const userId = JSON.parse(atob(jwt.split(".")[1] ?? "")).sub as string;
-    const admin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
     const { data, error } = await admin.rpc("bump_ask_pamwe_usage", { p_user: userId });
     if (!error && data && data[0]) {
       const { new_count, prev_last_at } = data[0] as { new_count: number; prev_last_at: string | null };
@@ -368,80 +484,158 @@ Deno.serve(async (req) => {
     // Same: never let rate accounting take the feature down.
   }
 
-  const anthropic = new Anthropic({ apiKey });
-  const isHelp = mode === "help";
-
-  // Two passes: intake, then generation from the brief alone. Temperature 0 on
-  // both, so the same request lands on the same plan rather than a new one each
-  // time someone taps again.
   if (mode === "build") {
     try {
-      const briefMsg = await anthropic.messages.create({
-        model: MODEL,
-        max_tokens: 400,
-        temperature: 0,
-        thinking: { type: "disabled" },
-        system: SYSTEM_BRIEF,
-        output_config: { format: { type: "json_schema", schema: BRIEF_SCHEMA } },
-        messages: [{ role: "user", content: query }],
-      });
+      const cat = await loadCatalogue(admin);
+      if (!cat) return json({ error: "Ask Pamwe isn't configured yet." }, 503);
 
-      if (briefMsg.stop_reason === "refusal") {
-        return json({ error: "Pamwe couldn't help with that one. Try another idea." }, 502);
+      const intake = await luna(
+        openaiKey!,
+        systemIntake(cat.themes, cat.cautions),
+        query,
+        "intake",
+        intakeSchema(cat.themes.map((t) => t.term), cat.cautions.map((c) => c.term)),
+      ) as {
+        off_topic: boolean; kind: string; book: string; themes: string[];
+        allow_cautions: string[]; stated_days: number; title: string;
+      };
+      if (intake.off_topic) return json({ off_topic: true, message: OFF_TOPIC_MESSAGE }, 200);
+
+      const stated = intake.stated_days >= 3 && intake.stated_days <= 40 ? intake.stated_days : 0;
+      const respond = (
+        title: string,
+        readings: { day: number; reference: string; note: string }[],
+        chapters: { book: string; chapter: number }[],
+        rhythm: string,
+        topics: string[],
+      ) => {
+        // The references were assembled from catalogue rows, so this should
+        // never fire; it stays because a plan day that cannot load is the one
+        // failure the app cannot recover from.
+        const bad = validateReadings(readings, readings.length);
+        if (bad) {
+          console.error("ask-pamwe build rejected:", bad);
+          return json({ error: "Pamwe put that one together wrong. Try asking again." }, 502);
+        }
+        return promptPreview(admin, chapters).then((prompts) =>
+          json({
+            title,
+            meta: metaFor(chapters.map((c) => c.book), readings.length),
+            days: readings.length,
+            rhythm,
+            topics: topics.slice(0, 4),
+            readings,
+            prompts,
+            spec: BUILD_VERSION,
+          }, 200)
+        );
+      };
+
+      // A named book is a walk, and a walk is arithmetic, not generation.
+      const bookRow = intake.kind === "book"
+        ? cat.books.get(intake.book.trim().toLowerCase())
+        : undefined;
+
+      if (bookRow && bookRow.chapters >= 3) {
+        const days = Math.min(stated || Math.min(bookRow.chapters, 21), bookRow.chapters, 40);
+        const { data: chs } = await admin.from("bible_chapters")
+          .select("chapter, summary").eq("book", bookRow.book)
+          .lte("chapter", days).order("chapter");
+        const readings = (chs ?? []).map((c: { chapter: number; summary: string }) => ({
+          day: c.chapter,
+          reference: `${bookRow.book} ${c.chapter}`,
+          note: noteFor(c.summary),
+        }));
+        return await respond(
+          intake.title, readings,
+          readings.map((r) => ({ book: bookRow.book, chapter: r.day })),
+          "chapter", [bookRow.book.toLowerCase()],
+        );
       }
 
-      const brief = JSON.parse(
-        briefMsg.content.filter((b: { type: string }) => b.type === "text")
-          .map((b: { text: string }) => b.text).join(""),
-      );
-      if (brief.off_topic) return json({ off_topic: true, message: OFF_TOPIC_MESSAGE }, 200);
-
-      // The raw request is deliberately NOT forwarded. Pass 2 sees the brief
-      // only, which is what makes the output a function of the brief.
-      const planMsg = await anthropic.messages.create({
-        model: MODEL,
-        max_tokens: 4096,
-        temperature: 0,
-        thinking: { type: "disabled" },
-        system: SYSTEM_BUILD,
-        output_config: { format: { type: "json_schema", schema: BUILD_SCHEMA } },
-        messages: [{ role: "user", content: JSON.stringify({
-          theme: brief.theme,
-          scope: brief.scope,
-          days: brief.days,
-          rhythm: brief.rhythm,
-          verse_level: brief.verse_level,
-          title: brief.title,
-        }) }],
-      });
-
-      if (planMsg.stop_reason === "refusal") {
-        return json({ error: "Pamwe couldn't help with that one. Try another idea." }, 502);
+      if (bookRow) {
+        // Philemon, Jude, Obadiah: too short to walk by chapter, so each
+        // catalogue passage becomes a day instead.
+        const [{ data: ps }, { data: chs }] = await Promise.all([
+          admin.from("bible_passages")
+            .select("book, chapter, verse_start, verse_end, summary, tone")
+            .eq("book", bookRow.book).order("chapter").order("verse_start"),
+          admin.from("bible_chapters").select("chapter, n_verses").eq("book", bookRow.book),
+        ]);
+        const nOf = new Map((chs ?? []).map((c: { chapter: number; n_verses: number }) => [c.chapter, c.n_verses]));
+        const rows: PassageRow[] = (ps ?? []).map((p: Omit<PassageRow, "chapter_verses">) => ({
+          ...p, chapter_verses: nOf.get(p.chapter) ?? 0,
+        }));
+        if (rows.length < 3) {
+          return json({
+            error: "That book is short enough to read in one sitting together. Ask for a theme to build a plan around it.",
+          }, 200);
+        }
+        const readings = rows.map((r, i) => ({
+          day: i + 1, reference: referenceFor(r), note: noteFor(r.summary),
+        }));
+        return await respond(
+          intake.title, readings,
+          rows.map((r) => ({ book: r.book, chapter: r.chapter })),
+          "passage", [bookRow.book.toLowerCase()],
+        );
       }
 
-      const plan = JSON.parse(
-        planMsg.content.filter((b: { type: string }) => b.type === "text")
-          .map((b: { text: string }) => b.text).join(""),
-      );
-      if (plan.off_topic) return json({ off_topic: true, message: OFF_TOPIC_MESSAGE }, 200);
+      // Theme path: retrieval picks the pool, the arranger picks from the pool.
+      const themes = (intake.themes ?? []).slice(0, 4);
+      if (!themes.length) {
+        return json({ error: "Tell Pamwe a bit more about what you two are walking through." }, 200);
+      }
+      const { data: pool, error: poolErr } = await admin.rpc("retrieve_passages", {
+        want_themes: themes,
+        allow_cautions: intake.allow_cautions ?? [],
+        max_rows: 40,
+      });
+      if (poolErr || !Array.isArray(pool) || pool.length < 5) {
+        return json({ error: "Pamwe couldn't gather enough for that one. Try saying it another way." }, 200);
+      }
 
-      // The schema guarantees the shape, never the truth. A day numbered twice,
-      // a gap, or a book that does not exist would all become real plan_days
-      // rows and a reader screen that cannot load. Check here, once, rather
-      // than in every client.
-      const readings = Array.isArray(plan.readings) ? plan.readings : [];
-      const bad = validateReadings(readings, plan.days);
-      if (bad) {
-        console.error("ask-pamwe build rejected:", bad, JSON.stringify(readings).slice(0, 400));
+      const candidates = (pool as PassageRow[])
+        .map((p, i) => `${i}. ${referenceFor(p)} (${p.tone}) ${noteFor(p.summary)}`)
+        .join("\n");
+      const plan = await luna(
+        openaiKey!,
+        SYSTEM_AGENT,
+        `Themes: ${themes.join(", ")}\nDays: ${stated ? `exactly ${stated}` : "between 5 and 21"}\n\nCandidates:\n${candidates}`,
+        "arrangement",
+        agentSchema(pool.length, stated || null),
+      ) as { off_topic: boolean; title: string; days: number[] };
+
+      const picks = Array.isArray(plan.days) ? plan.days : [];
+      const uniq = new Set(picks);
+      const usable = uniq.size === picks.length &&
+        picks.length >= 3 &&
+        picks.every((i) => Number.isInteger(i) && i >= 0 && i < pool.length) &&
+        (!stated || picks.length === stated);
+      if (!usable) {
+        console.error("ask-pamwe arrangement rejected:", JSON.stringify(picks).slice(0, 200));
         return json({ error: "Pamwe put that one together wrong. Try asking again." }, 502);
       }
 
-      return json({ ...plan, spec: PLAN_SPEC_VERSION, brief }, 200);
+      const rows = picks.map((i) => (pool as PassageRow[])[i]);
+      const readings = rows.map((r, i) => ({
+        day: i + 1, reference: referenceFor(r), note: noteFor(r.summary),
+      }));
+      const wholeChapters = rows.filter((r) => r.verse_start === 1 && r.verse_end === r.chapter_verses).length;
+      return await respond(
+        (plan.title || intake.title).trim(), readings,
+        rows.map((r) => ({ book: r.book, chapter: r.chapter })),
+        wholeChapters > rows.length / 2 ? "chapter" : "passage",
+        themes,
+      );
     } catch (err) {
       console.error("ask-pamwe build error:", err);
       return json({ error: "Pamwe is resting for a moment. Ask again soon." }, 502);
     }
   }
+
+  const anthropic = new Anthropic({ apiKey: anthropicKey! });
+  const isHelp = mode === "help";
 
   try {
     const message = await anthropic.messages.create({
