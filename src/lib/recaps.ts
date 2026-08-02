@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import type { SwatchColor } from '../theme/tokens';
 
 export type RecapPeriod = 'week' | 'month' | 'quarter';
 
@@ -13,19 +14,95 @@ export function recapCutoffISO(period: RecapPeriod, nowMs: number = Date.now()):
   return new Date(nowMs - RECAP_DAYS[period] * 86400000).toISOString();
 }
 
+// The recap used to hand the screen three finished sentences. It now hands over
+// the items themselves, so a passage, a highlight and a prayer can each be
+// tapped through to the thing it names. A recap that only tells you what you did
+// is a receipt; one you can walk back into is a way in.
+export type RecapReadItem = { reference: string };
+export type RecapHighlightItem = { book: string; chapter: number; verse: number; color: SwatchColor };
+export type RecapPrayerItem = { id: string; text: string };
+
 export type Recap = {
   period: RecapPeriod;
   rangeLabel: string;
   headline: string;
-  days: number;       // days I read
+  days: number;       // distinct days I read
   highlights: number; // verses we highlighted
   prayers: number;    // prayers raised
-  read: string;       // "What you read" — passage references
-  learned: string;    // deterministic encouragement
-  pray: string;       // "What you prayed for" — prayer snippets
+  insight: string | null;   // what the numbers actually say, when they say something
+  encouragement: string;    // what to do next
+  readItems: RecapReadItem[];
+  highlightItems: RecapHighlightItem[];
+  prayerItems: RecapPrayerItem[];
 };
 
 const uniq = (arr: string[]) => [...new Set(arr)];
+
+// ---- Copy. Pure, so the wording is testable without a database. ----
+
+export function recapHeadline(days: number, prayers: number, period: RecapPeriod): string {
+  const word = PERIOD_WORD[period];
+  if (days === 0 && prayers === 0) return `A gentle pause this ${word}.`;
+  if (days === 0) return `You carried each other in prayer this ${word}.`;
+  if (days >= 5) return `${days} days in the Word. Well done, both of you.`;
+  return `${days} ${days === 1 ? 'day' : 'days'} in the Word, together.`;
+}
+
+export function recapEncouragement(days: number, period: RecapPeriod): string {
+  const word = PERIOD_WORD[period];
+  if (days >= 5) return `You showed up ${days} times this ${word}. That rhythm is the rare thing: keep it.`;
+  if (days > 0) return 'Every day you opened the Word planted something. Pick your next reading tonight and keep it growing.';
+  return 'The Word will be here when you come back. Start small: one passage, read together.';
+}
+
+// prayers.category values, minus 'other', which names no subject and so can
+// never be the thing a couple prayed about most.
+const CATEGORY_PHRASE: Record<string, string> = {
+  family: 'your family',
+  health: 'health',
+  work: 'work',
+  guidance: 'guidance',
+  thanks: 'thanksgiving',
+};
+
+/** The book part of "1 Samuel 3:1-10", or null when the reference is unparseable here. */
+function bookOf(reference: string): string | null {
+  const m = reference.trim().match(/^(\d?\s?[A-Za-z][A-Za-z ]*?)\s+\d/);
+  return m ? m[1].trim() : null;
+}
+
+/** Highest count, but only when it is the sole highest. A tie says nothing. */
+function soleLeader(values: (string | null)[]): { key: string; count: number } | null {
+  const tally = new Map<string, number>();
+  for (const v of values) {
+    if (!v) continue;
+    tally.set(v, (tally.get(v) ?? 0) + 1);
+  }
+  let best: { key: string; count: number } | null = null;
+  let tied = false;
+  for (const [key, count] of tally) {
+    if (!best || count > best.count) { best = { key, count }; tied = false; }
+    else if (count === best.count) tied = true;
+  }
+  return tied ? null : best;
+}
+
+export function recapInsight(prayerCategories: string[], readRefs: string[], period: RecapPeriod): string | null {
+  const word = PERIOD_WORD[period];
+
+  const named = prayerCategories.filter((c) => CATEGORY_PHRASE[c]);
+  if (named.length >= 3) {
+    const lead = soleLeader(named);
+    if (lead) return `Most of what you prayed for this ${word} was ${CATEGORY_PHRASE[lead.key]}.`;
+  }
+
+  if (readRefs.length >= 3) {
+    const lead = soleLeader(readRefs.map(bookOf));
+    if (lead) return `You spent most of your reading in ${lead.key}.`;
+  }
+
+  return null;
+}
 
 export async function getRecap(coupleId: string, timezone: string, period: RecapPeriod): Promise<Recap> {
   const cutoff = recapCutoffISO(period);
@@ -68,35 +145,37 @@ export async function getRecap(coupleId: string, timezone: string, period: Recap
       .filter(Boolean) as string[],
   );
 
-  // Highlights + prayers in range.
-  const { count: highlights } = await supabase
-    .from('verse_highlights').select('id', { count: 'exact', head: true })
-    .eq('couple_id', coupleId).gte('created_at', cutoff);
+  // Highlights + prayers in range. Rows, not counts: the screen links each one
+  // back to the verse or the prayer it came from.
+  const { data: hlRows } = await supabase
+    .from('verse_highlights').select('book, chapter, verse, color, created_at')
+    .eq('couple_id', coupleId).gte('created_at', cutoff).order('created_at', { ascending: false });
+  const highlightRows = hlRows ?? [];
 
   const { data: prayerRows } = await supabase
-    .from('prayers').select('text').eq('couple_id', coupleId).gte('created_at', cutoff).order('created_at', { ascending: false });
-  const prayerTexts = (prayerRows ?? []).map((p) => p.text as string);
+    .from('prayers').select('id, text, category').eq('couple_id', coupleId).gte('created_at', cutoff).order('created_at', { ascending: false });
+  const prayers = prayerRows ?? [];
 
-  const days = myEntries.length;
-  const prayers = prayerTexts.length;
-  const word = PERIOD_WORD[period];
+  // Distinct dates, not row count: two plans read on one day is one day of
+  // showing up, and counting it twice made the number quietly flattering.
+  const days = new Set(myEntries.map((e) => String(e.submitted_at).slice(0, 10))).size;
 
-  const headline = days === 0 && prayers === 0
-    ? `A gentle pause this ${word}.`
-    : days === 0
-      ? `You carried each other in prayer this ${word}.`
-      : `${days} ${days === 1 ? 'day' : 'days'} in the Word, together.`;
-
-  const learned = days >= 5
-    ? `You're building a real rhythm: ${days} days of showing up for each other. Keep going.`
-    : days > 0
-      ? 'Small steps still count. Every day in the Word plants something between you.'
-      : "A quiet stretch. That's okay. The Word will be here when you come back.";
-
-  const read = readRefs.length ? readRefs.slice(0, 8).join(', ') : "After a few days of reading together, you'll see it here.";
-  const pray = prayerTexts.length
-    ? prayerTexts.slice(0, 3).map((t) => `“${t.length > 90 ? t.slice(0, 87) + '…' : t}”`).join('  ')
-    : 'No new prayers this ' + word + '.';
-
-  return { period, rangeLabel: RECAP_LABEL[period], headline, days, highlights: highlights ?? 0, prayers, read, learned, pray };
+  return {
+    period,
+    rangeLabel: RECAP_LABEL[period],
+    headline: recapHeadline(days, prayers.length, period),
+    days,
+    highlights: highlightRows.length,
+    prayers: prayers.length,
+    insight: recapInsight(prayers.map((p) => p.category as string), readRefs, period),
+    encouragement: recapEncouragement(days, period),
+    readItems: readRefs.slice(0, 8).map((reference) => ({ reference })),
+    highlightItems: highlightRows.slice(0, 6).map((h) => ({
+      book: h.book as string,
+      chapter: h.chapter as number,
+      verse: h.verse as number,
+      color: h.color as SwatchColor,
+    })),
+    prayerItems: prayers.slice(0, 3).map((p) => ({ id: p.id as string, text: p.text as string })),
+  };
 }

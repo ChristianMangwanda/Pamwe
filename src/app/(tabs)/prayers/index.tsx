@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform, RefreshControl, } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -41,7 +41,9 @@ export default function PrayersScreen() {
   const { couple, partner } = useCouple();
 
   // A tapped "your partner wrote down a dream" push lands here with tab=dreams.
-  const { tab: tabParam } = useLocalSearchParams<{ tab?: string }>();
+  // A prayer tapped in a recap lands here with the prayer's id, which opens its
+  // sheet once the list has loaded.
+  const { tab: tabParam, prayerId } = useLocalSearchParams<{ tab?: string; prayerId?: string }>();
   const [tab, setTab] = useState<Tab>(tabParam === 'dreams' ? 'dreams' : 'prayers');
   const [active, setActive] = useState<Prayer[]>([]);
   const [answered, setAnswered] = useState<Prayer[]>([]);
@@ -50,6 +52,7 @@ export default function PrayersScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [detail, setDetail] = useState<Prayer | null>(null);
+  const openedLinked = useRef(false);
   // The "Nothing on your hearts yet" empty state only shows after a fetch
   // actually succeeded — a failed first load must not claim the list is empty.
   const [everLoaded, setEverLoaded] = useState(false);
@@ -229,6 +232,16 @@ export default function PrayersScreen() {
   };
 
   const isDreams = tab === 'dreams';
+  // Open the linked prayer once, after the lists arrive. A prayer since deleted
+  // or answered-and-archived simply does not open.
+  useEffect(() => {
+    if (!prayerId || openedLinked.current) return;
+    const found = [...active, ...answered].find((p) => p.id === prayerId);
+    if (!found) return;
+    openedLinked.current = true;
+    setDetail(found);
+  }, [prayerId, active, answered]);
+
   const allEmpty = !loading && everLoaded && active.length === 0 && answered.length === 0;
   const dreamsEmpty = !loading && everLoaded && dreams.length === 0;
 
