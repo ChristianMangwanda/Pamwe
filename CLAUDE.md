@@ -50,10 +50,25 @@ supabase status                        # local URLs/keys · Studio http://127.0.
 #     here; sanity-check with get_project_url before any hosted mutation.
 #   • DEAD:   freftpwigrkjytusnqhx — old project on Christian's MAIN account (paused;
 #     that account's 2-project free quota belongs to his other projects). Never
-#     restore or apply anything there. env.hosted.backup may still hold its old
-#     values until the cutover rewrites it.
-# When cutting over: apply supabase/migrations/* + seeds/plan_metadata.sql to
-# jcyhhxgomhopkoqesbkb via MCP.
+#     restore or apply anything there.
+#
+# env.hosted.backup DOES hold the ACTIVE project's values (verified 2026-08-02:
+# its EXPO URL, session-pooler SUPABASE_DB_URL and service_role key all carry
+# ref jcyhhxgomhopkoqesbkb). The cutover rewrote it, so it is the one place on
+# disk with hosted DB credentials. Still decode any key's `ref` claim before
+# trusting it.
+#
+# ⚠️ The `supabase` CLI is logged into the WRONG (main) account: `supabase
+# projects list` returns the dead project and cannot see jcyhhxgomhopkoqesbkb
+# at all. So `supabase secrets set` and `functions deploy` do NOT work for
+# hosted. Until that is re-authed:
+#   • DDL      -> MCP apply_migration (by name; never db push)
+#   • edge fns -> MCP deploy_edge_function (pass the file contents inline)
+#   • secrets  -> the Supabase dashboard, by hand
+#   • bulk seed (too big to pass through MCP) -> borrow the local container's
+#     psql to reach hosted, which is how the 7.7MB catalogue was loaded:
+#       DBURL=$(grep '^SUPABASE_DB_URL=' env.hosted.backup | cut -d= -f2- | tr -d '"')
+#       docker exec -i supabase_db_Pamwe psql "$DBURL" -v ON_ERROR_STOP=1 -q < <file>
 ```
 
 ```bash
@@ -132,6 +147,46 @@ Auth gate in [src/app/index.tsx](src/app/index.tsx) sequences:
 | `dreams` | Couple-shared dream journal (both partners read, author-only edit/delete). **Pamwe never interprets a dream** (see the rule below). |
 | `verse_highlights` / `verse_notes` | Per-couple shared study layer over the Bible reader (one highlight + one note per verse per couple; `user_id` = authorship). |
 | `ask_pamwe_usage` / `partner_nudges` | Service-role-only bookkeeping (RLS on, zero policies): Ask Pamwe rate limiting (20/day + cooldown via `bump_ask_pamwe_usage` RPC) and nudge cooldowns (1/hour). |
+| `passage_prompts` | Chapter-keyed reflection questions, one per chapter, all 1,189. Keyed `'Psalm N'` like plan_days, NOT `'Psalms'` like the catalogue: normalise at any join. Its DDL lived only on hosted until the 2026-08-02 backfill migration. |
+| **catalogue** (5 tables) | `bible_books` / `bible_chapters` / `bible_verses` / `bible_passages` / `bible_vocabulary`. Reference data: SELECT for authenticated, writes service-role only. See below. |
+
+### The Bible catalogue
+
+31,103 WEB verses, 3,083 passages and all 1,189 chapters, tagged by **what they
+are about**, so plan generation can retrieve instead of improvise. Built once
+(2026-08-01, ~$2.81, 1189/1189 chapters accepted) by
+[`scripts/gen_bible_catalogue.py`](scripts/gen_bible_catalogue.py) against the
+spec in [`scripts/bible_catalogue_spec.py`](scripts/bible_catalogue_spec.py),
+emitted to SQL by `scripts/emit_bible_catalogue_sql.py`. Applied to local and
+hosted.
+
+**The governing rule: a tag names SUBJECT MATTER, never application.** `grief`
+yes; `suffering-is-discipline` no, because that is a reading. This is "points,
+never preaches" applied to the catalogue, and it matters most here because
+nobody will ever audit 31,103 rows: an interpretation that gets in at tag time
+silently shapes every plan built from it.
+
+- **The vocabulary is the one irreversible decision.** 65 themes with glosses, 8
+  tones, 9 genres, 7 caution flags, all closed sets living in the spec file and
+  mirrored into `bible_vocabulary` (which ask-pamwe reads at runtime, so the DB
+  is the source of truth for what a theme is). Changing a term means re-tagging.
+- **Passage boundaries are NOT model output.** They are the BSB's printed
+  section positions, fixed in code before the call (positions only, never the
+  titles, which are readings). The spec header records why: three rounds of
+  steering boundaries with prose oscillated (coarse, then slavish, then
+  confetti), while every constraint enforced in code held at 100%.
+- **`caution[]` is the pastoral guardrail.** `retrieve_passages()` returns a
+  flagged passage only when EVERY flag it carries was explicitly allowed, so a
+  couple asking about infertility meets Hannah while a couple in ordinary grief
+  never stumbles into a dead child. Known soft spot: caution recall measured
+  6/4/5/4 out of 6 across sample runs with no relation to prompt wording. A
+  caution-only sweep over the finished catalogue is the fix if it bites.
+- Empty `themes` on a verse is **correct and deliberate** (9% of the canon): a
+  name in a genealogy is about nothing, and tagging it would bury the passages
+  that really are about family.
+- Re-emitting is free: the run caches are frozen gzipped in `scripts/`, and
+  `SPEC_VERSION` is part of every cache key, so bumping it regenerates rather
+  than serving stale tags.
 
 ### Locked-reveal RLS
 
@@ -150,7 +205,11 @@ The core mechanic. Partner entries are invisible until both partners have submit
 - `entries` is in the `supabase_realtime` publication so the waiting screen subscription fires.
 - Other webhook functions: `notify-new-prayer`, `notify-freeze`, `delete-account` (verify_jwt=true — demote-don't-delete routine). **Push banners actually deliver since b10/b11** (APNs key on Expo).
 - **`notify-nudge`** — user-invoked (verify_jwt=true): "nudge my partner" from Today; pushes to the partner, one per sender per hour (cooldown logged in `partner_nudges`).
-- **`ask-pamwe`** (v9) — **"Pamwe points, never preaches"** (Christian's product line: no Scripture interpretation, ever; interpretation questions deflect gently). Three schema-constrained modes: **`build`** (ONE plan, the Plans search), `plans` (2 recs, the by-book builder) and `help` (unreachable since the sheet was removed). **`build` runs two passes against a versioned `PLAN_SPEC`, both at temperature 0**: free text becomes a fixed brief, then the plan is generated from the brief alone, so phrasing stops steering the reading list. Its references carry **verse ranges** (`Ruth 1:6-18`), which the `plans` schema cannot express. Every generated plan is checked server-side against the 66-book canon (`validateReadings`) before it can become plan_days: no invented books, no chapter past the end of one, no backwards range, no duplicate or missing day. Every schema carries a required `off_topic` flag; the server swaps flagged output for one fixed gentle line. Per-user rate limit 20/day + 10s cooldown, fail-open. **verify_jwt=true.** Anthropic SDK (`npm:@anthropic-ai/sdk`), model from env `ANTHROPIC_MODEL` (default `claude-haiku-4-5`). Secret **`ANTHROPIC_API_KEY`**: locally in gitignored `supabase/functions/.env`; hosted via `supabase secrets set`. Clients: `src/lib/askPamwe.ts` (`buildPlan` returns a typed plan/off_topic/error and deliberately does NOT fall back to stock recs, since a build answers something the couple typed; `askPamwe` still falls back to hardcoded recs for the by-book builder).
+- **`ask-pamwe`** (build v9, 2026-08-02) — **"Pamwe points, never preaches"** (Christian's product line: no Scripture interpretation, ever; interpretation questions deflect gently). Three schema-constrained modes: **`build`** (ONE plan, the Plans search), `plans` (2 recs, the by-book builder) and `help` (unreachable since the sheet was removed). Every schema carries a required `off_topic` flag; the server swaps flagged output for one fixed gentle line. Per-user rate limit 20/day + 10s cooldown, fail-open. **verify_jwt=true.**
+
+  **`build` never asks a model for a Bible reference.** It reads the [Bible catalogue](#the-bible-catalogue) instead, in three steps: **intake** maps what a couple typed onto the closed theme vocabulary (so "we lost our dog" becomes `grief` without anyone having predicted dogs) and decides which `caution` flags to unlock; **`retrieve_passages()`** picks the candidate pool in plain SQL; then the **arranger** answers with candidate **indices into that pool**, schema-constrained to `0..poolSize-1`, and the server maps them back to references itself. An invented reference has nowhere to enter the pipeline, structurally rather than by instruction. Day notes are catalogue summaries, the prompt preview comes from `passage_prompts`, and `meta`/`rhythm` are computed. A named book skips the models entirely and walks its chapters. `validateReadings` still runs on the assembled result as a backstop, since a plan day that cannot load is the one failure the app cannot recover from.
+
+  v8's two-pass `PLAN_SPEC` brief is **deleted**: it asked a model to write references and needed an ever-growing rulebook to keep them loadable. Build runs on **OpenAI** (`OPENAI_API_KEY`, model `OPENAI_MODEL`, default `gpt-5.6-luna`, the family that tagged the catalogue); `plans`/`help` still run on the Anthropic SDK (`ANTHROPIC_MODEL`, default `claude-haiku-4-5`). Both keys live locally in gitignored `supabase/functions/.env`; hosted they are dashboard secrets (the CLI cannot reach the project, see the identity block above). Clients: `src/lib/askPamwe.ts` (`buildPlan` returns a typed plan/off_topic/error and deliberately does NOT fall back to stock recs, since a build answers something the couple typed; `askPamwe` still falls back to hardcoded recs for the by-book builder).
 
 ---
 
@@ -349,6 +408,9 @@ The voice recorder, audio upload, and partner-push flow only behave correctly on
 | Voice recorder component | [src/components/VoiceRecorder.tsx](src/components/VoiceRecorder.tsx) |
 | Design tokens | [src/theme/tokens.ts](src/theme/tokens.ts) (light+dark; via `useTheme()`), [src/constants/typography.ts](src/constants/typography.ts). Legacy [src/constants/colors.ts](src/constants/colors.ts) is frozen — don't use in new code. |
 | Ask Pamwe edge function | [supabase/functions/ask-pamwe/index.ts](supabase/functions/ask-pamwe/index.ts) |
+| Catalogue vocabulary + tagging rules | [scripts/bible_catalogue_spec.py](scripts/bible_catalogue_spec.py) (the file to argue with; `SPEC_VERSION` history explains every past mistake) |
+| Catalogue generator + SQL emitter | [scripts/gen_bible_catalogue.py](scripts/gen_bible_catalogue.py), [scripts/emit_bible_catalogue_sql.py](scripts/emit_bible_catalogue_sql.py); seed [supabase/seeds/bible_catalogue.sql](supabase/seeds/bible_catalogue.sql) (7.7MB, generated) |
+| Retrieval over the catalogue | `retrieve_passages(want_themes, allow_cautions, max_rows)` in [supabase/migrations/20260802000001_retrieve_passages.sql](supabase/migrations/20260802000001_retrieve_passages.sql) |
 | Seeded plan content | [supabase/seed.sql](supabase/seed.sql) (~14k lines) + `scripts/seed_{john,psalms,cord}_plan.py` |
 | Widgets, home + lock (WidgetKit/SwiftUI) | [ios/VerseWidget/](ios/VerseWidget/) (git-tracked source); target splice `scripts/add_widget_target.rb`, verse data `scripts/gen_widget_verses.py` |
 | App Group bridge (anniversary → widget) | [modules/pamwe-widget/](modules/pamwe-widget/) (local Expo module), called from [src/providers/CoupleProvider.tsx](src/providers/CoupleProvider.tsx) |
