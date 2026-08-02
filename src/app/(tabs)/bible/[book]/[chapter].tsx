@@ -12,7 +12,10 @@ import { VersePassage, ReaderScale, READER_SIZES } from '../../../../components/
 import { fonts } from '../../../../constants/typography';
 import { GUTTER, swatches, SwatchColor } from '../../../../theme/tokens';
 import { useTheme } from '../../../../providers/ThemeProvider';
+import { useAuth } from '../../../../providers/AuthProvider';
 import { useCouple } from '../../../../providers/CoupleProvider';
+import { supabase } from '../../../../lib/supabase';
+import { profileInitial } from '../../../../lib/couples';
 import { findBook, fetchChapterVerses, TRANSLATION_NAMES, TRANSLATION_ABBR, TRANSLATIONS, type Translation, type BibleVerse } from '../../../../lib/bible';
 import { getMarksForChapter, setHighlight, clearHighlight, type VerseHighlight, type VerseNote } from '../../../../lib/verseMarks';
 import { haptics } from '../../../../lib/haptics';
@@ -24,7 +27,8 @@ export default function ChapterReader() {
   const router = useRouter();
   const { colors, mode, setMode } = useTheme();
   const insets = useSafeAreaInsets();
-  const { couple } = useCouple();
+  const { couple, partner } = useCouple();
+  const { user } = useAuth();
   const params = useLocalSearchParams<{ book: string; chapter: string; verse?: string; couplePlanId?: string; day?: string; planTitle?: string }>();
   const bookName = decodeURIComponent(params.book ?? '');
   const chapterNum = Number(params.chapter ?? 0);
@@ -94,6 +98,19 @@ export default function ChapterReader() {
 
   useFocusEffect(useCallback(() => { reloadMarks(); }, [reloadMarks]));
 
+  // Focus alone was not enough for the case this is for: both of you reading
+  // the same chapter at once, where a mark made a moment after you opened it
+  // stayed invisible until you left and came back.
+  useEffect(() => {
+    if (!couple?.id) return;
+    const channel = supabase
+      .channel(`verse-marks-${couple.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'verse_highlights', filter: `couple_id=eq.${couple.id}` }, () => reloadMarks())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'verse_notes', filter: `couple_id=eq.${couple.id}` }, () => reloadMarks())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [couple?.id, reloadMarks]);
+
   if (!book || !chapterNum) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
@@ -109,7 +126,15 @@ export default function ChapterReader() {
 
   const hlMap: Record<number, SwatchColor> = Object.fromEntries(highlights.map((h) => [h.verse, h.color]));
   const notedVerses = new Set(notes.map((n) => n.verse));
-  const notesByVerse: Record<number, string> = Object.fromEntries(notes.map((n) => [n.verse, n.text]));
+  const noteByVerse: Record<number, VerseNote> = Object.fromEntries(notes.map((n) => [n.verse, n]));
+
+  // Anything not mine is theirs. Tested against MY id rather than the partner's
+  // so a partner profile that has not loaded yet can never mislabel my own marks.
+  const partnerVerses = new Set<number>([
+    ...highlights.filter((h) => h.user_id !== user?.id).map((h) => h.verse),
+    ...notes.filter((n) => n.user_id !== user?.id).map((n) => n.verse),
+  ]);
+  const partnerInitial = profileInitial(partner) ?? undefined;
 
   const canPrev = chapterNum > 1;
   const canNext = chapterNum < book.chapters;
@@ -139,14 +164,18 @@ export default function ChapterReader() {
   };
   const openNoteEditor = () => {
     if (selVerse == null) return;
-    const text = notesByVerse[selVerse] ?? '';
+    const text = noteByVerse[selVerse]?.text ?? '';
     const v = selVerse;
     setSelVerse(null);
     router.push({ pathname: '/(tabs)/bible/note', params: { book: book.name, chapter: String(chapterNum), verse: String(v), text } } as any);
   };
 
   const selRef = selVerse != null ? `${book.name} ${chapterNum}:${selVerse}` : '';
-  const selNote = selVerse != null ? notesByVerse[selVerse] : undefined;
+  const selNoteRow = selVerse != null ? noteByVerse[selVerse] : undefined;
+  const selNote = selNoteRow?.text;
+  const selNoteLabel = !selNoteRow || selNoteRow.user_id === user?.id
+    ? 'Your note'
+    : `${partner?.display_name ?? 'Your partner'}'s note`;
   const hasCtx = !!(params.day && params.planTitle);
 
   return (
@@ -218,6 +247,8 @@ export default function ChapterReader() {
                 showNums={showNums}
                 highlights={hlMap}
                 notedVerses={notedVerses}
+                partnerVerses={partnerVerses}
+                partnerInitial={partnerInitial}
                 onVerseLongPress={onVerseLongPress}
                 focusVerse={focusVerse}
                 flashVerse={flashVerse}
@@ -317,7 +348,7 @@ export default function ChapterReader() {
         </View>
         {selNote ? (
           <View style={[styles.notePreview, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-            <Text style={[styles.noteLabel, { color: colors.accent2 }]}>Your note</Text>
+            <Text style={[styles.noteLabel, { color: colors.accent2 }]}>{selNoteLabel}</Text>
             <Text style={{ fontFamily: fonts.serif, fontSize: 15, lineHeight: 22, color: colors.ink }}>{selNote}</Text>
           </View>
         ) : null}

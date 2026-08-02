@@ -16,6 +16,8 @@ export function VersePassage({
   showNums = true,
   highlights = {},
   notedVerses,
+  partnerVerses,
+  partnerInitial,
   onVerseLongPress,
   focusVerse,
   flashVerse,
@@ -26,6 +28,10 @@ export function VersePassage({
   showNums?: boolean;
   highlights?: Record<number, SwatchColor>;
   notedVerses?: Set<number>;
+  /** Verses whose mark your partner made, so their initial rides along. */
+  partnerVerses?: Set<number>;
+  /** Your partner's initial. Absent before their profile loads. */
+  partnerInitial?: string;
   /** Long press, so a stray touch mid-scroll doesn't select a verse. */
   onVerseLongPress?: (verse: number) => void;
   /** Verse to locate on layout (jump target from the marks screen). */
@@ -38,10 +44,18 @@ export function VersePassage({
   const { colors } = useTheme();
   const size = READER_SIZES[scale];
 
+  const showsInitial = (verse: number) => !!(partnerInitial && partnerVerses?.has(verse));
+
   // Length of one verse's rendered string — must mirror the render below so
-  // char offsets map onto onTextLayout's per-line text lengths.
+  // char offsets map onto onTextLayout's per-line text lengths. Every span the
+  // render can add needs a term here or scroll-to-verse drifts: the note glyph
+  // is ` ✎` (2), the partner initial is a space plus the letter.
   const verseLen = (v: BibleVerse) =>
-    (showNums ? `${v.verse} `.length : 0) + v.text.length + (notedVerses?.has(v.verse) ? 2 : 0) + 2;
+    (showNums ? `${v.verse} `.length : 0) +
+    v.text.length +
+    (notedVerses?.has(v.verse) ? 2 : 0) +
+    (showsInitial(v.verse) ? partnerInitial!.length + 1 : 0) +
+    2;
 
   // The whole chapter is ONE flowing <Text>, so a verse has no view to measure.
   // Instead: find the focus verse's character offset, then walk the laid-out
@@ -81,6 +95,11 @@ export function VersePassage({
             ) : null}
             {v.text}
             {notedVerses?.has(v.verse) ? <RNText style={{ color: colors.accent2 }}> ✎</RNText> : null}
+            {showsInitial(v.verse) ? (
+              <RNText style={{ fontFamily: fonts.sansSemiBold, fontSize: 11, color: colors.accent }}>
+                {' '}{partnerInitial}
+              </RNText>
+            ) : null}
             {'  '}
           </RNText>
         );
