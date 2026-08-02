@@ -300,15 +300,40 @@ screen until the app restarts**, with no in-app way back. Fixed 2026-08-02, afte
 it was hit through the weekly recap. Tab-root pushes (`reflect`, `prayers`,
 `(today)`) need nothing.
 
-### The tree awards grow without a ceiling
+### The Grove: a walk, not a list
 
 Finished plans earn a tree, from fig up to redwood
-([src/lib/treeAwards.ts](src/lib/treeAwards.ts)). The ladder replaced
-`TREE_FULL_AT = 3`, which let a couple exhaust the app's one real milestone in a
-season and then read "In full bloom" forever. `StreakTree` is now only the
-drawing: it has six stages, so the picture saturates at the oak while the tree's
-NAME keeps going. Adding a rung is one entry in `TREE_AWARDS`; nothing else
-changes, and the count stays derived (`finishedPlanCount`), never stored.
+([src/lib/treeAwards.ts](src/lib/treeAwards.ts)), shown as ONE scrolling scene
+([you/grove.tsx](src/app/(tabs)/you/grove.tsx)): two sets of footprints climbing
+a path, a tree rooted at every threshold passed, the trees ahead standing pale.
+Geometry is pure maths in [src/lib/grove.ts](src/lib/grove.ts) on a 400-wide
+canvas that screens scale by `deviceWidth / SCENE_W`. Design handoff:
+[The Grove (standalone).html](The%20Grove%20(standalone).html), brief in
+[grove-design-brief.md](grove-design-brief.md).
+
+- **Thresholds are 5, 10, 20, 40, 80, 100** (Christian, 2026-08-02), measured
+  against the real pace: 0.75 reading days per calendar day, so the fig is about
+  10 weeks in and the redwood a four-year walk. **Tree spacing is DERIVED from
+  those thresholds** (square root of each stretch), never hardcoded, because the
+  handoff's fixed positions were tuned for a 1,2,3,5,8,13 ladder and left the
+  five-plan opening stretch as a 60 unit sliver.
+- **Finished plans move the solid prints; the streak only adds half-strength
+  ground on top and can never arrive.** Planting is what arriving is for.
+- **Days do not mint a second trophy.** That is how streaks live here without
+  competing with plans, and it retired the dismiss-once milestone card.
+- **The ladder does not end.** Above the redwood the path keeps going
+  unlabelled; a 7th rung ships when a couple nears it.
+- The count stays derived (`finishedPlanCount`), never stored. `StreakTree` is
+  now only the legacy drawing, still backing the completion screen until the
+  arrival sequence lands.
+
+**Tree art ships as ONE alpha-only set** in
+[assets/images/grove/](assets/images/grove/), tinted at runtime via
+`tintColor` (see [src/lib/groveArt.ts](src/lib/groveArt.ts)). The handoff's light
+and dark exports were pixel-identical silhouettes differing only in fill, so one
+set halves the payload (3.0MB to 0.58MB) and follows the palette automatically.
+Do not add a coloured variant. The olive shipped with two UI glyphs baked into
+its corners, painted out on import.
 
 ### Auth: getSession(), not getUser(); every sign-in success must route through the gate
 
@@ -429,7 +454,8 @@ The voice recorder, audio upload, and partner-push flow only behave correctly on
 | Streak milestones | [src/lib/milestones.ts](src/lib/milestones.ts), [src/components/MilestoneCard.tsx](src/components/MilestoneCard.tsx) |
 | Plan generation client | [src/lib/askPamwe.ts](src/lib/askPamwe.ts) (`buildPlan`), screen [plans/build.tsx](src/app/(tabs)/plans/build.tsx) |
 | Plan search, browse, sharing | [src/lib/plans.ts](src/lib/plans.ts) (`searchPlans`, `filterPlans`, `topicsIn`, `sharePlan`, `getSharedPlan`) |
-| Finished-plan rule + tree awards | [src/lib/planHistory.ts](src/lib/planHistory.ts) (`isFinished`, `finishedPlans`), [src/lib/treeAwards.ts](src/lib/treeAwards.ts) (`TREE_AWARDS` ladder), [StreakTree](src/components/ui/StreakTree.tsx) (the drawing only) |
+| Finished-plan rule + tree awards | [src/lib/planHistory.ts](src/lib/planHistory.ts) (`isFinished`, `finishedPlans`), [src/lib/treeAwards.ts](src/lib/treeAwards.ts) (`TREE_AWARDS` ladder) |
+| The Grove scene + You card | [src/lib/grove.ts](src/lib/grove.ts) (geometry + all copy), [you/grove.tsx](src/app/(tabs)/you/grove.tsx), [GroveCard](src/components/GroveCard.tsx), art [src/lib/groveArt.ts](src/lib/groveArt.ts) |
 | Docked tab bar | [src/components/DockedTabBar.tsx](src/components/DockedTabBar.tsx) |
 | Motion + haptics | [src/lib/motion.ts](src/lib/motion.ts), [src/lib/haptics.ts](src/lib/haptics.ts) |
 | Voice recorder component | [src/components/VoiceRecorder.tsx](src/components/VoiceRecorder.tsx) |

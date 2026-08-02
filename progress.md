@@ -4,6 +4,66 @@
 
 ---
 
+## ⭐ B22 (2026-08-02, not yet built): the recap points somewhere, and the Grove
+
+Two rounds of work, no binary yet. Round one is **on main** (`ed0fd3e` through
+`008a4b9`); the Grove is on the branch `grove`. Both green: 27 suites, 249 tests,
+tsc clean. Three migrations and the ask-pamwe rebuild are already live on hosted.
+
+### Round one: six things Christian hit in use
+
+- **The recap was a receipt.** It stated facts and nothing in it was tappable.
+  `recaps.ts` now returns ITEMS, so every passage, marked verse and prayer opens
+  the thing it names, and the copy congratulates and points forward instead of
+  counting. Two bugs went with it: "days read" counted rows, so two plans in one
+  day counted twice, and a failed load span forever instead of showing an error.
+- **The recap notification was a navigation trap.** A cold-start tap mounted the
+  target as its stack's ONLY route, so Back fell through to the tab bar and that
+  tab stayed stuck until the app restarted. `unstable_settings` anchors plus
+  `withAnchor` on the three nested pushes. It also affected note and reveal pushes.
+- **Verse marks carry authorship now.** A partner's initial rides inline on what
+  they marked, both tables joined the realtime publication, and the note sheet
+  stopped calling their note "Your note". **The note push had never once fired on
+  hosted**: the trigger read a GUC hosted Postgres forbids. Fixed and verified
+  end to end against the review couple.
+- **Plans:** Browse became a real screen (the door did nothing but clear chips),
+  build dropped the prompt preview and its round trips (7.6s live), "Save for
+  later" means building no longer ends what you are reading, and finished plans
+  became a list whose count finally applies `isFinished`.
+- **Lock widget** says "In love N days". The old ladder dropped the words first
+  and rendered a bare "126D", a number with nothing saying what it counted. Both
+  the reference and the phrase fit once the header drops to 8pt.
+
+### Round two: the Grove (branch `grove`)
+
+The award page, designed with Claude Design and built from the handoff. **One
+scrolling scene, not a list**: footprints climbing a path, a tree at every
+threshold passed, the rest standing pale ahead. It supersedes the seven-row list
+from `7b10954`.
+
+- **Thresholds are 5, 10, 20, 40, 80, 100.** Christian's call, and he was right
+  to push back: the first estimate against it was wrong, built on the app's
+  lifetime rather than the 20 days it had actually been in use. Measured pace is
+  0.75 reading days per calendar day, so the fig is ~10 weeks out and the redwood
+  a four-year walk.
+- **Two silent bugs the ladder change introduced, both caught before shipping.**
+  Tree spacing was hardcoded for a 1,2,3,5,8,13 ladder and left the five-plan
+  opening stretch as a 60 unit sliver of a 1930 unit scene, so it is now DERIVED
+  from the thresholds. And the prints advanced on streak alone, so 4-of-5 plans
+  looked like 0; solid prints now track plans, with the streak adding
+  half-strength ground on top that can never arrive.
+- **Days do not mint a second trophy**, they move you. That is how the streak
+  lives here without competing with plans.
+- **"Unbroken" is retired** from all streak copy, with a test to keep it out: the
+  streak forgives four days, so it cannot honestly claim to be unbroken.
+- Art ships as ONE alpha-only set tinted at runtime: 3.00MB to 0.58MB. The olive
+  arrived with two UI glyphs baked into its corners, painted out on import.
+
+**Still to do:** the arrival sequence on the completion screen (spec'd in the
+handoff, beat-by-beat with haptics and a Reduce Motion variant), then a build.
+
+---
+
 ## ⭐ B21 (2026-08-02): plans stop being improvised
 
 Build 21 is uploaded to App Store Connect and processing. Four commits on main
