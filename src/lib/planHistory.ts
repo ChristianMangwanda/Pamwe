@@ -47,15 +47,15 @@ export async function finishedPlanCount(coupleId: string): Promise<number> {
 }
 
 /**
- * The most recently finished plan, and the day it was finished.
+ * Every plan the couple read to the end, newest finish first.
  *
- * couple_plans has no completed_at, so the finish is taken from the last
- * sealed entry on it. That is the moment the couple actually ended it, rather
- * than created_at, which is when they started.
+ * couple_plans has no completed_at, so a finish is taken from the last sealed
+ * entry on it. That is the moment the couple actually ended it, rather than
+ * created_at, which is when they started.
  */
-export async function lastFinishedPlan(coupleId: string): Promise<FinishedPlan | null> {
+export async function finishedPlans(coupleId: string): Promise<FinishedPlan[]> {
   const rows = await finishedRows(coupleId);
-  if (rows.length === 0) return null;
+  if (rows.length === 0) return [];
 
   const { data: entries, error } = await supabase
     .from('entries')
@@ -73,18 +73,23 @@ export async function lastFinishedPlan(coupleId: string): Promise<FinishedPlan |
 
   // Newest finish first, falling back to enrolment order for a finished plan
   // with no readable entries (RLS hides a partner's unrevealed day).
-  const [top] = [...rows].sort((a, b) => {
-    const av = sealedLast.get(a.id) ?? a.created_at;
-    const bv = sealedLast.get(b.id) ?? b.created_at;
-    return av < bv ? 1 : -1;
-  });
+  return [...rows]
+    .sort((a, b) => {
+      const av = sealedLast.get(a.id) ?? a.created_at;
+      const bv = sealedLast.get(b.id) ?? b.created_at;
+      return av < bv ? 1 : -1;
+    })
+    .map((row) => ({
+      couplePlanId: row.id,
+      planId: row.plan_id,
+      title: row.plan?.title ?? 'your plan',
+      durationDays: row.plan?.duration_days ?? row.current_day ?? 0,
+      cadenceDays: row.cadence_days ?? 1,
+      finishedOn: sealedLast.get(row.id) ?? null,
+    }));
+}
 
-  return {
-    couplePlanId: top.id,
-    planId: top.plan_id,
-    title: top.plan?.title ?? 'your plan',
-    durationDays: top.plan?.duration_days ?? top.current_day ?? 0,
-    cadenceDays: top.cadence_days ?? 1,
-    finishedOn: sealedLast.get(top.id) ?? null,
-  };
+/** The most recently finished plan, for Today's empty state. */
+export async function lastFinishedPlan(coupleId: string): Promise<FinishedPlan | null> {
+  return (await finishedPlans(coupleId))[0] ?? null;
 }

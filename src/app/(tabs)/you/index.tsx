@@ -14,7 +14,8 @@ import { useCouple } from '../../../providers/CoupleProvider';
 import { profileInitial } from '../../../lib/couples';
 import { countMyTotalSubmitted, countCoupleReflections } from '../../../lib/entries';
 import { countPrayers } from '../../../lib/prayers';
-import { StreakTree, TREE_FULL_AT } from '../../../components/ui/StreakTree';
+import { StreakTree } from '../../../components/ui/StreakTree';
+import { currentAward, nextAward } from '../../../lib/treeAwards';
 import { finishedPlanCount } from '../../../lib/planHistory';
 import { haptics } from '../../../lib/haptics';
 
@@ -109,20 +110,36 @@ export default function YouScreen() {
             the completion screen so it is visible between finishes, which can
             be a year apart. */}
         {finishedPlans !== null && (
-          <View style={[styles.treeCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+          <TouchableOpacity activeOpacity={0.85} onPress={() => go('/(tabs)/you/grove')}
+            style={[styles.treeCard, { backgroundColor: colors.surface, borderColor: colors.line }]}
+            accessibilityRole="button" accessibilityLabel="Your grove">
             <StreakTree count={finishedPlans} />
-            {finishedPlans >= TREE_FULL_AT ? (
-              <View style={[styles.badge, { backgroundColor: colors.accent }]}>
-                <Text variant="chip" color={colors.bg}>Full bloom · {finishedPlans} plans</Text>
-              </View>
-            ) : (
-              <Text style={[styles.treeCaption, { color: colors.muted }]}>
-                {finishedPlans === 0
-                  ? 'Finish a plan together and your tree begins.'
-                  : `${finishedPlans} of ${TREE_FULL_AT} plans finished together.`}
-              </Text>
-            )}
-          </View>
+            {(() => {
+              const award = currentAward(finishedPlans);
+              const next = nextAward(finishedPlans);
+              if (!award) {
+                return (
+                  <Text style={[styles.treeCaption, { color: colors.muted }]}>
+                    Finish a plan together and your grove begins.
+                  </Text>
+                );
+              }
+              return (
+                <>
+                  <View style={[styles.badge, { backgroundColor: colors.accent }]}>
+                    <Text variant="chip" color={colors.bg}>
+                      {award.name} · {finishedPlans} plan{finishedPlans === 1 ? '' : 's'}
+                    </Text>
+                  </View>
+                  <Text style={[styles.treeCaption, { color: colors.muted }]}>
+                    {next
+                      ? `Next tree at ${next.threshold} plans: ${next.name.toLowerCase()}.`
+                      : award.line}
+                  </Text>
+                </>
+              );
+            })()}
+          </TouchableOpacity>
         )}
 
         <Text variant="eyebrow" color={colors.muted} style={styles.section}>Appearance</Text>

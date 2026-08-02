@@ -3,6 +3,7 @@ import Svg, { Path, Circle, Ellipse, Line, G } from 'react-native-svg';
 import { Text } from './Text';
 import { fonts } from '../../constants/typography';
 import { useTheme } from '../../providers/ThemeProvider';
+import { awardStage, currentAward, type TreeStage } from '../../lib/treeAwards';
 
 // A quiet growth metaphor: the couple's constancy is a plant that grows with
 // the PLANS they finish together. Drawn in the app's ink/accent language so it
@@ -12,22 +13,13 @@ import { useTheme } from '../../providers/ThemeProvider';
 // the two said the same thing twice and neither meant much. Finishing a plan is
 // rare (a fortnight to a year), so the tree now moves only for that, which
 // makes each step worth seeing. Christian's call, 2026-08-01.
-export type TreeStage = 0 | 1 | 2 | 3 | 4 | 5;
+export type { TreeStage } from '../../lib/treeAwards';
 
-/** Finished plans it takes to grow the tree to full. Lives here rather than in
- *  lib so this file stays free of the Supabase client and can be unit tested as
- *  the pure drawing it is. One constant, so the ceiling is a one-line
- *  recalibration once we see how it feels over a year. */
-export const TREE_FULL_AT = 3;
-
-// Stages spread evenly across the run to TREE_FULL_AT. At a ceiling of 3 a plan
-// is worth two stages (1 -> 2, 2 -> 4, 3 -> 5); at 5 it is worth one each.
-// Either way the last finished plan is what tips it into full bloom.
-
+// The drawing follows the award ladder in lib/treeAwards, which is where the
+// thresholds and the species names live. This file stays the pure drawing: no
+// Supabase client, and no opinion about what a count is worth.
 export function treeStage(finishedPlans: number): TreeStage {
-  if (finishedPlans <= 0) return 0;
-  const ceiling = TREE_FULL_AT > 0 ? TREE_FULL_AT : 1;
-  return Math.min(5, Math.ceil((finishedPlans / ceiling) * 5)) as TreeStage;
+  return awardStage(finishedPlans);
 }
 
 const STAGE_STEM_TOP = [70, 62, 50, 38, 26, 20];
@@ -38,15 +30,6 @@ const STAGE_STEM_TOP = [70, 62, 50, 38, 26, 20];
 export function stemTopFor(finishedPlans: number): number {
   return STAGE_STEM_TOP[treeStage(finishedPlans)];
 }
-
-const STAGE_WORD: Record<TreeStage, string> = {
-  0: 'Ready to plant',
-  1: 'Planted',
-  2: 'Taking root',
-  3: 'Growing',
-  4: 'Reaching up',
-  5: 'In full bloom',
-};
 
 export function StreakTree({ count }: { count: number }) {
   const { colors } = useTheme();
@@ -117,7 +100,7 @@ export function StreakTree({ count }: { count: number }) {
           </G>
         )}
       </Svg>
-      <Text style={[styles.word, { color: colors.muted }]}>{STAGE_WORD[stage]}</Text>
+      <Text style={[styles.word, { color: colors.muted }]}>{currentAward(count)?.name ?? 'Ready to plant'}</Text>
     </View>
   );
 }

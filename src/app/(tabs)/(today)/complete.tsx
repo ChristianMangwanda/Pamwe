@@ -7,7 +7,8 @@ import { Text } from '../../../components/ui/Text';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Floral } from '../../../components/ui/Floral';
-import { StreakTree, TREE_FULL_AT } from '../../../components/ui/StreakTree';
+import { StreakTree } from '../../../components/ui/StreakTree';
+import { currentAward, nextAward } from '../../../lib/treeAwards';
 import { fonts } from '../../../constants/typography';
 import { useTheme } from '../../../providers/ThemeProvider';
 import { useCouple } from '../../../providers/CoupleProvider';
@@ -90,11 +91,7 @@ export default function CompleteScreen() {
           <View style={styles.treeWrap}>
             <StreakTree count={finishedPlans} />
             <Text style={[styles.treeCaption, { color: colors.muted }]}>
-              {finishedPlans >= TREE_FULL_AT
-                ? `${finishedPlans} plans finished together. Your tree is full.`
-                : finishedPlans === 1
-                ? 'One plan finished together. Your tree has taken root.'
-                : `${finishedPlans} plans finished together. ${TREE_FULL_AT - finishedPlans} more and it is full.`}
+              {treeCaption(finishedPlans)}
             </Text>
           </View>
         )}
@@ -116,6 +113,19 @@ export default function CompleteScreen() {
       </ScrollView>
     </SafeAreaView>
   );
+}
+
+// This screen is the moment a tree is earned, so it names the one that just
+// arrived rather than counting down to a ceiling.
+function treeCaption(finishedPlans: number): string {
+  const award = currentAward(finishedPlans);
+  const next = nextAward(finishedPlans);
+  if (!award) return 'Your grove begins with the first plan you finish.';
+  if (award.threshold === finishedPlans) {
+    return `A new tree for your grove: the ${award.name.toLowerCase()}. ${award.line}`;
+  }
+  if (next) return `${finishedPlans} plans finished together. The next tree arrives at ${next.threshold}.`;
+  return `${finishedPlans} plans finished together. A whole grove, from fig to redwood.`;
 }
 
 function Stat({ value, label, colors }: { value: string; label: string; colors: any }) {
