@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, TextInput, RefreshControl } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { MagnifyingGlass, ArrowRight, CaretRight, Flower, CheckCircle, Sparkle, SquaresFour, X, Heart } from 'phosphor-react-native';
+import { MagnifyingGlass, ArrowRight, CaretRight, Flower, CheckCircle, Sparkle, SquaresFour, X } from 'phosphor-react-native';
 import { Screen } from '../../../components/ui/Screen';
 import { Text } from '../../../components/ui/Text';
 import { PamweLoading } from '../../../components/ui/PamweLoading';
@@ -12,13 +12,13 @@ import { useTheme } from '../../../providers/ThemeProvider';
 import { useCouple } from '../../../providers/CoupleProvider';
 import {
   getBrowsablePlans, getCouplePlans, getCompletedCouplePlans,
-  getReaderCounts, searchPlans, filterPlans, topicsIn,
+  getEnrolledPlanIds, searchPlans,
 } from '../../../lib/plans';
+import { isFinished } from '../../../lib/planHistory';
 import { bannerTintForPlan } from '../../../lib/planArtwork';
 import { haptics } from '../../../lib/haptics';
 
 const PLANS_CACHE_KEY = 'pamwe:plansBrowse';
-const LENGTHS = [7, 14, 21, 30];
 
 export default function PlansScreen() {
   const router = useRouter();
@@ -27,13 +27,11 @@ export default function PlansScreen() {
   const [browsable, setBrowsable] = useState<any[]>([]);
   const [myPlans, setMyPlans] = useState<any[]>([]);
   const [completed, setCompleted] = useState<any[]>([]);
-  const [counts, setCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  const [enrolledIds, setEnrolledIds] = useState<Set<string>>(new Set());
   const [query, setQuery] = useState('');
-  const [topic, setTopic] = useState<string | null>(null);
-  const [days, setDays] = useState<number | null>(null);
 
   // Stale-while-revalidate: render the last-seen browse grid instantly on a
   // cold launch while the network load below refreshes it.
@@ -49,16 +47,17 @@ export default function PlansScreen() {
 
   const load = useCallback(async () => {
     try {
-      const [b, mine, done] = await Promise.all([
+      const [b, mine, done, enrolled] = await Promise.all([
         getBrowsablePlans(),
         couple?.id ? getCouplePlans(couple.id) : Promise.resolve([]),
         couple?.id ? getCompletedCouplePlans(couple.id) : Promise.resolve([]),
+        couple?.id ? getEnrolledPlanIds(couple.id) : Promise.resolve(new Set<string>()),
       ]);
       setBrowsable(b);
       setMyPlans(mine);
       setCompleted(done);
+      setEnrolledIds(enrolled);
       AsyncStorage.setItem(PLANS_CACHE_KEY, JSON.stringify(b)).catch(() => {});
-      getReaderCounts(b.map((p: any) => p.id)).then(setCounts).catch(() => {});
     } catch {
       // Leave lists as-is; pull-to-refresh can retry.
     } finally {
@@ -86,15 +85,21 @@ export default function PlansScreen() {
   const activePct = Math.max(0, Math.min(1, (currentDay - 1) / activeTotal));
 
   // One row per finished plan (a plan can be completed twice), newest first,
-  // and never the plan that's being read right now.
+  // and never the plan that's being read right now. isFinished, not status
+  // alone: enrollInPlan retires the outgoing plan on every switch, so status
+  // counts abandonments too and this number ran ahead of the You tab's.
   const seenPlanIds = new Set<string>();
   const completedPlans = completed.filter((cp) => {
     if (!cp.plan || cp.plan_id === activePlan?.id || seenPlanIds.has(cp.plan_id)) return false;
+    if (!isFinished(cp)) return false;
     seenPlanIds.add(cp.plan_id);
     return true;
   });
 
-  const topics = useMemo(() => topicsIn(browsable).slice(0, 8), [browsable]);
+  // Started at least once vs built and set aside.
+  const startedPlans = myPlans.filter((p) => enrolledIds.has(p.id));
+  const savedPlans = myPlans.filter((p) => !enrolledIds.has(p.id));
+
   const searching = query.trim().length > 0;
   // Search runs over everything the couple could open, their own plans
   // included, since "that plan we built about waiting" is a thing people look
@@ -103,7 +108,6 @@ export default function PlansScreen() {
     () => searchPlans([...myPlans, ...browsable], query),
     [myPlans, browsable, query],
   );
-  const browseList = useMemo(() => filterPlans(browsable, topic, days), [browsable, topic, days]);
 
   const metaLine = (p: any) => `${p.book_label ?? p.title} · ${p.duration_days} days`;
 
@@ -216,7 +220,7 @@ export default function PlansScreen() {
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity activeOpacity={0.9} onPress={() => { haptics.tap(); setTopic(null); setDays(null); }}
+            <TouchableOpacity activeOpacity={0.9} onPress={() => { haptics.tap(); router.push('/(tabs)/plans/browse'); }}
               style={[styles.door, { backgroundColor: colors.surface, borderColor: colors.line }]}>
               <View style={[styles.doorIcon, { backgroundColor: colors.surface2, borderColor: colors.lineAccent, borderWidth: 1 }]}>
                 <SquaresFour size={17} color={colors.accent2} weight="regular" />
@@ -228,83 +232,29 @@ export default function PlansScreen() {
             </TouchableOpacity>
           </View>
 
-          {myPlans.length > 0 && (
+          {startedPlans.length > 0 && (
             <>
               <Text variant="eyebrow" color={colors.muted} style={styles.eyebrow}>Your plans</Text>
-              {myPlans.map((p) => (
-                <TouchableOpacity key={p.id} activeOpacity={0.85} onPress={() => open(p.id)}
-                  style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-                  <View style={[styles.rowIcon, { backgroundColor: colors.surface2, borderColor: colors.lineAccent }]}>
-                    <Flower size={19} color={colors.accent2} weight="fill" />
-                  </View>
-                  <View style={styles.flex}>
-                    <Text style={[styles.rowTitle, { color: colors.ink }]} numberOfLines={2}>{p.title}</Text>
-                    <Text style={[styles.rowMeta, { color: colors.muted }]}>{metaLine(p)}</Text>
-                  </View>
-                  <CaretRight size={15} color={colors.accent2} weight="regular" />
-                </TouchableOpacity>
+              {startedPlans.map((p) => (
+                <PlanRow key={p.id} plan={p} meta={metaLine(p)} colors={colors} onPress={() => open(p.id)} />
               ))}
             </>
           )}
 
-          {topics.length > 0 && (
+          {/* A plan you built but have not started. Building used to mean
+              starting, which ended whatever you were already reading, so a good
+              plan at the wrong moment had to be thrown away. */}
+          {savedPlans.length > 0 && (
             <>
-              <Text variant="eyebrow" color={colors.muted} style={styles.eyebrow}>Browse by topic</Text>
-              <View style={styles.chips}>
-                {topics.map((t) => (
-                  <Chip key={t} label={t} on={topic === t} colors={colors}
-                    onPress={() => { haptics.tap(); setTopic(topic === t ? null : t); }} />
-                ))}
-              </View>
+              <Text variant="eyebrow" color={colors.muted} style={styles.eyebrow}>Saved for later</Text>
+              {savedPlans.map((p) => (
+                <PlanRow key={p.id} plan={p} meta={metaLine(p)} colors={colors} onPress={() => open(p.id)} />
+              ))}
             </>
           )}
 
-          <Text variant="eyebrow" color={colors.muted} style={styles.eyebrow}>Length</Text>
-          <View style={styles.chips}>
-            {LENGTHS.map((d) => (
-              <Chip key={d} label={`${d} days`} on={days === d} colors={colors}
-                onPress={() => { haptics.tap(); setDays(days === d ? null : d); }} />
-            ))}
-          </View>
-
-          <Text variant="eyebrow" color={colors.muted} style={styles.eyebrow}>
-            {topic || days ? `${browseList.length} plan${browseList.length === 1 ? '' : 's'}` : 'All plans'}
-          </Text>
-          {browseList.length === 0 ? (
-            <TouchableOpacity activeOpacity={0.85} onPress={() => build(topic ?? undefined)}
-              style={[styles.emptyBrowse, { borderColor: colors.lineAccent, backgroundColor: colors.surface2 }]}>
-              <Text style={[styles.emptyText, { color: colors.ink2 }]}>
-                Nothing here yet with that shape. Pamwe can build one instead.
-              </Text>
-            </TouchableOpacity>
-          ) : (
-            <View style={styles.grid}>
-              {browseList.map((p: any) => (
-                <TouchableOpacity key={p.id} activeOpacity={0.85} onPress={() => open(p.id)}
-                  style={[styles.gridCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-                  <StripedBanner height={64} stripe={6} tint={bannerTintForPlan(p)} />
-                  <View style={styles.gridBody}>
-                    <Text style={[styles.gridTitle, { color: colors.ink }]} numberOfLines={2}>{p.title}</Text>
-                    <Text style={[styles.gridMeta, { color: colors.muted }]}>{metaLine(p)}</Text>
-                    {counts[p.id] > 1 && (
-                      <View style={styles.readBy}>
-                        <Heart size={10} color={colors.accent2} weight="fill" />
-                        <Text style={[styles.readByText, { color: colors.accent2 }]}>
-                          Read by {counts[p.id]} couples
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-
-          {/* Finished plans were a full card each, sitting between the couple
-              and the plans they could start next. One line, and the real record
-              lives with the tree in the You tab. */}
           {completedPlans.length > 0 && (
-            <TouchableOpacity activeOpacity={0.85} onPress={() => open(completedPlans[0].plan.id)}
+            <TouchableOpacity activeOpacity={0.85} onPress={() => { haptics.tap(); router.push('/(tabs)/plans/finished'); }}
               style={[styles.finished, { borderColor: colors.line }]}>
               <CheckCircle size={17} color={colors.accent2} weight="regular" />
               <Text style={[styles.finishedText, { color: colors.ink2 }]}>
@@ -319,15 +269,18 @@ export default function PlansScreen() {
   );
 }
 
-function Chip({ label, on, colors, onPress }: { label: string; on: boolean; colors: any; onPress: () => void }) {
+function PlanRow({ plan, meta, colors, onPress }: { plan: any; meta: string; colors: any; onPress: () => void }) {
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.8}
-      accessibilityRole="button" accessibilityState={{ selected: on }}
-      style={[styles.chip, {
-        backgroundColor: on ? colors.accent : colors.surface,
-        borderColor: on ? colors.accent : colors.line,
-      }]}>
-      <Text variant="chip" color={on ? colors.bg : colors.ink2} style={styles.chipText}>{label}</Text>
+    <TouchableOpacity activeOpacity={0.85} onPress={onPress}
+      style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+      <View style={[styles.rowIcon, { backgroundColor: colors.surface2, borderColor: colors.lineAccent }]}>
+        <Flower size={19} color={colors.accent2} weight="fill" />
+      </View>
+      <View style={styles.flex}>
+        <Text style={[styles.rowTitle, { color: colors.ink }]} numberOfLines={2}>{plan.title}</Text>
+        <Text style={[styles.rowMeta, { color: colors.muted }]}>{meta}</Text>
+      </View>
+      <CaretRight size={15} color={colors.accent2} weight="regular" />
     </TouchableOpacity>
   );
 }
@@ -365,21 +318,6 @@ const styles = StyleSheet.create({
   buildFromSearch: { flexDirection: 'row', alignItems: 'center', gap: 13, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 15, marginTop: 6 },
   bfsTitle: { fontFamily: fonts.serif, fontSize: 15 },
   bfsSub: { fontFamily: fonts.sans, fontSize: 11.5, marginTop: 2, opacity: 0.8 },
-
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
-  chip: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 13, paddingVertical: 8 },
-  chipText: { fontSize: 10, letterSpacing: 0.7 },
-
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 11 },
-  gridCard: { width: '47.5%', flexGrow: 1, borderWidth: 1, borderRadius: 16, overflow: 'hidden' },
-  gridBody: { paddingHorizontal: 12, paddingTop: 11, paddingBottom: 13 },
-  gridTitle: { fontFamily: fonts.serif, fontSize: 13.5, lineHeight: 17 },
-  gridMeta: { fontFamily: fonts.sans, fontSize: 10.5, marginTop: 5 },
-  readBy: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8 },
-  readByText: { fontFamily: fonts.sansSemiBold, fontSize: 9, letterSpacing: 1, textTransform: 'uppercase' },
-
-  emptyBrowse: { borderWidth: 1, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 16 },
-  emptyText: { fontFamily: fonts.serif, fontSize: 14, lineHeight: 21, textAlign: 'center' },
 
   finished: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 13, marginTop: 22 },
   finishedText: { flex: 1, fontFamily: fonts.sans, fontSize: 12.5 },

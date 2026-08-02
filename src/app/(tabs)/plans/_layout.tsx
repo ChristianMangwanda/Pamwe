@@ -9,6 +9,8 @@ export default function PlansLayout() {
       <Stack.Screen name="[id]" />
       <Stack.Screen name="builder" />
       <Stack.Screen name="build" />
+      <Stack.Screen name="browse" />
+      <Stack.Screen name="finished" />
     </Stack>
   );
 }

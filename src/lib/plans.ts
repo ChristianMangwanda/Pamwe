@@ -47,12 +47,36 @@ export async function getCouplePlans(coupleId: string) {
   return data ?? [];
 }
 
+// Which of a couple's own plans have ever been enrolled in. A built plan the
+// couple saved but never started has no couple_plans row at all, which is what
+// separates "Saved for later" from "Your plans".
+export async function getEnrolledPlanIds(coupleId: string): Promise<Set<string>> {
+  const { data, error } = await supabase
+    .from('couple_plans')
+    .select('plan_id')
+    .eq('couple_id', coupleId);
+
+  if (error) throw error;
+  return new Set((data ?? []).map((r: any) => r.plan_id as string));
+}
+
+/**
+ * Delete a saved plan. plan_days cascade with it; couple_plans.plan_id does
+ * NOT cascade, so a plan anyone has ever started refuses to delete and the
+ * couple's history survives. That FK is the real guard: the UI only hides the
+ * button.
+ */
+export async function deletePlan(planId: string): Promise<void> {
+  const { error } = await supabase.from('plans').delete().eq('id', planId);
+  if (error) throw error;
+}
+
 // Completed runs for the Plans tab's "Completed" section — newest first. A plan
 // can appear more than once (re-taking is allowed); the UI dedupes by plan_id.
 export async function getCompletedCouplePlans(coupleId: string) {
   const { data, error } = await supabase
     .from('couple_plans')
-    .select('id, plan_id, start_date, status, plan:plans(*)')
+    .select('id, plan_id, start_date, status, current_day, plan:plans(*)')
     .eq('couple_id', coupleId)
     .eq('status', 'completed')
     .order('created_at', { ascending: false });

@@ -13,7 +13,7 @@ import { GUTTER } from '../../../theme/tokens';
 import { overlayIn } from '../../../lib/motion';
 import { useTheme } from '../../../providers/ThemeProvider';
 import { useCouple } from '../../../providers/CoupleProvider';
-import { getPlan, getPlanCached, getPlanDayList, enrollInPlan, switchPlan, completePlan, sharePlan } from '../../../lib/plans';
+import { getPlan, getPlanCached, getPlanDayList, enrollInPlan, switchPlan, completePlan, sharePlan, deletePlan, getEnrolledPlanIds } from '../../../lib/plans';
 import { bannerTintForPlan } from '../../../lib/planArtwork';
 import { parseReference } from '../../../lib/bible';
 import { haptics } from '../../../lib/haptics';
@@ -32,6 +32,10 @@ export default function PlanDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [removing, setRemoving] = useState(false);
+  // null until known: the Remove affordance stays hidden rather than flickering
+  // in on a plan that turns out to have been read.
+  const [everEnrolled, setEverEnrolled] = useState<boolean | null>(null);
 
   const isActive = !!couplePlan && couplePlan.plan_id === id;
   const dayNow = isActive ? (couplePlan.current_day ?? 1) : 1;
@@ -57,6 +61,16 @@ export default function PlanDetailScreen() {
       .catch(() => { /* schedule section simply stays hidden */ });
     return () => { alive = false; };
   }, [id, windowFrom]);
+
+  useEffect(() => {
+    let alive = true;
+    if (!couple?.id) return;
+    getEnrolledPlanIds(couple.id)
+      .then((ids) => { if (alive) setEverEnrolled(ids.has(id)); })
+      // Unknown stays unknown, which hides Remove rather than offering it wrongly.
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [couple?.id, id]);
 
   const openReading = useCallback((ref: string, dayNumber: number) => {
     const parsed = parseReference(ref);
@@ -111,7 +125,35 @@ export default function PlanDetailScreen() {
     }
   };
 
-  const canShare = !!plan && plan.is_curated === false && !!couple?.id && plan.couple_id === couple.id;
+  const isMine = !!plan && plan.is_curated === false && !!couple?.id && plan.couple_id === couple.id;
+  const canShare = isMine;
+  const canRemove = isMine && everEnrolled === false;
+
+  const onRemove = () => {
+    if (!plan || removing) return;
+    Alert.alert(
+      'Remove this saved plan?',
+      'It disappears for both of you. Plans you have read together stay in your history.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            setRemoving(true);
+            try {
+              await deletePlan(plan.id);
+              haptics.tap();
+              router.back();
+            } catch {
+              setRemoving(false);
+              Alert.alert("Couldn't remove it", 'This plan has already been read together, so it stays.');
+            }
+          },
+        },
+      ],
+    );
+  };
 
   const onShare = async () => {
     if (!plan || sharing) return;
@@ -328,6 +370,17 @@ export default function PlanDetailScreen() {
               accessibilityRole="button" accessibilityLabel="Share this plan with another couple">
               <Text variant="chip" color={colors.accent2} style={styles.markCompleteText}>
                 {sharing ? 'Making a link…' : 'Share with another couple'}
+              </Text>
+            </TouchableOpacity>
+          )}
+          {/* Only a saved plan neither of you has ever started. The FK on
+              couple_plans refuses to delete anything you have read, so this
+              can never take a plan out of your history. */}
+          {canRemove && (
+            <TouchableOpacity onPress={onRemove} disabled={removing} style={styles.markComplete} hitSlop={8}
+              accessibilityRole="button" accessibilityLabel="Remove this saved plan">
+              <Text variant="chip" color={colors.accent2} style={styles.markCompleteText}>
+                {removing ? 'Removing…' : 'Remove this plan'}
               </Text>
             </TouchableOpacity>
           )}
