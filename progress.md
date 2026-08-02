@@ -1,10 +1,77 @@
 # Pamwe Build Progress Summary
 
-**Last Updated:** July 31, 2026
+**Last Updated:** August 2, 2026
 
 ---
 
-## ⭐ B20 (2026-07-31): the anniversary picker gets a screen
+## ⭐ B21 (2026-08-02): plans stop being improvised
+
+Build 21 is uploaded to App Store Connect and processing. Four commits on main
+(`5b030b4`, `dde0b15`, `7395018`, plus the untracked pbxproj bump). This is the
+largest round since the design handoff: it carries five app changes that had sat
+unshipped since b20, and a backend rebuilt underneath them.
+
+**The backend was broken in production before this round, and nobody could have
+seen it from the app.** Hosted ask-pamwe ran v8 against an Anthropic account with
+no credits, so every plan-generation request died. The fix and the feature turned
+out to be the same act.
+
+### The Bible catalogue (the round's centre)
+
+Ask Pamwe used to invent a reading list from a prompt, so what a couple got
+depended on how they phrased their sentence. You cannot hard-code a branch for
+"we lost a baby" and another for "we lost a dog". So the knowledge moved out of
+the prompt and into data: **31,103 verses, 3,083 passages and 1,189 chapters
+tagged by what they are ABOUT**, from a closed 65-term vocabulary. Generated once
+in 39 minutes for **$2.81** on gpt-5.6-luna, 1189/1189 chapters accepted, every
+chapter validated on arrival for exact verse coverage.
+
+- **Tags name subject matter, never application.** `grief` yes,
+  `suffering-is-discipline` no. Nobody will audit 31,103 rows, so an
+  interpretation that gets in at tag time shapes every plan built from it,
+  forever, unseen. This is the catalogue's half of "points, never preaches".
+- **Passage boundaries are not model output.** They are the BSB's printed section
+  positions, fixed in code. Three rounds of trying to steer them with prose went
+  coarse, then slavish, then confetti; every constraint enforced in code held at
+  100%. That lesson is recorded in the spec header and is the reusable finding of
+  this round.
+- **Build v9 cannot invent a reference.** Intake maps words onto the vocabulary,
+  `retrieve_passages()` picks the pool in SQL, and the arranger answers with
+  indices into that pool. Structural, not instructional.
+- **Cautions are the pastoral guardrail**: a flagged passage returns only when
+  every flag was explicitly allowed, so a couple asking about infertility meets
+  Hannah and a couple in ordinary grief never stumbles into a dead child.
+
+### The app changes, unshipped since b20
+
+Reveal pins its own day so a partner's Amen cannot shift it mid-read (the
+concurrent-use bug), faster voice sending, finishing a plan became a moment with
+the tree regrown from finished plans rather than the streak, Plans rebuilt around
+search with sharing and no floating bubble, and readings as long as the passage
+actually is.
+
+Gate: tsc clean, **25 suites / 207 Jest**. Hosted verified before the archive
+(row counts matching local, retrieval returning the same passages, a live build
+request answering). Archive verified before upload: hosted ref present, dead ref
+absent, no LAN URL, app and widget `CFBundleVersion` both 21, purpose strings
+present.
+
+**Still on Christian:** the Plans search to build flow on device, described in
+his own words rather than a theme word; the finished-plan flow across both
+phones; everything b19/b20 left open on the Lock Screen widget.
+
+**Known soft spot, deliberately not fixed:** caution recall measured 6/4/5/4 of 6
+across sample runs with no relation to prompt wording, so it is run-to-run
+variance on borderline calls rather than a bug to word away. The fix, if it
+bites, is a caution-only sweep over the finished catalogue (~$0.40, no re-run).
+
+**Also true and worth saying:** the catalogue is one model's reading. Good enough
+to build on, not a finished pastoral instrument. Real use will find its wrong
+tags faster than more sampling would.
+
+---
+
+## B20 (2026-07-31): the anniversary picker gets a screen
 
 Build 20 is on App Store Connect, VALID. One commit on main (`380cd6f`). No DB
 change, no native change: b19 already carried the column, the RPC and the picker

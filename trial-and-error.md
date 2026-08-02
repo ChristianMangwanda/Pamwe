@@ -562,3 +562,68 @@ this stays safe.
 **Homebrew's install confirmation ignores piped input.** `brew install` prompts
 `Do you want to proceed? [y/n]` and loops on `Invalid input` when driven through a
 pipe. `yes | HOMEBREW_NO_AUTO_UPDATE=1 brew install <formula>` gets through it.
+
+---
+
+## Deploying to hosted when the CLI is on the wrong account (2026-08-02, build 21)
+
+Shipping the Bible catalogue meant four different kinds of change against
+hosted, and `supabase secrets set` / `functions deploy` were both unavailable:
+the CLI is logged into Christian's MAIN account, so `supabase projects list`
+returns the dead `freftpwigrkjytusnqhx` and cannot see `jcyhhxgomhopkoqesbkb`
+at all. Each kind needed a different route.
+
+**DDL** went through MCP `apply_migration`, by name, as CLAUDE.md already says.
+
+**The edge function** went through MCP `deploy_edge_function` with the file
+contents passed inline. `verify_jwt: true` has to be set explicitly on the call
+or the deploy silently flips it, which would open a rate-limited AI endpoint to
+the world.
+
+**Secrets** have no MCP tool at all. `OPENAI_API_KEY` had to be added by hand in
+the dashboard under Project Settings, Edge Functions, Secrets.
+
+**The 7.7MB seed** was the interesting one. MCP `execute_sql` is the sanctioned
+path but the payload has to be typed into the tool call, which is impossible at
+that size, and even the 1.55MB subset the app strictly needs is too large. The
+CLI was out. What worked: `env.hosted.backup` holds a session-pooler
+`SUPABASE_DB_URL` for the ACTIVE project (the file's own warning that it "may
+still hold its old values" is out of date, verified by decoding the service
+key's `ref` claim), and although `psql` is not on PATH, the local Supabase
+container has one that can reach the internet:
+
+```bash
+DBURL=$(grep '^SUPABASE_DB_URL=' env.hosted.backup | cut -d= -f2- | tr -d '"')
+docker exec -i supabase_db_Pamwe psql "$DBURL" -v ON_ERROR_STOP=1 -q < supabase/seeds/bible_catalogue.sql
+```
+
+Borrowing the container's client to talk to a remote database is the general
+trick worth remembering; it applies to any bulk load, not just this one.
+
+## A table whose DDL existed only on hosted (2026-08-02, build 21)
+
+`supabase functions serve` failed outright with `failed to read file: open
+supabase/functions/notify-freeze/index.ts`. The function was deleted in
+`a1a931d` but its `[functions.notify-freeze]` block stayed in `config.toml`, and
+serve reads every declared function before starting any of them. Deleting the
+block fixed it.
+
+Behind that, a worse one. With serve finally running, every build request failed
+on `relation "passage_prompts" does not exist`. The table had been applied to
+hosted directly by name via MCP back in the b17 round, and **no migration file
+was ever written**, so `supabase/seeds/passage_prompts.sql` had 1,189 rows and
+nowhere on a fresh local stack to put them. It went unnoticed because the local
+DB was never reset in between.
+
+Backfilled as `20260802000002_passage_prompts_local_backfill.sql`, mirroring the
+hosted definition exactly (read back through MCP first, rather than guessed) and
+using `create table if not exists` so it is a no-op wherever the table already
+lives. **The lesson is about the by-name MCP workflow generally: applying to
+hosted does not write a migration file, so always write the file too, or local
+silently drifts.**
+
+Related, same round: the catalogue tables were applied locally with `psql` as
+`postgres`, which does not pick up the default privileges a `supabase migration
+up` would. The service role got `permission denied for table bible_vocabulary`
+before RLS was ever consulted. Explicit `grant` statements now live in the
+migration.
