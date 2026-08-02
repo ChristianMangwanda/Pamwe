@@ -1,6 +1,10 @@
 import { Stack } from 'expo-router';
 import { useTheme } from '../../../providers/ThemeProvider';
 
+// A note push and the lock widget both deep-link straight to a chapter. The
+// anchor puts the book list under it so Back reaches the rest of the Bible.
+export const unstable_settings = { initialRouteName: 'index' };
+
 export default function BibleStackLayout() {
   const { colors } = useTheme();
   return (

@@ -8,6 +8,12 @@ let lastHandledId: string | null = null;
 // Routes a tapped notification to the right screen. Mounted in the (tabs)
 // layout so navigation only happens after the auth gate has landed a signed-in,
 // paired user — covers both warm taps and cold starts from a notification.
+//
+// Pushes into a nested stack pass withAnchor, which loads that stack's
+// initialRouteName underneath the target. Without it a cold start mounts the
+// pushed screen as the stack's only route, its back link falls through to the
+// tab navigator, and the tab is stuck there for the rest of the process. The
+// three tab-root pushes need nothing: they are already the stack root.
 export function usePushRouting() {
   const router = useRouter();
   const response = Notifications.useLastNotificationResponse();
@@ -27,7 +33,8 @@ export function usePushRouting() {
         break;
       case 'partner_entry':
         // reveal is only valid once both have submitted; otherwise land on Today
-        router.push(data.reveal ? '/(tabs)/(today)/reveal' : ('/(tabs)/(today)' as any));
+        if (data.reveal) router.push('/(tabs)/(today)/reveal' as any, { withAnchor: true });
+        else router.push('/(tabs)/(today)' as any);
         break;
       case 'prayer':
       case 'prayer_reminder':
@@ -43,10 +50,10 @@ export function usePushRouting() {
         router.push({
           pathname: '/(tabs)/bible/[book]/[chapter]',
           params: { book: String(data.book), chapter: String(data.chapter), verse: String(data.verse) },
-        } as any);
+        } as any, { withAnchor: true });
         break;
       case 'recap':
-        router.push('/(tabs)/you/recaps' as any);
+        router.push('/(tabs)/you/recaps' as any, { withAnchor: true });
         break;
       case 'morning':
       case 'thinking':
