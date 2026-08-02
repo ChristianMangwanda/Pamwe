@@ -11,8 +11,18 @@ describe('TREE_AWARDS', () => {
     }
   });
 
-  it('starts at the first finished plan, so finishing one always earns a tree', () => {
-    expect(TREE_AWARDS[0].threshold).toBe(1);
+  it('gates the first tree behind a real stretch of reading', () => {
+    // Christian's call, 2026-08-02: the fig is at 5 so a tree means something.
+    // If this ever drops to 1 again it should be a deliberate decision, not a
+    // drift, which is what this assertion is here to catch.
+    expect(TREE_AWARDS[0].threshold).toBe(5);
+  });
+
+  it('widens the gaps as it climbs, so the last trees stay rare', () => {
+    const gaps = TREE_AWARDS.slice(1).map((a, i) => a.threshold - TREE_AWARDS[i].threshold);
+    for (let i = 1; i < gaps.length - 1; i++) {
+      expect(gaps[i]).toBeGreaterThanOrEqual(gaps[i - 1]);
+    }
   });
 
   it('has no em dashes in any user-facing line', () => {
@@ -31,29 +41,39 @@ describe('currentAward', () => {
 
   it('awards exactly at each threshold', () => {
     for (const a of TREE_AWARDS) {
-      expect(currentAward(a.threshold)?.key).toBe(a.key);
+      expect(currentAward(a.threshold)?.id).toBe(a.id);
     }
   });
 
   it('holds the previous tree between thresholds', () => {
-    // 4 sits between the jacaranda (3) and the oak (5).
-    expect(currentAward(4)?.key).toBe('jacaranda');
+    // 12 sits between the olive (10) and the oak (20).
+    expect(currentAward(12)?.id).toBe('olive');
+  });
+
+  it('plants nothing before the first threshold, however close', () => {
+    // The first tree is at 5, so four finished plans still show an empty grove.
+    expect(currentAward(4)).toBeNull();
   });
 
   it('stays on the last tree well past the top', () => {
     const last = TREE_AWARDS[TREE_AWARDS.length - 1];
-    expect(currentAward(last.threshold + 100)?.key).toBe(last.key);
+    expect(currentAward(last.threshold + 100)?.id).toBe(last.id);
   });
 });
 
 describe('nextAward', () => {
   it('points at the first tree before anything is finished', () => {
-    expect(nextAward(0)?.key).toBe(TREE_AWARDS[0].key);
+    expect(nextAward(0)?.id).toBe(TREE_AWARDS[0].id);
   });
 
   it('points past the tree just earned', () => {
-    expect(nextAward(1)?.key).toBe('olive');
-    expect(nextAward(3)?.key).toBe('oak');
+    expect(nextAward(5)?.id).toBe('olive');
+    expect(nextAward(20)?.id).toBe('baobab');
+  });
+
+  it('keeps pointing at the fig while the grove is still empty', () => {
+    expect(nextAward(0)?.id).toBe('fig');
+    expect(nextAward(4)?.id).toBe('fig');
   });
 
   it('is null once the last tree is standing', () => {

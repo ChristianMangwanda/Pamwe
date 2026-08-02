@@ -9,7 +9,8 @@ import { TREE_AWARDS } from '../lib/treeAwards';
 // the picture saturates while the award name keeps growing. These are written
 // against TREE_AWARDS rather than hardcoded counts.
 
-const FULL_AT = TREE_AWARDS.find((a) => a.key === 'oak')!.threshold;
+// The drawing tops out at the cedar; the redwood shares full bloom with it.
+const FULL_AT = TREE_AWARDS.find((a) => a.id === 'cedar')!.threshold;
 const TOP = TREE_AWARDS[TREE_AWARDS.length - 1].threshold;
 
 describe('treeStage over finished plans', () => {
@@ -17,12 +18,12 @@ describe('treeStage over finished plans', () => {
     expect(treeStage(0)).toBe(0);
   });
 
-  it('shows growth for the very first finished plan', () => {
+  it('shows growth once the first tree is planted', () => {
     // A couple who finished a whole plan must never still look unplanted.
-    expect(treeStage(1)).toBeGreaterThan(0);
+    expect(treeStage(TREE_AWARDS[0].threshold)).toBeGreaterThan(0);
   });
 
-  it('reaches full bloom at the oak', () => {
+  it('reaches full bloom at the cedar', () => {
     expect(treeStage(FULL_AT)).toBe(5);
   });
 

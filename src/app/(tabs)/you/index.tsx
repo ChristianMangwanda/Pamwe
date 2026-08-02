@@ -14,8 +14,7 @@ import { useCouple } from '../../../providers/CoupleProvider';
 import { profileInitial } from '../../../lib/couples';
 import { countMyTotalSubmitted, countCoupleReflections } from '../../../lib/entries';
 import { countPrayers } from '../../../lib/prayers';
-import { StreakTree } from '../../../components/ui/StreakTree';
-import { currentAward, nextAward } from '../../../lib/treeAwards';
+import { GroveCard } from '../../../components/GroveCard';
 import { finishedPlanCount } from '../../../lib/planHistory';
 import { haptics } from '../../../lib/haptics';
 
@@ -110,36 +109,7 @@ export default function YouScreen() {
             the completion screen so it is visible between finishes, which can
             be a year apart. */}
         {finishedPlans !== null && (
-          <TouchableOpacity activeOpacity={0.85} onPress={() => go('/(tabs)/you/grove')}
-            style={[styles.treeCard, { backgroundColor: colors.surface, borderColor: colors.line }]}
-            accessibilityRole="button" accessibilityLabel="Your grove">
-            <StreakTree count={finishedPlans} />
-            {(() => {
-              const award = currentAward(finishedPlans);
-              const next = nextAward(finishedPlans);
-              if (!award) {
-                return (
-                  <Text style={[styles.treeCaption, { color: colors.muted }]}>
-                    Finish a plan together and your grove begins.
-                  </Text>
-                );
-              }
-              return (
-                <>
-                  <View style={[styles.badge, { backgroundColor: colors.accent }]}>
-                    <Text variant="chip" color={colors.bg}>
-                      {award.name} · {finishedPlans} plan{finishedPlans === 1 ? '' : 's'}
-                    </Text>
-                  </View>
-                  <Text style={[styles.treeCaption, { color: colors.muted }]}>
-                    {next
-                      ? `Next tree at ${next.threshold} plans: ${next.name.toLowerCase()}.`
-                      : award.line}
-                  </Text>
-                </>
-              );
-            })()}
-          </TouchableOpacity>
+          <GroveCard count={finishedPlans} onPress={() => go('/(tabs)/you/grove')} />
         )}
 
         <Text variant="eyebrow" color={colors.muted} style={styles.section}>Appearance</Text>

@@ -9,6 +9,7 @@ import { Button } from '../../../components/ui/Button';
 import { Floral } from '../../../components/ui/Floral';
 import { StreakTree } from '../../../components/ui/StreakTree';
 import { currentAward, nextAward } from '../../../lib/treeAwards';
+import { word } from '../../../lib/grove';
 import { fonts } from '../../../constants/typography';
 import { useTheme } from '../../../providers/ThemeProvider';
 import { useCouple } from '../../../providers/CoupleProvider';
@@ -120,13 +121,23 @@ export default function CompleteScreen() {
 function treeCaption(finishedPlans: number): string {
   const award = currentAward(finishedPlans);
   const next = nextAward(finishedPlans);
-  if (!award) return 'Your grove begins with the first plan you finish.';
+  const done = `${cap(word(finishedPlans))} ${finishedPlans === 1 ? 'plan' : 'plans'} finished together.`;
+
+  // Before the first tree. This screen only ever renders after a finish, so it
+  // must never tell a couple who just finished one that nothing has happened:
+  // it counts what they did and names what it is heading toward.
+  if (!award) {
+    const togo = (next?.threshold ?? 0) - finishedPlans;
+    return `${done} ${cap(word(togo))} more and a fig tree goes in the ground.`;
+  }
   if (award.threshold === finishedPlans) {
     return `A new tree for your grove: the ${award.name.toLowerCase()}. ${award.line}`;
   }
-  if (next) return `${finishedPlans} plans finished together. The next tree arrives at ${next.threshold}.`;
-  return `${finishedPlans} plans finished together. A whole grove, from fig to redwood.`;
+  if (next) return `${done} The next tree arrives at ${next.threshold}.`;
+  return `${done} A whole grove, from fig to redwood.`;
 }
+
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 function Stat({ value, label, colors }: { value: string; label: string; colors: any }) {
   return (
