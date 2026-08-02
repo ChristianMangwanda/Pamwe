@@ -76,3 +76,10 @@ ds-bundle/
 .design-sync/.cache/
 .design-sync/learnings/
 .design-sync/node_modules
+
+# Python bytecode from the scripts/ generators
+__pycache__/
+*.pyc
+
+# Generated catalogue review, regenerate from the run cache
+catalogue-sample-review.md
