@@ -171,7 +171,11 @@ export default function SettingsScreen() {
               <View style={[styles.divider, { backgroundColor: colors.line }]} />
             </>
           )}
-          <ActionRow label="Change reading plan" onPress={() => router.push('/(onboarding)/plan-select?mode=change')} colors={colors} />
+          {/* Same destination as the You tab's row of the same name: the Plans
+              tab is the one switch surface (plan detail confirms and calls
+              switchPlan). The old onboarding picker only knew the 4 curated
+              plans. */}
+          <ActionRow label="Change reading plan" onPress={() => router.push('/(tabs)/plans')} colors={colors} />
         </Card>
 
         <Text variant="eyebrow" color={colors.muted} style={styles.sectionLabel}>Account</Text>

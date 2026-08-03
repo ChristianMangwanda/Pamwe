@@ -72,47 +72,76 @@ Deno.serve(async (req) => {
   //    delete below fail and the whole request 500. Migration
   //    20260802000006 made those two keys CASCADE as a backstop; they are
   //    deleted here too so the privacy promise reads off this routine.
-  await admin.from("prayer_marks").delete().eq("user_id", userId);
-  await admin.from("entries").delete().eq("user_id", userId);
-  await admin.from("prayers").delete().eq("author_id", userId);
-  await admin.from("dreams").delete().eq("author_id", userId);
-  await admin.from("verse_highlights").delete().eq("user_id", userId);
-  await admin.from("verse_notes").delete().eq("user_id", userId);
+  //
+  //    Every write in steps 3 and 4 is load-bearing: a row left behind a
+  //    NO ACTION key makes the final auth-row delete fail with an opaque FK
+  //    error. Discarding these results is what hid the never-paired 500, so
+  //    the first failure stops the routine and names its step, while the
+  //    account is still intact and the user can retry.
+  const must = async (
+    step: string,
+    op: PromiseLike<{ error: { message: string } | null }>,
+  ) => {
+    const { error } = await op;
+    if (error) throw new Error(`${step}: ${error.message}`);
+  };
 
-  // A plan the couple BUILT is not the departing user's alone: the survivor may
-  // be reading it right now, and deleting it would take their enrollment with
-  // it. Authorship leaves, the plan stays. (plans_created_by_fkey is now ON
-  // DELETE SET NULL, so this is belt and braces.)
-  await admin.from("plans").update({ created_by: null }).eq("created_by", userId);
+  try {
+    await must("prayer_marks", admin.from("prayer_marks").delete().eq("user_id", userId));
+    await must("entries", admin.from("entries").delete().eq("user_id", userId));
+    await must("prayers", admin.from("prayers").delete().eq("author_id", userId));
+    await must("dreams", admin.from("dreams").delete().eq("author_id", userId));
+    await must("verse_highlights", admin.from("verse_highlights").delete().eq("user_id", userId));
+    await must("verse_notes", admin.from("verse_notes").delete().eq("user_id", userId));
+    // ask_pamwe_usage carries no FK at all, so nothing cascades it: without
+    // this line its per-user rows outlive the account.
+    await must("ask_pamwe_usage", admin.from("ask_pamwe_usage").delete().eq("user_id", userId));
 
-  // 4. Demote the couple — never DELETE the couples row, because
-  //    couples -> couple_plans -> entries and couples -> prayers cascade would
-  //    destroy the surviving partner's data.
-  if (couple) {
-    if (!partnerId) {
-      // Solo / never-paired couple: nothing of the partner's to protect, so the
-      // row (and its cascade of the departing user's own plans) can go.
-      await admin.from("couples").delete().eq("id", couple.id);
-    } else {
-      const resetFields = {
-        partner_b_id: null,
-        paired_at: null,
-        streak_count: 0,
-        streak_last_date: null,
-        freeze_days_used: 0,
-        freeze_period_start: null,
-        invite_code: generateInviteCode(),
-        invite_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-      };
-      if (couple.partner_a_id === userId) {
-        // Departing user holds the NOT NULL partner_a slot — promote the survivor.
-        await admin.from("couples")
-          .update({ ...resetFields, partner_a_id: partnerId })
-          .eq("id", couple.id);
+    // A plan the couple BUILT is not the departing user's alone: the survivor may
+    // be reading it right now, and deleting it would take their enrollment with
+    // it. Authorship leaves, the plan stays. (plans_created_by_fkey is now ON
+    // DELETE SET NULL, so this is belt and braces.)
+    await must("plans", admin.from("plans").update({ created_by: null }).eq("created_by", userId));
+
+    // 4. Demote the couple — never DELETE the couples row, because
+    //    couples -> couple_plans -> entries and couples -> prayers cascade would
+    //    destroy the surviving partner's data.
+    if (couple) {
+      if (!partnerId) {
+        // Solo / never-paired couple: nothing of the partner's to protect, so
+        // the row (and its cascade of the departing user's own plans) can go.
+        // The departing user's own users.couple_id still points at the row
+        // (NO ACTION), so detach it first: deleting the couple with that
+        // reference in place is the FK failure that 500'd every never-paired
+        // deletion.
+        await must("users detach", admin.from("users").update({ couple_id: null }).eq("couple_id", couple.id));
+        await must("couples", admin.from("couples").delete().eq("id", couple.id));
       } else {
-        await admin.from("couples").update(resetFields).eq("id", couple.id);
+        const resetFields = {
+          partner_b_id: null,
+          paired_at: null,
+          streak_count: 0,
+          streak_last_date: null,
+          freeze_days_used: 0,
+          freeze_period_start: null,
+          invite_code: generateInviteCode(),
+          invite_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        };
+        if (couple.partner_a_id === userId) {
+          // Departing user holds the NOT NULL partner_a slot — promote the survivor.
+          await must("couples", admin.from("couples")
+            .update({ ...resetFields, partner_a_id: partnerId })
+            .eq("id", couple.id));
+        } else {
+          await must("couples", admin.from("couples").update(resetFields).eq("id", couple.id));
+        }
       }
     }
+  } catch (e) {
+    return new Response(
+      JSON.stringify({ error: e instanceof Error ? e.message : "Deletion failed" }),
+      { status: 500, headers: { "Content-Type": "application/json" } },
+    );
   }
 
   // 5. Notify the surviving partner (best-effort) and route them to unpaired.

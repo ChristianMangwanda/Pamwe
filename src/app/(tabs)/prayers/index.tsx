@@ -52,7 +52,7 @@ export default function PrayersScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [detail, setDetail] = useState<Prayer | null>(null);
-  const openedLinked = useRef(false);
+  const openedLinked = useRef<string | null>(null);
   // The "Nothing on your hearts yet" empty state only shows after a fetch
   // actually succeeded — a failed first load must not claim the list is empty.
   const [everLoaded, setEverLoaded] = useState(false);
@@ -232,13 +232,22 @@ export default function PrayersScreen() {
   };
 
   const isDreams = tab === 'dreams';
-  // Open the linked prayer once, after the lists arrive. A prayer since deleted
-  // or answered-and-archived simply does not open.
+
+  // A dream push can arrive while this tab is already mounted (warm launch),
+  // long after the initial useState read the param; follow it when it changes.
   useEffect(() => {
-    if (!prayerId || openedLinked.current) return;
+    if (tabParam === 'dreams' || tabParam === 'prayers') setTab(tabParam);
+  }, [tabParam]);
+
+  // Open the linked prayer once per prayer, after the lists arrive. Latching
+  // on the id (not a boolean) lets a second recap tap open a different prayer
+  // in the same session. A prayer since deleted or answered-and-archived
+  // simply does not open.
+  useEffect(() => {
+    if (!prayerId || openedLinked.current === prayerId) return;
     const found = [...active, ...answered].find((p) => p.id === prayerId);
     if (!found) return;
-    openedLinked.current = true;
+    openedLinked.current = prayerId;
     setDetail(found);
   }, [prayerId, active, answered]);
 

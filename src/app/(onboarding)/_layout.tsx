@@ -11,7 +11,6 @@ export default function OnboardingLayout() {
       <Stack.Screen name="invite" />
       <Stack.Screen name="join" />
       <Stack.Screen name="connected" />
-      <Stack.Screen name="waiting" />
       <Stack.Screen name="plan-select" />
     </Stack>
   );

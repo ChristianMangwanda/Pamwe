@@ -382,7 +382,9 @@ deno_version = 2
 
 # Ask Pamwe is user-invoked, so it verifies the caller's JWT (unlike the webhook
 # functions, which deploy with verify_jwt = false). Deploy hosted with the same
-# setting; secret ANTHROPIC_API_KEY comes from supabase/functions/.env locally.
+# setting. Secrets come from supabase/functions/.env locally: OPENAI_API_KEY
+# (build mode, the primary path) AND ANTHROPIC_API_KEY (plans/help modes) —
+# both are required for a working Ask Pamwe.
 [functions.ask-pamwe]
 verify_jwt = true
 

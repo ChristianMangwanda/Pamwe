@@ -82,18 +82,6 @@ export async function deletePrayer(prayerId: string) {
   if (error) throw error;
 }
 
-// Both partners' marks for today, scoped to the couple by RLS. The caller maps
-// each row's user_id to "me" vs "partner".
-export async function getTodayMarks(timezone: string) {
-  const { data, error } = await supabase
-    .from('prayer_marks')
-    .select('prayer_id, user_id')
-    .eq('marked_date', todayInTimezone(timezone));
-
-  if (error) throw error;
-  return data ?? [];
-}
-
 // Shift a YYYY-MM-DD date literal by whole days. UTC arithmetic on a date-only
 // value, so a DST boundary can't move it.
 function shiftDays(dateISO: string, delta: number): string {

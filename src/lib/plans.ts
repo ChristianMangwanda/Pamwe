@@ -1,16 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from './supabase';
 
-export async function getPlans() {
-  const { data, error } = await supabase
-    .from('plans')
-    .select('*')
-    .order('created_at', { ascending: true });
-
-  if (error) throw error;
-  return data;
-}
-
 // Session-lifetime caches: plan content is immutable once seeded/created, so
 // revisits render instantly instead of paying free-tier latency every focus.
 let curatedCache: any[] | null = null;
@@ -232,7 +222,11 @@ export async function getPlanDay(planId: string, dayNumber: number) {
     return data;
   } catch (err) {
     const cached = await AsyncStorage.getItem(planDayStorageKey(planId, dayNumber)).catch(() => null);
-    if (cached) return JSON.parse(cached);
+    if (cached) {
+      // A corrupt cache entry must not turn a recoverable network error into
+      // a SyntaxError; fall through to the original failure instead.
+      try { return JSON.parse(cached); } catch {}
+    }
     throw err;
   }
 }

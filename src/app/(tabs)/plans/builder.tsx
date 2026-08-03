@@ -5,7 +5,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated from 'react-native-reanimated';
-import { CaretLeft, Sparkle, MagnifyingGlass, Check, ArrowRight } from 'phosphor-react-native';
+import { CaretLeft, MagnifyingGlass, Check, ArrowRight } from 'phosphor-react-native';
 import { Text } from '../../../components/ui/Text';
 import { Button } from '../../../components/ui/Button';
 import { SegmentedControl } from '../../../components/ui/SegmentedControl';
@@ -20,11 +20,13 @@ import { askPamwe, PlanRecommendation } from '../../../lib/askPamwe';
 import { createCustomPlan, generateSchedule } from '../../../lib/planBuilder';
 import { haptics } from '../../../lib/haptics';
 
-type Mode = 'books' | 'topics' | 'ask';
+// Free-text generation lives in the Plans search field, and nowhere else
+// (2026-08-01): the builder offers structure, not an Ask Pamwe front door.
+// The topic chips still fetch their 2 recommendations through askPamwe.
+type Mode = 'books' | 'topics';
 const MODES = [
   { key: 'books' as const, label: 'Books' },
   { key: 'topics' as const, label: 'Topics' },
-  { key: 'ask' as const, label: 'Ask Pamwe' },
 ];
 const LENGTHS = [7, 14, 21, 30];
 const RHYTHMS = [
@@ -58,7 +60,6 @@ export default function BuilderScreen() {
   const [mode, setMode] = useState<Mode>('books');
   const [bookQuery, setBookQuery] = useState('');
   const [selectedBook, setSelectedBook] = useState<string | null>(null);
-  const [askQuery, setAskQuery] = useState('');
   const [asking, setAsking] = useState(false);
   const [activeTopic, setActiveTopic] = useState<string | null>(null);
   const [recs, setRecs] = useState<PlanRecommendation[]>([]);
@@ -76,7 +77,7 @@ export default function BuilderScreen() {
   }, [bookQuery]);
 
   const pickedFromBooks = mode === 'books' && !!selectedBook;
-  const pickedFromRec = (mode === 'topics' || mode === 'ask') && !!selectedRec;
+  const pickedFromRec = mode === 'topics' && !!selectedRec;
   const hasPick = pickedFromBooks || pickedFromRec;
 
   const runAsk = async (query: string) => {
@@ -180,7 +181,7 @@ export default function BuilderScreen() {
           {step === 0 && (
             <>
               <Text variant="h1">Build a plan</Text>
-              <Text color={colors.ink2} style={styles.sub}>Pick a book, a topic, or ask Pamwe for an idea.</Text>
+              <Text color={colors.ink2} style={styles.sub}>Pick a book or a topic to build from.</Text>
               <SegmentedControl segments={MODES} value={mode} onChange={(m) => setMode(m)} style={styles.modeSeg} />
 
               {mode === 'books' && (
@@ -230,27 +231,6 @@ export default function BuilderScreen() {
                       );
                     })}
                   </View>
-                  <RecResults asking={asking} recs={recs} selected={selectedRec} onChoose={chooseRec} colors={colors} />
-                </>
-              )}
-
-              {mode === 'ask' && (
-                <>
-                  <View style={[styles.askBox, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-                    <TextInput
-                      value={askQuery}
-                      onChangeText={setAskQuery}
-                      placeholder="e.g. We're anxious about a big move. What should we read?"
-                      placeholderTextColor={colors.muted}
-                      multiline
-                      style={[styles.askInput, { color: colors.ink }]}
-                    />
-                  </View>
-                  <TouchableOpacity activeOpacity={0.85} onPress={() => runAsk(askQuery)} disabled={asking || !askQuery.trim()}
-                    style={[styles.askBtn, { backgroundColor: colors.accent, opacity: asking || !askQuery.trim() ? 0.55 : 1 }]}>
-                    <Sparkle size={16} color={colors.bg} weight="fill" />
-                    <Text variant="cta" color={colors.bg} style={styles.askBtnText}>Ask Pamwe</Text>
-                  </TouchableOpacity>
                   <RecResults asking={asking} recs={recs} selected={selectedRec} onChoose={chooseRec} colors={colors} />
                 </>
               )}
@@ -386,10 +366,6 @@ const styles = StyleSheet.create({
   bookMeta: { fontFamily: fonts.sans, fontSize: 11 },
   chips: { marginTop: 16, flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   chip: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 9 },
-  askBox: { borderWidth: 1, borderRadius: 14, padding: 14, marginTop: 16 },
-  askInput: { fontFamily: fonts.sans, fontSize: 15, minHeight: 70, textAlignVertical: 'top', padding: 0 },
-  askBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 14, paddingVertical: 15, marginTop: 12 },
-  askBtnText: { letterSpacing: 1 },
   recLoading: { paddingVertical: 40, alignItems: 'center' },
   recList: { marginTop: 18, gap: 10 },
   recCard: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 15 },

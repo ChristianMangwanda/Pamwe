@@ -46,6 +46,12 @@ export function useTodayEntry(dayOverride?: number): TodayState {
 
   const refresh = useCallback(async () => {
     if (!couplePlanId) {
+      // The plan went away (unpaired, plan ended): clear the previous plan's
+      // day and entries instead of letting screens keep reading them.
+      setPlanDay(null);
+      setMyEntry(null);
+      setPartnerEntry(null);
+      loadedOnce.current = false;
       setLoading(false);
       return;
     }

@@ -51,9 +51,14 @@ export function CoupleProvider({ children }: { children: React.ReactNode }) {
       if (c?.id) {
         const plan = await getActiveCouPlan(c.id);
         setCouplePlan(plan);
+      } else {
+        // No couple means no plan: without this, an unpair or partner-left
+        // leaves every consumer reading the previous couple's plan.
+        setCouplePlan(null);
       }
     } catch {
-      // Silently fail — couple state will be null
+      // A failed refresh (network blip) keeps the last-known couple state
+      // rather than nulling it, which would bounce the user to onboarding.
     } finally {
       setLoading(false);
     }

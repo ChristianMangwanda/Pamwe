@@ -3,6 +3,7 @@ import { View, StyleSheet, ScrollView, ActivityIndicator, KeyboardAvoidingView, 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Text } from '../../../components/ui/Text';
+import { Button } from '../../../components/ui/Button';
 import { BackLink } from '../../../components/ui/BackLink';
 import { Floral } from '../../../components/ui/Floral';
 import { AudioPlayer } from '../../../components/AudioPlayer';
@@ -30,6 +31,8 @@ export default function ReflectionDetailScreen() {
 
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [loadErr, setLoadErr] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const [passage, setPassage] = useState<string | null>(null);
   const [passageErr, setPassageErr] = useState(false);
   const [responsesByEntry, setResponsesByEntry] = useState<Record<string, EntryResponse[]>>({});
@@ -37,12 +40,17 @@ export default function ReflectionDetailScreen() {
 
   useEffect(() => {
     let alive = true;
+    setLoadErr(false);
     (async () => {
       try {
         const d = await getReflectionDetail(couplePlanId, dayNumber);
         if (!alive) return;
         setData(d);
         setPassage(d.planDay?.passage_text ?? null);
+      } catch {
+        // A discarded error used to render the day with empty cards and a
+        // spinner that never resolved; show the retry card instead.
+        if (alive) setLoadErr(true);
       } finally {
         if (alive) setLoading(false);
       }
@@ -60,7 +68,7 @@ export default function ReflectionDetailScreen() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'entry_responses', filter: `couple_plan_id=eq.${couplePlanId}` }, loadResponses)
       .subscribe();
     return () => { alive = false; supabase.removeChannel(channel); };
-  }, [couplePlanId, dayNumber]);
+  }, [couplePlanId, dayNumber, attempt]);
 
   const reference: string | undefined = data?.planDay?.passage_reference;
   const planDayId: string | undefined = data?.planDay?.id;
@@ -88,6 +96,22 @@ export default function ReflectionDetailScreen() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top']}>
         <View style={styles.center}><ActivityIndicator color={colors.accent} /></View>
+      </SafeAreaView>
+    );
+  }
+
+  if (loadErr && !data) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top']}>
+        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+          <BackLink label="Reflections" onPress={() => router.back()} />
+          <View style={[styles.passageCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+            <Text style={[styles.passageText, { color: colors.ink }]}>
+              We couldn't load this reflection. Check your connection and try again.
+            </Text>
+            <Button title="Try again" onPress={() => { setLoading(true); setAttempt((n) => n + 1); }} style={styles.retry} />
+          </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -187,6 +211,7 @@ const styles = StyleSheet.create({
   passageCard: { marginTop: 18, borderWidth: 1, borderRadius: 16, paddingHorizontal: 20, paddingVertical: 18 },
   passageText: { fontFamily: fonts.serif, fontSize: 15, lineHeight: 24, marginTop: 10 },
   passageState: { marginTop: 12, alignItems: 'center' },
+  retry: { marginTop: 14 },
   reference: { fontFamily: fonts.sansSemiBold, fontSize: 10, letterSpacing: 1.6, textTransform: 'uppercase', textAlign: 'right', marginTop: 10 },
   section: { marginTop: 22 },
   reflCard: { marginTop: 10, borderWidth: 1, borderRadius: 16, paddingHorizontal: 18, paddingVertical: 16 },

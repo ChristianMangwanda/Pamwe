@@ -114,21 +114,27 @@ export function pickOnThisDay(
 }
 
 // Full detail for one revealed day (re-fetched fresh for the detail screen).
+// Query errors THROW so the screen can show a retry; discarding them rendered
+// the day with no passage, title or prompt and nothing saying why. maybeSingle
+// keeps genuine absence (an enrollment or day row that is gone) as null.
 export async function getReflectionDetail(couplePlanId: string, dayNumber: number) {
   const { data: { session } } = await supabase.auth.getSession();
   const user = session?.user;
   const meId = user?.id;
 
-  const { data: cp } = await supabase.from('couple_plans').select('plan_id').eq('id', couplePlanId).single();
+  const { data: cp, error: cpErr } = await supabase.from('couple_plans').select('plan_id').eq('id', couplePlanId).maybeSingle();
+  if (cpErr) throw cpErr;
   const planId = cp?.plan_id ?? null;
 
   const [pdRes, eRes, pRes] = await Promise.all([
     planId
-      ? supabase.from('plan_days').select('id, passage_reference, passage_title, passage_text, reflection_prompt').eq('plan_id', planId).eq('day_number', dayNumber).single()
-      : Promise.resolve({ data: null }),
+      ? supabase.from('plan_days').select('id, passage_reference, passage_title, passage_text, reflection_prompt').eq('plan_id', planId).eq('day_number', dayNumber).maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
     supabase.from('entries').select(ENTRY_COLS).eq('couple_plan_id', couplePlanId).eq('day_number', dayNumber).not('submitted_at', 'is', null),
-    planId ? supabase.from('plans').select('title').eq('id', planId).single() : Promise.resolve({ data: null }),
+    planId ? supabase.from('plans').select('title').eq('id', planId).maybeSingle() : Promise.resolve({ data: null, error: null }),
   ]);
+  const firstErr = (pdRes as any).error ?? (eRes as any).error ?? (pRes as any).error;
+  if (firstErr) throw firstErr;
 
   const entries = (eRes as any).data ?? [];
   return {

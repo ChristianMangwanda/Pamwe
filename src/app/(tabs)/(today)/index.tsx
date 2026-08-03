@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { GearSix } from 'phosphor-react-native';
@@ -10,7 +9,6 @@ import { Button } from '../../../components/ui/Button';
 import { SectionEyebrow } from '../../../components/ui/SectionEyebrow';
 import { ProgressBar } from '../../../components/ui/ProgressBar';
 import { StreakBar } from '../../../components/ui/StreakBar';
-import { MilestoneCard } from '../../../components/MilestoneCard';
 import { ThinkingButton } from '../../../components/ThinkingButton';
 import { DayClosed } from '../../../components/DayClosed';
 import { Floral } from '../../../components/ui/Floral';
@@ -25,7 +23,6 @@ import { parseReference } from '../../../lib/bible';
 import { getPlanDay } from '../../../lib/plans';
 import { daysBehind, todayInTimezone, canOpenDay, opensOn, opensLabel } from '../../../lib/catchup';
 import { nudgePartner } from '../../../lib/notifications';
-import { milestoneFor, Milestone } from '../../../lib/milestones';
 import { lastFinishedPlan, FinishedPlan } from '../../../lib/planHistory';
 import { haptics } from '../../../lib/haptics';
 
@@ -38,7 +35,6 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [nudging, setNudging] = useState(false);
   const [nudged, setNudged] = useState(false);
-  const [milestone, setMilestone] = useState<Milestone | null>(null);
   // Only read when there's no active plan, to tell "you finished something"
   // apart from "you never started".
   const [finished, setFinished] = useState<FinishedPlan | null>(null);
@@ -70,29 +66,10 @@ export default function HomeScreen() {
     return () => { alive = false; };
   }, [closed, planIdForDays, dayNumber]);
 
-  // Celebrate a streak milestone once: an AsyncStorage high-water mark per
-  // couple decides whether this one has already had its moment.
-  const streakNow = couple?.streak_count ?? 0;
-  useEffect(() => {
-    if (!couple?.id) return;
-    const m = milestoneFor(streakNow);
-    if (!m) return;
-    AsyncStorage.getItem(`pamwe:milestoneSeen:${couple.id}`)
-      .then((v) => { if (Number(v ?? 0) < m) setMilestone(m); })
-      .catch(() => {});
-  }, [couple?.id, streakNow]);
-
   useEffect(() => {
     if (!couple?.id || couplePlan) { setFinished(null); return; }
     lastFinishedPlan(couple.id).then(setFinished).catch(() => {});
   }, [couple?.id, couplePlan]);
-
-  const dismissMilestone = () => {
-    if (couple?.id && milestone) {
-      AsyncStorage.setItem(`pamwe:milestoneSeen:${couple.id}`, String(milestone)).catch(() => {});
-    }
-    setMilestone(null);
-  };
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -321,8 +298,6 @@ export default function HomeScreen() {
             <Text style={[styles.streakCount, { color: colors.muted }]}>{streakCount} day streak</Text>
           )}
         </View>
-
-        {milestone && <MilestoneCard milestone={milestone} onDismiss={dismissMilestone} />}
 
         <View style={styles.ctaWrap}>
           {/* The heart sits beside the CTA rather than floating over it: a

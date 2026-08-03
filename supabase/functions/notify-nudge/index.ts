@@ -57,11 +57,14 @@ Deno.serve(async (req) => {
   const partnerId = couple.partner_a_id === meId ? couple.partner_b_id : couple.partner_a_id;
   if (!partnerId) return json({ ok: false, reason: "no_partner" }, 200);
 
-  // One nudge per hour per sender.
+  // One nudge per hour per sender. Filtered by kind: "thinking of you" taps
+  // share this table, and one must never silence the other (the whole reason
+  // partner_nudges.kind exists — see 20260725000002).
   const { data: recent, error: recentErr } = await admin
     .from("partner_nudges")
     .select("created_at")
     .eq("from_user", meId)
+    .eq("kind", "nudge")
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -77,7 +80,7 @@ Deno.serve(async (req) => {
   // cooldown holds even before push is enabled. If this insert fails the
   // cooldown silently stops holding, so treat it as a server fault.
   const { error: logErr } = await admin
-    .from("partner_nudges").insert({ couple_id: me.couple_id, from_user: meId });
+    .from("partner_nudges").insert({ couple_id: me.couple_id, from_user: meId, kind: "nudge" });
   if (logErr) {
     console.error("notify-nudge: nudge log insert failed", logErr);
     return json({ ok: false, reason: "server" }, 500);

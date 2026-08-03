@@ -111,13 +111,13 @@ xcodebuild -exportArchive -archivePath /tmp/Pamwe.xcarchive -exportOptionsPlist 
 ```
 src/app/
 ├── index.tsx                      # auth gate, routes to one of 5 states
-├── _layout.tsx                    # root providers (Theme, Auth, Couple, deep-link, push) + GestureHandlerRootView
+├── _layout.tsx                    # root providers (Theme, Auth, deep-link) + GestureHandlerRootView; CoupleProvider mounts in (tabs)/_layout, push registration lives in AuthProvider
 ├── (auth)/                        # welcome, sign-in, magic-link
-├── (onboarding)/                  # value-slides, name, pair-choice, invite, join, waiting, connected, plan-select
+├── (onboarding)/                  # value-slides, name, pair-choice, invite, join, connected, plan-select
 └── (tabs)/                        # 6-tab DOCKED bar (DockedTabBar; the b7 glass oval is gone): Today · Bible · Plans · Prayers · Reflect · You
-    ├── (today)/                   # home (tree streak, milestones, catch-up, nudge) → reading → journal → waiting → reveal → complete
+    ├── (today)/                   # home (tree streak, catch-up, nudge) → reading → journal → waiting → reveal → complete
     ├── bible/                     # index → [book] → [book]/[chapter] reader (6 translations, 2 sources); marks, note
-    ├── plans/                     # index (search + Build/Browse doors, Your plans / Saved for later) → [id] detail; build (generate + save), builder (by book), browse (topic/length grid), finished (list)
+    ├── plans/                     # index (search + Build/Browse doors, Your plans / Saved for later) → [id] detail; build (generate + save), builder (by book or topic), browse (topic/length grid), finished (list)
     ├── prayers/                   # index = Prayers|Dreams toggle (swipe cards + detail sheet w/ reminders) → add · dream-add → timeline (answered)
     ├── reflect/                   # index (history + From-your-story card) → [id] detail (responses) → words (Their Words)
     └── you/                       # index (stats + dark toggle) → settings, recaps, grove (tree awards), couple (→ anniversary), privacy, terms, delete-account
@@ -131,8 +131,8 @@ The design-handoff rebuild (2026-07) replaced the 2-tab app with this 6-tab shel
 
 Auth gate in [src/app/index.tsx](src/app/index.tsx) sequences:
 1. No session → `(auth)/welcome`
-2. Session, no couple → `(onboarding)/invite`
-3. Session, couple not paired → `(onboarding)/waiting`
+2. Session, no couple → `(onboarding)/value-slides`
+3. Session, couple not paired → `(onboarding)/invite` (shows the code and waits; there is no separate waiting screen)
 4. Session, paired, no plan → `(onboarding)/plan-select`
 5. Session, paired, has plan → `(tabs)`
 
@@ -207,8 +207,9 @@ The core mechanic. Partner entries are invisible until both partners have submit
 - `notify-partner` deployed (verify_jwt=false because it's a DB webhook target)
 - Trigger `notify_partner_on_submit_trigger` on `entries` AFTER INSERT OR UPDATE OF submitted_at, calls the function via `net.http_post`. Only fires when submitted_at transitions NULL → set.
 - `entries` is in the `supabase_realtime` publication so the waiting screen subscription fires.
-- Other webhook functions: `notify-new-prayer`, `notify-freeze`, `delete-account` (verify_jwt=true — demote-don't-delete routine). **Push banners actually deliver since b10/b11** (APNs key on Expo).
-- **`notify-nudge`** — user-invoked (verify_jwt=true): "nudge my partner" from Today; pushes to the partner, one per sender per hour (cooldown logged in `partner_nudges`).
+- Other webhook targets (verify_jwt=false): `notify-new-prayer`, `notify-new-dream`, `notify-new-response`, `notify-new-note`. **Push banners actually deliver since b10/b11** (APNs key on Expo).
+- `delete-account` — user-invoked (verify_jwt=true): demote-don't-delete routine; the survivor keeps everything, a never-paired couple row is detached (`users.couple_id` nulled first) and deleted.
+- **`notify-nudge`** / **`notify-thinking`** — user-invoked (verify_jwt=true): "nudge my partner" and "thinking of you" from Today; each pushes to the partner, one per sender per hour **per kind** (cooldowns logged in `partner_nudges.kind`, so one never silences the other).
 - **`ask-pamwe`** (build v9, 2026-08-02) — **"Pamwe points, never preaches"** (Christian's product line: no Scripture interpretation, ever; interpretation questions deflect gently). Three schema-constrained modes: **`build`** (ONE plan, the Plans search), `plans` (2 recs, the by-book builder) and `help` (unreachable since the sheet was removed). Every schema carries a required `off_topic` flag; the server swaps flagged output for one fixed gentle line. Per-user rate limit 20/day + 10s cooldown, fail-open. **verify_jwt=true.**
 
   **`build` never asks a model for a Bible reference.** It reads the [Bible catalogue](#the-bible-catalogue) instead, in three steps: **intake** maps what a couple typed onto the closed theme vocabulary (so "we lost our dog" becomes `grief` without anyone having predicted dogs) and decides which `caution` flags to unlock; **`retrieve_passages()`** picks the candidate pool in plain SQL; then the **arranger** answers with candidate **indices into that pool**, schema-constrained to `0..poolSize-1`, and the server maps them back to references itself. An invented reference has nowhere to enter the pipeline, structurally rather than by instruction. Day notes are catalogue summaries and `meta`/`rhythm` are computed. (The "You will be asked" preview was **removed 2026-08-02**: it cost up to three extra `passage_prompts` round trips before the couple saw anything, to show questions the plan screen shows anyway. `build` now returns `prompts: []`; `createCustomPlan` still resolves the real prompts from `passage_prompts` at creation.) A named book skips the models entirely and walks its chapters. `validateReadings` still runs on the assembled result as a backstop, since a plan day that cannot load is the one failure the app cannot recover from.
@@ -350,7 +351,9 @@ canvas that screens scale by `deviceWidth / SCENE_W`. Design handoff:
 - **Finished plans move the solid prints; the streak only adds half-strength
   ground on top and can never arrive.** Planting is what arriving is for.
 - **Days do not mint a second trophy.** That is how streaks live here without
-  competing with plans, and it retired the dismiss-once milestone card.
+  competing with plans, and it retired the dismiss-once milestone card (the
+  removal landed 2026-08-03: `MilestoneCard`, `lib/milestones.ts` and their
+  test are gone).
 - **The ladder does not end.** Above the redwood the path keeps going
   unlabelled; a 7th rung ships when a couple nears it.
 - The count stays derived (`finishedPlanCount`), never stored. The generic
@@ -436,7 +439,7 @@ hits are authoritative and never revalidate (scripture is immutable); bible-api.
 
 ### NEVER run `expo prebuild` — the ios/ project is hand-maintained
 
-`ios/` is gitignored (except `ExportOptions.plist`) but hand-maintained: entitlements, `$(CURRENT_PROJECT_VERSION)` wiring, purpose strings. A stray prebuild on 2026-07-11 reset Info.plist's `CFBundleVersion` to a literal `1` and stripped `NSPhotoLibraryUsageDescription`, which burned build 10 at Apple processing. New Expo modules need only `npm install` + `pod install` (autolinking). Purpose strings are mirrored in `app.json > ios.infoPlist` as a backstop.
+`ios/` is gitignored (except `ExportOptions.plist`) but hand-maintained: entitlements, `$(CURRENT_PROJECT_VERSION)` wiring, purpose strings. A stray prebuild on 2026-07-11 reset Info.plist's `CFBundleVersion` to a literal `1` and stripped `NSPhotoLibraryUsageDescription`, which burned build 10 at Apple processing. New Expo modules need only `npm install` + `pod install` (autolinking). Only `NSPhotoLibraryUsageDescription` is mirrored in `app.json > ios.infoPlist`; the mic and speech purpose strings exist solely as plugin props (which apply only via the banned prebuild) plus the hand-maintained `ios/Pamwe/Info.plist`, which is the real source of truth for all of them.
 
 ### Widgets (VerseWidget appex) — home screen 2026-07-12, lock screen 2026-07-31
 
@@ -510,7 +513,6 @@ The voice recorder, audio upload, and partner-push flow only behave correctly on
 | Voice transcription (on-device) | [src/lib/transcription.ts](src/lib/transcription.ts) |
 | Shared-layer search | [src/lib/search.ts](src/lib/search.ts) |
 | Catch-up / grace days | [src/lib/catchup.ts](src/lib/catchup.ts) |
-| Streak milestones | [src/lib/milestones.ts](src/lib/milestones.ts), [src/components/MilestoneCard.tsx](src/components/MilestoneCard.tsx) |
 | Plan generation client | [src/lib/askPamwe.ts](src/lib/askPamwe.ts) (`buildPlan`), screen [plans/build.tsx](src/app/(tabs)/plans/build.tsx) |
 | Plan search, browse, sharing | [src/lib/plans.ts](src/lib/plans.ts) (`searchPlans`, `filterPlans`, `topicsIn`, `sharePlan`, `getSharedPlan`) |
 | Finished-plan rule + tree awards | [src/lib/planHistory.ts](src/lib/planHistory.ts) (`isFinished`, `finishedPlans`), [src/lib/treeAwards.ts](src/lib/treeAwards.ts) (`TREE_AWARDS` ladder) |

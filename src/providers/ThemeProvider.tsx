@@ -19,15 +19,22 @@ const ThemeContext = createContext<ThemeContextValue>({
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [mode, setModeState] = useState<ThemeMode>('light');
+  // Seed from the system scheme so a dark phone doesn't flash light on every
+  // cold launch while the stored choice loads. The stored choice still wins
+  // once it arrives.
+  const [mode, setModeState] = useState<ThemeMode>(() =>
+    Appearance.getColorScheme() === 'dark' ? 'dark' : 'light'
+  );
 
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY).then((stored) => {
-      if (stored === 'dark' || stored === 'light') {
-        setModeState(stored);
-        Appearance.setColorScheme(stored);
-      }
-    });
+    AsyncStorage.getItem(STORAGE_KEY)
+      .then((stored) => {
+        if (stored === 'dark' || stored === 'light') {
+          setModeState(stored);
+          Appearance.setColorScheme(stored);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const setMode = useCallback((next: ThemeMode) => {
