@@ -243,7 +243,7 @@ export default function GroveScreen() {
             <Button
               title="Browse reading plans"
               variant="secondary"
-              onPress={() => { setSheet(null); router.push('/(tabs)/plans/browse'); }}
+              onPress={() => { setSheet(null); router.push('/(tabs)/plans/browse', { withAnchor: true }); }}
               style={styles.sheetCta}
             />
           </View>

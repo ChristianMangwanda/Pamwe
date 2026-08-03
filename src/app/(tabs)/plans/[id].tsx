@@ -85,7 +85,7 @@ export default function PlanDetailScreen() {
           ? { couplePlanId: couplePlan.id, day: String(dayNumber), planTitle: plan?.title ?? '' }
           : {}),
       },
-    });
+    }, { withAnchor: true });
   }, [router, isActive, couplePlan, plan?.title]);
 
   const onPrimary = async () => {
@@ -199,7 +199,7 @@ export default function PlanDetailScreen() {
                   planId: plan?.id ?? '',
                   cadence: String(couplePlan?.cadence_days ?? 1),
                 },
-              });
+              }, { withAnchor: true });
             } catch (err: any) {
               setBusy(false);
               Alert.alert("Couldn't update the plan", err?.message ?? 'Try again in a moment.');

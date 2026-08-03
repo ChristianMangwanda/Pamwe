@@ -119,7 +119,7 @@ export default function HomeScreen() {
             <Button
               title="Build your own"
               variant="secondary"
-              onPress={() => router.push('/(tabs)/plans/builder')}
+              onPress={() => router.push('/(tabs)/plans/builder', { withAnchor: true })}
               style={styles.centerCta2}
             />
           </View>
@@ -181,7 +181,7 @@ export default function HomeScreen() {
         day: String(dayNumber),
         planTitle,
       },
-    });
+    }, { withAnchor: true });
   };
 
   const cta = bothSubmitted
@@ -226,7 +226,7 @@ export default function HomeScreen() {
 
         <View style={styles.gearRow}>
           <TouchableOpacity
-            onPress={() => { haptics.tap(); router.push('/(tabs)/you/settings'); }}
+            onPress={() => { haptics.tap(); router.push('/(tabs)/you/settings', { withAnchor: true }); }}
             hitSlop={12}
             accessibilityRole="button"
             accessibilityLabel="Settings"

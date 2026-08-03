@@ -47,12 +47,17 @@ export default function RecapsScreen() {
     return () => { alive = false; };
   }, [couple?.id, couple?.timezone, period, attempt]);
 
+  // withAnchor for the same reason the notification tap needs it: this is a
+  // push into the BIBLE stack's nested route from the You tab, so without the
+  // anchor the chapter mounts as that stack's only screen and Back falls
+  // through to the tab bar. Round one fixed the notification route and left
+  // these two in-app ones, which is the same defect one layer in.
   const openVerse = useCallback((book: string, chapter: number, verse?: number) => {
     haptics.tap();
     router.push({
       pathname: '/(tabs)/bible/[book]/[chapter]',
       params: { book, chapter: String(chapter), ...(verse ? { verse: String(verse) } : {}) },
-    } as any);
+    } as any, { withAnchor: true });
   }, [router]);
 
   const openReference = useCallback((reference: string) => {

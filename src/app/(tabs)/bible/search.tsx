@@ -46,7 +46,7 @@ export default function SharedSearchScreen() {
   };
   const openReflection = (couplePlanId: string, day: number) => {
     haptics.tap();
-    router.push({ pathname: '/(tabs)/reflect/[id]', params: { id: couplePlanId, day: String(day) } });
+    router.push({ pathname: '/(tabs)/reflect/[id]', params: { id: couplePlanId, day: String(day) } }, { withAnchor: true });
   };
 
   const total = results ? results.notes.length + results.highlights.length + results.reflections.length : 0;

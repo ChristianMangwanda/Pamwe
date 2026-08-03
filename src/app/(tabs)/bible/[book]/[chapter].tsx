@@ -128,13 +128,19 @@ export default function ChapterReader() {
   const notedVerses = new Set(notes.map((n) => n.verse));
   const noteByVerse: Record<number, VerseNote> = Object.fromEntries(notes.map((n) => [n.verse, n]));
 
-  // Anything not mine is theirs. Tested against MY id rather than the partner's
-  // so a partner profile that has not loaded yet can never mislabel my own marks.
-  const partnerVerses = new Set<number>([
-    ...highlights.filter((h) => h.user_id !== user?.id).map((h) => h.verse),
-    ...notes.filter((n) => n.user_id !== user?.id).map((n) => n.verse),
-  ]);
-  const partnerInitial = profileInitial(partner) ?? undefined;
+  // Every mark carries the initial of whoever made it, mine included, so the
+  // page can be read for who found what. Tested against MY id rather than the
+  // partner's, so a partner profile that has not loaded yet can never mislabel
+  // my own marks: at worst theirs go unlabelled until it arrives.
+  const myInitial = (user?.user_metadata?.full_name || user?.email || 'Y')[0]?.toUpperCase() ?? 'Y';
+  const partnerInitial = profileInitial(partner);
+  const markInitials: Record<number, string> = {};
+  // Highlights first, then notes: a verse one of us highlighted and the other
+  // wrote on belongs to the note, which is the more deliberate act.
+  for (const m of [...highlights, ...notes]) {
+    const who = m.user_id === user?.id ? myInitial : partnerInitial;
+    if (who) markInitials[m.verse] = who;
+  }
 
   const canPrev = chapterNum > 1;
   const canNext = chapterNum < book.chapters;
@@ -216,7 +222,7 @@ export default function ChapterReader() {
               <Text style={[styles.bannerTitle, { color: colors.accent }]} numberOfLines={1}>{params.planTitle}</Text>
               <Text style={[styles.bannerDay, { color: colors.muted }]}>Day {params.day}</Text>
             </View>
-            <TouchableOpacity onPress={() => router.push({ pathname: '/(tabs)/(today)/journal', params: { day: String(params.day) } })} style={[styles.reflectBtn, { backgroundColor: colors.accent }]}>
+            <TouchableOpacity onPress={() => router.push({ pathname: '/(tabs)/(today)/journal', params: { day: String(params.day) } }, { withAnchor: true })} style={[styles.reflectBtn, { backgroundColor: colors.accent }]}>
               <Feather size={13} color={colors.bg} />
               <Text style={[styles.reflectLabel, { color: colors.bg }]}>Reflect</Text>
             </TouchableOpacity>
@@ -247,8 +253,7 @@ export default function ChapterReader() {
                 showNums={showNums}
                 highlights={hlMap}
                 notedVerses={notedVerses}
-                partnerVerses={partnerVerses}
-                partnerInitial={partnerInitial}
+                markInitials={markInitials}
                 onVerseLongPress={onVerseLongPress}
                 focusVerse={focusVerse}
                 flashVerse={flashVerse}
@@ -265,7 +270,7 @@ export default function ChapterReader() {
                 Offer it again where the reading actually ends. */}
             {hasCtx && (
               <TouchableOpacity
-                onPress={() => { haptics.tap(); router.push({ pathname: '/(tabs)/(today)/journal', params: { day: String(params.day) } }); }}
+                onPress={() => { haptics.tap(); router.push({ pathname: '/(tabs)/(today)/journal', params: { day: String(params.day) } }, { withAnchor: true }); }}
                 activeOpacity={0.85}
                 style={[styles.reflectEnd, { backgroundColor: colors.accent }]}
                 accessibilityRole="button"
