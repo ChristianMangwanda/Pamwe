@@ -257,6 +257,36 @@ Christian's call, after a couple who had read 9 days across 15 calendar days saw
 a streak of 1. Widening or narrowing forgiveness is the `+ 4` in that function,
 and re-running the same function backfills every couple.
 
+**The cadence gate: you cannot read ahead, and that rule is DIRECTIONAL**
+(Christian, 2026-08-02). `canOpenDay()` ([catchup.ts](src/lib/catchup.ts)) opens
+every plan day up to `expectedDay` and nothing past it.
+
+- **Behind, you may open several days in one sitting.** That is catching up and
+  it stays credited, per the rule directly above. Any change that blocks
+  multiple days in a day reverses that decision, so do not "simplify" this to
+  one-reading-per-calendar-day.
+- **Ahead, nothing opens.** Reading tomorrow's tonight turns a ritual into a
+  backlog, and a couple who clear four days on a Sunday have nothing to do
+  together on Monday.
+- It **fails open without a `start_date`**: never lock a couple out of their own
+  plan over a null column.
+- **The seal is the journal**, not Today's button. Today stops offering the day
+  and the plan list withholds plan context (so a future day opens as plain
+  Scripture with no Reflect button), but `journal.tsx` is the one place that
+  must refuse, because every path to writing comes through it.
+- **Scripture is never locked.** The Bible tab reads anything at any time. Only
+  the day's *reflection* waits.
+- `opensOn()` inverts `expectedDay` so the gate and the "opens tomorrow morning"
+  line read off one rule and cannot drift; a test asserts the inversion holds at
+  every cadence.
+
+When the day is closed, Today becomes `DayClosed`
+([src/components/DayClosed.tsx](src/components/DayClosed.tsx)): the verse just
+sealed, when the next day opens, and doors to prayers and the Grove. **It has no
+primary action on purpose.** It also holds the SEALED day's pull quote, fetched
+separately, never the shut day's, which would be the reading-ahead the gate
+exists to stop.
+
 The morning reminder uses a DAILY trigger at cadence 1 and individually **dated**
 reminders otherwise (no repeating trigger honours both a rhythm and a chosen
 clock time), topped up on each sign-in by `scheduleMorningFromPrefs`. It cancels

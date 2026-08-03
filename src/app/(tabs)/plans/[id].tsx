@@ -16,6 +16,7 @@ import { useCouple } from '../../../providers/CoupleProvider';
 import { getPlan, getPlanCached, getPlanDayList, enrollInPlan, switchPlan, completePlan, sharePlan, deletePlan, getEnrolledPlanIds } from '../../../lib/plans';
 import { bannerTintForPlan } from '../../../lib/planArtwork';
 import { parseReference } from '../../../lib/bible';
+import { canOpenDay, todayInTimezone } from '../../../lib/catchup';
 import { haptics } from '../../../lib/haptics';
 
 const WINDOW = 40;
@@ -81,12 +82,22 @@ export default function PlanDetailScreen() {
       params: {
         book: parsed.book.name,
         chapter: String(parsed.chapter ?? 1),
-        ...(isActive && couplePlan
+        // Plan context is what puts the Reflect button in the reader, so a day
+        // the cadence gate has not opened yet is passed WITHOUT it: the passage
+        // still reads, the ritual does not start early. Scripture is never
+        // locked in this app, only the day's reflection is.
+        ...(isActive && couplePlan && canOpenDay(
+          dayNumber,
+          couplePlan.start_date,
+          todayInTimezone(couple?.timezone ?? 'UTC'),
+          plan?.duration_days ?? 365,
+          couplePlan.cadence_days ?? 1,
+        )
           ? { couplePlanId: couplePlan.id, day: String(dayNumber), planTitle: plan?.title ?? '' }
           : {}),
       },
     }, { withAnchor: true });
-  }, [router, isActive, couplePlan, plan?.title]);
+  }, [router, isActive, couplePlan, plan?.title, plan?.duration_days, couple?.timezone]);
 
   const onPrimary = async () => {
     if (!couple?.id || !plan) return;

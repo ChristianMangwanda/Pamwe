@@ -13,6 +13,7 @@ import { fonts } from '../../../constants/typography';
 import { GUTTER } from '../../../theme/tokens';
 import { useTheme } from '../../../providers/ThemeProvider';
 import { useCouple } from '../../../providers/CoupleProvider';
+import { canOpenDay, opensOn, opensLabel, todayInTimezone } from '../../../lib/catchup';
 import { useTodayEntry } from '../../../hooks/useTodayEntry';
 import { haptics } from '../../../lib/haptics';
 import { transcribeRecording } from '../../../lib/transcription';
@@ -36,7 +37,7 @@ function isNetworkError(err: any): boolean {
 export default function JournalScreen() {
   const router = useRouter();
   const { colors } = useTheme();
-  const { couplePlan, partner } = useCouple();
+  const { couple, couplePlan, partner } = useCouple();
   // Pinned to the day this reflection is for. Unpinned, a partner tapping Amen
   // moved current_day out from under the open journal, and the next autosave
   // wrote these words into the NEXT day's entry, a day neither partner had
@@ -45,6 +46,15 @@ export default function JournalScreen() {
   const { myEntry, dayNumber, planDay, refresh } = useTodayEntry(day ? Number(day) : undefined);
   const partnerName = partner?.display_name ?? 'your partner';
   const planTitle = couplePlan?.plan?.title ?? 'Reading plan';
+
+  // The cadence gate's real seal. Today's button and the plan list both stop
+  // offering a day that is not open yet, but the journal is where the ritual
+  // actually happens, so it is the one place that has to refuse. Nothing else
+  // can be routed around: every path to writing comes through here.
+  const todayISO = todayInTimezone(couple?.timezone ?? 'UTC');
+  const cadence = couplePlan?.cadence_days ?? 1;
+  const totalDays = couplePlan?.plan?.duration_days ?? 365;
+  const tooEarly = !canOpenDay(dayNumber, couplePlan?.start_date, todayISO, totalDays, cadence);
 
   const [mode, setMode] = useState<Mode>(myEntry?.entry_type === 'voice' ? 'voice' : 'text');
   const [text, setText] = useState(myEntry?.text_content ?? '');
@@ -185,6 +195,29 @@ export default function JournalScreen() {
     </View>
   );
 
+  // Refused, gently and with a date. A locked door with no reason on it reads
+  // as a bug; a rhythm reads as a rhythm.
+  if (tooEarly) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top', 'bottom']}>
+        <View style={styles.header}>
+          <BackLink onPress={() => router.back()} label="Back" />
+        </View>
+        <View style={styles.tooEarly}>
+          <Text style={[styles.title, { color: colors.ink }]}>Day {dayNumber} is not open yet</Text>
+          <Text style={[styles.tooEarlyBody, { color: colors.ink2 }]}>
+            You have read today. This one opens {couplePlan?.start_date
+              ? opensLabel(opensOn(couplePlan.start_date, dayNumber, cadence), todayISO)
+              : 'tomorrow morning'}, so you can meet it together.
+          </Text>
+          <Text style={[styles.tooEarlyBody, { color: colors.muted }]}>
+            The Bible tab is always open if you want to keep reading tonight.
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top', 'bottom']}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
@@ -255,6 +288,8 @@ export default function JournalScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  tooEarly: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 30, gap: 14 },
+  tooEarlyBody: { fontFamily: fonts.serif, fontSize: 16, lineHeight: 25, textAlign: 'center' },
   flex: { flex: 1 },
   header: { paddingHorizontal: GUTTER, paddingTop: 8 },
   eyebrow: { fontFamily: fonts.sansSemiBold, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', marginTop: 14 },

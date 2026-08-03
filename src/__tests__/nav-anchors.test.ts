@@ -45,6 +45,25 @@ const anchoredStacks = new Set(
 // router.push('/(tabs)/x/y') and router.push({ pathname: '/(tabs)/x/y', ... }).
 const NAV = /router\.(?:push|replace)\(\s*(?:\{[^}]*?pathname:\s*'([^']+)'|['"`]([^'"`]+))/gs;
 
+/**
+ * The full text of the router call starting at `from`, by matching parens.
+ *
+ * A fixed-size window was the obvious thing and it was wrong: the option can
+ * trail the pathname object by however many lines of comment sit inside the
+ * call, so a comment long enough to push it past the window read as a missing
+ * anchor. This ends where the call ends.
+ */
+function callText(src: string, from: number): string {
+  const open = src.indexOf('(', from);
+  if (open < 0) return '';
+  let depth = 0;
+  for (let i = open; i < src.length; i++) {
+    if (src[i] === '(') depth++;
+    else if (src[i] === ')' && --depth === 0) return src.slice(open, i + 1);
+  }
+  return src.slice(open);
+}
+
 type Nav = { file: string; line: number; target: string; targetTab: string; anchored: boolean };
 
 function crossTabNestedNavigations(): Nav[] {
@@ -65,8 +84,7 @@ function crossTabNestedNavigations(): Nav[] {
         line: src.slice(0, m.index).split('\n').length,
         target,
         targetTab: parts[0],
-        // The option can trail the pathname object by a few lines.
-        anchored: src.slice(m.index, m.index! + 600).includes('withAnchor'),
+        anchored: callText(src, m.index!).includes('withAnchor'),
       });
     }
   }

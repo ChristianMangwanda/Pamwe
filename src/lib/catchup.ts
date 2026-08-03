@@ -40,3 +40,60 @@ export function daysBehind(
 ): number {
   return Math.max(0, expectedDay(startDate, todayISO, totalDays, cadenceDays) - currentDay);
 }
+
+/**
+ * Whether a plan day may be opened for the ritual yet.
+ *
+ * The rule is DIRECTIONAL, and that is the whole point. Behind your rhythm, you
+ * may open several days in one sitting: that is catching up, and it has been
+ * credited since 2026-07-26, when a couple who read 9 days across 15 saw a
+ * streak of 1. Ahead of it, nothing opens: reading tomorrow's tonight turns a
+ * daily ritual into a backlog to clear, which is the one thing this app is
+ * built against.
+ *
+ * Measured against the couple's CHOSEN cadence, so a weekly couple gets day 2
+ * next week rather than tonight, and is never told they are early for keeping
+ * the rhythm they picked.
+ *
+ * Fails OPEN without a start date. A couple must never be locked out of their
+ * own plan because a column is null.
+ */
+export function canOpenDay(
+  day: number,
+  startDate: string | null | undefined,
+  todayISO: string,
+  totalDays: number,
+  cadenceDays = 1,
+): boolean {
+  if (!startDate) return true;
+  return day <= expectedDay(startDate, todayISO, totalDays, cadenceDays);
+}
+
+/**
+ * The date a plan day becomes openable, as YYYY-MM-DD.
+ *
+ * expectedDay counts floor(elapsed / interval) + 1, so day N needs
+ * (N - 1) * interval days elapsed. Inverting it here keeps the gate and the
+ * "opens tomorrow" line reading off one rule instead of two that can drift.
+ */
+export function opensOn(
+  startDate: string, day: number, cadenceDays = 1,
+): string {
+  const interval = Math.max(1, cadenceDays);
+  const [y, m, d] = startDate.split('-').map(Number);
+  const at = new Date(Date.UTC(y, m - 1, d) + Math.max(0, day - 1) * interval * 86_400_000);
+  return at.toISOString().slice(0, 10);
+}
+
+/** How the wait reads: today, tomorrow, a weekday inside the week, else a date. */
+export function opensLabel(openISO: string, todayISO: string): string {
+  const away = daysBetween(todayISO, openISO);
+  if (away <= 0) return 'now';
+  if (away === 1) return 'tomorrow morning';
+  const [y, m, d] = openISO.split('-').map(Number);
+  const at = new Date(Date.UTC(y, m - 1, d));
+  if (away < 7) {
+    return `on ${at.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' })}`;
+  }
+  return `on ${at.toLocaleDateString('en-US', { month: 'long', day: 'numeric', timeZone: 'UTC' })}`;
+}

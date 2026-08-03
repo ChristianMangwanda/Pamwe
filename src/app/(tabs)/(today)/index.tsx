@@ -12,6 +12,7 @@ import { ProgressBar } from '../../../components/ui/ProgressBar';
 import { StreakBar } from '../../../components/ui/StreakBar';
 import { MilestoneCard } from '../../../components/MilestoneCard';
 import { ThinkingButton } from '../../../components/ThinkingButton';
+import { DayClosed } from '../../../components/DayClosed';
 import { Floral } from '../../../components/ui/Floral';
 import { fonts } from '../../../constants/typography';
 import { GUTTER } from '../../../theme/tokens';
@@ -21,7 +22,8 @@ import { useTodayEntry } from '../../../hooks/useTodayEntry';
 import { useAuth } from '../../../providers/AuthProvider';
 import { profileInitial } from '../../../lib/couples';
 import { parseReference } from '../../../lib/bible';
-import { daysBehind, todayInTimezone } from '../../../lib/catchup';
+import { getPlanDay } from '../../../lib/plans';
+import { daysBehind, todayInTimezone, canOpenDay, opensOn, opensLabel } from '../../../lib/catchup';
 import { nudgePartner } from '../../../lib/notifications';
 import { milestoneFor, Milestone } from '../../../lib/milestones';
 import { lastFinishedPlan, FinishedPlan } from '../../../lib/planHistory';
@@ -40,6 +42,33 @@ export default function HomeScreen() {
   // Only read when there's no active plan, to tell "you finished something"
   // apart from "you never started".
   const [finished, setFinished] = useState<FinishedPlan | null>(null);
+
+  // The cadence gate, and the verse the closed day holds. Both live up here
+  // with the other hooks because there are early returns below, and a hook
+  // placed after one of those changes the hook count between renders.
+  //
+  // The day's reading is done and the next has not come round yet. Being AHEAD
+  // of your own rhythm is the only thing that closes the day: behind it, every
+  // day up to today stays open, so catching up still works exactly as before.
+  const todayISO = todayInTimezone(couple?.timezone ?? 'UTC');
+  const cadence = couplePlan?.cadence_days ?? 1;
+  const totalDays = couplePlan?.plan?.duration_days ?? 365;
+  const closed = dayNumber > 1
+    && !canOpenDay(dayNumber, couplePlan?.start_date, todayISO, totalDays, cadence);
+
+  // The verse held on a closed day is the one just SEALED, never the one still
+  // shut: showing tomorrow's pull quote here would be the reading-ahead this
+  // gate exists to stop.
+  const [sealedDay, setSealedDay] = useState<any | null>(null);
+  const planIdForDays = couplePlan?.plan?.id ?? couplePlan?.plan_id ?? null;
+  useEffect(() => {
+    if (!closed || !planIdForDays) { setSealedDay(null); return; }
+    let alive = true;
+    getPlanDay(planIdForDays, dayNumber - 1)
+      .then((pd) => { if (alive) setSealedDay(pd); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [closed, planIdForDays, dayNumber]);
 
   // Celebrate a streak milestone once: an AsyncStorage high-water mark per
   // couple decides whether this one has already had its moment.
@@ -129,7 +158,6 @@ export default function HomeScreen() {
   }
 
   const planTitle = couplePlan.plan?.title ?? "M'Cheyne Reading Plan";
-  const totalDays = couplePlan.plan?.duration_days ?? 365;
   const mySubmitted = !!myEntry?.submitted_at;
   const partnerSubmitted = !!partnerEntry?.submitted_at;
   const bothSubmitted = mySubmitted && partnerSubmitted;
@@ -147,13 +175,7 @@ export default function HomeScreen() {
   // are, measured against their chosen cadence so a slower rhythm is never
   // reported as late. Server owns advancement; this only decides whether to nudge.
   const behind = couplePlan?.start_date
-    ? daysBehind(
-        couplePlan.start_date,
-        dayNumber,
-        todayInTimezone(couple?.timezone ?? 'UTC'),
-        totalDays,
-        couplePlan.cadence_days ?? 1,
-      )
+    ? daysBehind(couplePlan.start_date, dayNumber, todayISO, totalDays, cadence)
     : 0;
 
   const now = new Date();
@@ -235,6 +257,24 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
+        {closed ? (
+          <DayClosed
+            day={dayNumber - 1}
+            verse={sealedDay?.pull_quote ?? sealedDay?.passage_reference ?? verseRef}
+            verseRef={sealedDay?.pull_quote_ref ?? sealedDay?.passage_reference ?? ''}
+            opens={couplePlan?.start_date
+              ? opensLabel(opensOn(couplePlan.start_date, dayNumber, cadence), todayISO)
+              : 'tomorrow morning'}
+            streakCount={streakCount}
+            onPrayers={() => router.push('/(tabs)/prayers')}
+            onGrove={() => router.push('/(tabs)/you/grove', { withAnchor: true })}
+            onReread={() => router.push({
+              pathname: '/(tabs)/(today)/reveal',
+              params: { day: String(dayNumber - 1) },
+            })}
+          />
+        ) : (
+        <>
         <View style={styles.header}>
           <SectionEyebrow style={styles.dateLabel}>{dateLabel}</SectionEyebrow>
           <Text style={[styles.dayNum, { color: colors.ink }]}>Day {dayNumber}</Text>
@@ -303,6 +343,8 @@ export default function HomeScreen() {
             Today's reading · <Text style={{ color: colors.accent }}>{planDay.passage_reference}</Text>
           </Text>
         </View>
+        </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
