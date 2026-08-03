@@ -4,12 +4,21 @@
 
 ---
 
-## ⭐ B22 (2026-08-02, not yet built): the recap points somewhere, and the Grove
+## ⭐ B22 (2026-08-02): the recap points somewhere, and the Grove
 
-Three rounds of work, no binary yet. Round one is **on main** (`ed0fd3e` through
-`008a4b9`); the Grove and the planting are on the branch `grove`. All green: 26
-suites, 246 tests, tsc clean. Three migrations and the ask-pamwe rebuild are
-already live on hosted. Nothing in rounds two or three touches the backend.
+Build 22 is uploaded to App Store Connect and processing. Three rounds of work,
+all on `main` (`ed0fd3e` through `1292190`; the `grove` branch fast-forwarded in,
+so it is the same commit). Green at upload: 26 suites, 246 tests, tsc clean,
+archive with zero errors. Three migrations and the ask-pamwe rebuild went to
+hosted during round one; **rounds two and three touch no backend at all.**
+
+Pipeline notes for next time: the bundle verification (`grep -ac
+jcyhhxgomhopkoqesbkb main.jsbundle` = 1, dead ref = 0) and the app-vs-appex
+`CFBundleVersion` match both passed first try. Export logged seven "Upload
+Symbols Failed" warnings for prebuilt frameworks that ship without dSYMs
+(ReactNativeDependencies, hermesvm, the five SDWebImage ones). They are warnings,
+not errors, they do not affect the binary, and they only mean Xcode Organizer
+cannot symbolicate a crash inside third-party native code we do not own.
 
 ### Round one: six things Christian hit in use
 
