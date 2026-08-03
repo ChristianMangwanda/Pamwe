@@ -99,7 +99,11 @@ Deno.serve(async (req) => {
     sound: "default",
     title: message.title,
     body: message.body,
-    data: { type: "partner_entry", reveal: partnerAlsoSubmitted },
+    // `day` pins the reveal this push is about. Without it the app opened
+    // whatever current_day had become by the time the banner was tapped, and if
+    // the sender had already amened, that is the NEXT day, where neither
+    // partner has written. The reveal then reported a connection problem.
+    data: { type: "partner_entry", reveal: partnerAlsoSubmitted, day: day_number },
   }]);
   return new Response(JSON.stringify(result), {
     headers: { "Content-Type": "application/json" },

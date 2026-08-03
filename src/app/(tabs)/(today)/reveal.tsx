@@ -36,7 +36,7 @@ export default function RevealScreen() {
   // screen onto the next, empty day while it's still being read.
   const { day } = useLocalSearchParams<{ day?: string }>();
   const pinnedDay = day ? Number(day) : undefined;
-  const { myEntry, partnerEntry, dayNumber, planDay, loading, refresh } = useTodayEntry(pinnedDay);
+  const { myEntry, partnerEntry, dayNumber, planDay, loading, error, refresh } = useTodayEntry(pinnedDay);
   const { couplePlan, partner, loading: coupleLoading, refresh: refreshCouple } = useCouple();
 
   const myInitial = (user?.user_metadata?.full_name || user?.email || 'Y')[0]?.toUpperCase() ?? 'Y';
@@ -106,6 +106,26 @@ export default function RevealScreen() {
     return () => { supabase.removeChannel(channel); };
   }, [revealed, couplePlan?.id, dayNumber]);
 
+  // A reveal opened before both have written is NOT a failure, and must never
+  // be dressed as one. It happens for real: the partner push carried no day, so
+  // a tap that landed after they had amened opened the NEXT day, where nobody
+  // has written yet, and the screen blamed the connection for it.
+  //
+  // Each case has a screen that is already right for it, so hand off rather
+  // than inventing a third state here.
+  useEffect(() => {
+    if (loading || coupleLoading || !couplePlan || error || revealed) return;
+    if (!myEntry) {
+      // Nothing written yet, so this day is not a reveal at all. Today derives
+      // the right next step from server state.
+      router.replace('/(tabs)/(today)');
+    } else {
+      // You have written and they have not. That is the waiting screen, and it
+      // carries you back here by itself the moment they submit.
+      router.replace({ pathname: '/(tabs)/(today)/waiting', params: { day: String(dayNumber) } });
+    }
+  }, [loading, coupleLoading, couplePlan, error, revealed, myEntry, dayNumber]);
+
   const onAmen = async () => {
     haptics.tap();
     // Capture the plan before refresh: completing the final day retires it,
@@ -169,7 +189,10 @@ export default function RevealScreen() {
     );
   }
 
-  if (!revealed) {
+  // This copy is now reserved for what it actually describes: the fetch failed.
+  // It used to catch every not-yet-revealed day as well, so a perfectly healthy
+  // phone was told to check its connection.
+  if (error) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
         <View style={styles.centered}>
@@ -180,6 +203,16 @@ export default function RevealScreen() {
             <Button title="Back to Today" variant="secondary" onPress={() => router.replace('/(tabs)/(today)')} />
           </View>
         </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Not revealed and not broken: the effect above is handing off, so hold the
+  // spinner rather than flashing a state that is about to be replaced.
+  if (!revealed) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
+        <View style={styles.centered}><PamweLoading /></View>
       </SafeAreaView>
     );
   }

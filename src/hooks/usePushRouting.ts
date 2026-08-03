@@ -33,8 +33,15 @@ export function usePushRouting() {
         break;
       case 'partner_entry':
         // reveal is only valid once both have submitted; otherwise land on Today
-        if (data.reveal) router.push('/(tabs)/(today)/reveal' as any, { withAnchor: true });
-        else router.push('/(tabs)/(today)' as any);
+        if (data.reveal) {
+          // Pin the day the push was about. Unpinned, a banner tapped after the
+          // sender had amened opened the next day instead, where neither
+          // partner has written. Older pushes carry no day and stay unpinned.
+          router.push({
+            pathname: '/(tabs)/(today)/reveal',
+            params: data.day != null ? { day: String(data.day) } : {},
+          } as any, { withAnchor: true });
+        } else router.push('/(tabs)/(today)' as any);
         break;
       case 'prayer':
       case 'prayer_reminder':
