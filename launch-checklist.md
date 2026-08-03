@@ -63,11 +63,11 @@ One structured pass on the TestFlight/dev build against **hosted**:
 ## E. Wide-deployment hardening (before — or immediately after — public release)
 
 **Backend / cost:**
-- [ ] **Upgrade Supabase to Pro.** Free-tier projects pause after ~1 week of inactivity and have hard email/storage caps — a paused backend bricks every install. Pro also unlocks daily backups/PITR.
-- [ ] **Custom SMTP** for magic-link email (built-in Supabase mail is a few emails/hour, dev-only). Resend/Postmark + sender domain.
-- [ ] **Ask Pamwe rate limit (#11):** per-user N/hour counter → 429; set an Anthropic spend alert. Currently any authed user can loop 4096-token calls against the API bill.
-- [ ] Dead push-token cleanup (#33): handle Expo `DeviceNotRegistered` receipts in the notify-* functions.
-- [ ] Advisor follow-up: revoke `EXECUTE` on `public.rls_auto_enable` from `anon`/`authenticated` (only WARN-level advisor finding worth acting on; the RLS-helper warnings are by design).
+- [ ] **Supabase stays FREE until there are real users** (Christian, 2026-08-03). The pause risk is covered by `.github/workflows/supabase-keepalive.yml` (daily anon ping; needs the `SUPABASE_ANON_KEY` repo secret). Revisit Pro at scale for daily backups/PITR and the email/storage caps.
+- [ ] **Custom SMTP: parked until there is a verified sending domain** (every provider requires one). Exposure is small: Apple/Google sign-in send no email, only magic links touch the built-in mailer. Leaked-password protection is Pro-only, skipped for the same reason.
+- [x] **Ask Pamwe rate limit (#11):** done, 20/day per user + 10s cooldown server-side. Spend alerts in the OpenAI + Anthropic consoles still worth setting (free).
+- [x] Dead push-token cleanup (#33): done, `_shared/push.ts` clears `DeviceNotRegistered` tokens on every send.
+- [x] Advisor follow-up: `rls_auto_enable` EXECUTE revoked from `anon`/`authenticated` (migration `20260803000001`, applied to hosted 2026-08-03).
 
 **Highest-value open P2s at scale** (full list in the debug tour):
 - [ ] #18 expired invite code bricks the couple (no regenerate path).
