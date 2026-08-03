@@ -143,4 +143,10 @@ function RootLayout() {
   );
 }
 
+// expo-router only installs an error boundary for a route that exports one, so
+// until this existed a render error anywhere unmounted the tree to a dead
+// screen and told nobody. Exported from the root layout, it sits above every
+// screen in the app.
+export { RouteErrorBoundary as ErrorBoundary } from '../components/RouteErrorBoundary';
+
 export default sentryDsn ? Sentry.wrap(RootLayout) : RootLayout;
