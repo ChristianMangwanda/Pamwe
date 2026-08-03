@@ -6,9 +6,10 @@
 
 ## ⭐ B22 (2026-08-02, not yet built): the recap points somewhere, and the Grove
 
-Two rounds of work, no binary yet. Round one is **on main** (`ed0fd3e` through
-`008a4b9`); the Grove is on the branch `grove`. Both green: 27 suites, 249 tests,
-tsc clean. Three migrations and the ask-pamwe rebuild are already live on hosted.
+Three rounds of work, no binary yet. Round one is **on main** (`ed0fd3e` through
+`008a4b9`); the Grove and the planting are on the branch `grove`. All green: 26
+suites, 246 tests, tsc clean. Three migrations and the ask-pamwe rebuild are
+already live on hosted. Nothing in rounds two or three touches the backend.
 
 ### Round one: six things Christian hit in use
 
@@ -59,8 +60,33 @@ from `7b10954`.
 - Art ships as ONE alpha-only set tinted at runtime: 3.00MB to 0.58MB. The olive
   arrived with two UI glyphs baked into its corners, painted out on import.
 
-**Still to do:** the arrival sequence on the completion screen (spec'd in the
-handoff, beat-by-beat with haptics and a Reduce Motion variant), then a build.
+### Round three: the planting
+
+The arrival moment, phase two of the handoff and the emotional peak of the whole
+award system. It covers the completion screen for 2,250ms: quiet, then twelve
+prints land 46ms apart up the last stretch, then the tree stands out of its base,
+then its name and its line. Reduce Motion gets a different timeline rather than a
+flattened one, 400ms of crossfades with one haptic.
+
+- **Nothing is stored to know a tree is new.** A count landing exactly on a
+  threshold IS the planting (`justPlanted`), which is what the design asked for:
+  no newly-unlocked flag, no earn dates, nothing that can go stale or fire twice.
+- **A layout bug in round two's scene, found by reasoning about it rather than by
+  the tests.** Each tree's wrapper held only absolutely positioned children, so
+  it measured zero high and every tree's `bottom` resolved above the top of the
+  walk. It had never run on a device. The wrappers now fill the scene.
+- **The generic StreakTree drawing is gone**, and `awardStage` with it. It was
+  the last thing in the app telling the tree story in a different visual language
+  than the Grove. The completion screen carries a `GroveCard` instead, which is
+  also its door into the walk.
+- The completion screen's success haptic is now gated on the plan count, so the
+  finish is not sounded twice a breath apart when a tree arrives.
+- Composition and vertical budget were checked by rendering the panel off device
+  at 390x844 and at the 375x667 floor, light and dark, with the real fonts. Same
+  method the lock-screen header was tuned with.
+
+**Still to do:** on-device validation of the planting (haptic rhythm, the 8pt
+widget header through vibrancy, two-phone partner marks), then a build.
 
 ---
 

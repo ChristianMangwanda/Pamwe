@@ -323,9 +323,38 @@ canvas that screens scale by `deviceWidth / SCENE_W`. Design handoff:
   competing with plans, and it retired the dismiss-once milestone card.
 - **The ladder does not end.** Above the redwood the path keeps going
   unlabelled; a 7th rung ships when a couple nears it.
-- The count stays derived (`finishedPlanCount`), never stored. `StreakTree` is
-  now only the legacy drawing, still backing the completion screen until the
-  arrival sequence lands.
+- The count stays derived (`finishedPlanCount`), never stored. The generic
+  `StreakTree` drawing and `awardStage` are **gone** (2026-08-02): every tree is
+  its own artwork on the walk, so nothing needs a stage number, and the
+  completion screen carries a `GroveCard` instead.
+
+**The planting** ([PlantingCeremony.tsx](src/components/PlantingCeremony.tsx)) is
+the arrival moment, and the only sequence in the app longer than half a second
+after the reveal. It covers the completion screen for 2,250ms: a beat of quiet,
+then twelve prints land 46ms apart up the last stretch, then the tree stands out
+of its base, then its name. Haptics are success at 0, light every fourth print,
+medium as the tree grows, celebrate as it settles. Both ways out land somewhere,
+the Grove or the completion screen underneath.
+
+- **A tree is "newly earned" if the count landed exactly on a threshold**
+  (`justPlanted`). That is the whole mechanism: nothing is stored, so nothing can
+  go stale and no flag can fire twice. The handoff asked for no newly-unlocked
+  flag and no per-tree earn dates, and it does not need them.
+- **The completion screen's success haptic is gated on the count** so the finish
+  is not sounded twice a breath apart. Whichever of the two owns the beat, it
+  fires once, including when the count fails to load.
+- Reduce Motion gets its own timeline, not a flattened one: the finished scene
+  crossfades in over 200ms, the words 200ms later, one haptic, done at 400ms.
+  Nothing translates, nothing scales, no print lands on its own. Each keyframe
+  therefore opts out of `ReduceMotion.System` rather than being second-guessed on
+  top of the branch.
+- **The scene scales off the window, never off a measurement.** `CHROME` is what
+  everything other than the walk costs; measuring instead would spend a frame at
+  the start of the one sequence that cannot stutter.
+- The handoff into the Grove is a **route param** (`arrived=<tree id>`), session
+  only: the Grove opens at that tree with no scroll animation and holds it at
+  full strength for 600ms while the rest of the walk comes up from 0.5. The
+  emphasis belongs to the transition, not to the data.
 
 **Tree art ships as ONE alpha-only set** in
 [assets/images/grove/](assets/images/grove/), tinted at runtime via
@@ -456,6 +485,7 @@ The voice recorder, audio upload, and partner-push flow only behave correctly on
 | Plan search, browse, sharing | [src/lib/plans.ts](src/lib/plans.ts) (`searchPlans`, `filterPlans`, `topicsIn`, `sharePlan`, `getSharedPlan`) |
 | Finished-plan rule + tree awards | [src/lib/planHistory.ts](src/lib/planHistory.ts) (`isFinished`, `finishedPlans`), [src/lib/treeAwards.ts](src/lib/treeAwards.ts) (`TREE_AWARDS` ladder) |
 | The Grove scene + You card | [src/lib/grove.ts](src/lib/grove.ts) (geometry + all copy), [you/grove.tsx](src/app/(tabs)/you/grove.tsx), [GroveCard](src/components/GroveCard.tsx), art [src/lib/groveArt.ts](src/lib/groveArt.ts) |
+| The planting (arrival sequence) | [PlantingCeremony.tsx](src/components/PlantingCeremony.tsx), geometry `arrivalScene`/`arrivalHeadline` in [src/lib/grove.ts](src/lib/grove.ts), keyframes `landStep`/`standUp`/`riseAt` in [src/lib/motion.ts](src/lib/motion.ts), trigger `justPlanted` in [src/lib/treeAwards.ts](src/lib/treeAwards.ts) |
 | Docked tab bar | [src/components/DockedTabBar.tsx](src/components/DockedTabBar.tsx) |
 | Motion + haptics | [src/lib/motion.ts](src/lib/motion.ts), [src/lib/haptics.ts](src/lib/haptics.ts) |
 | Voice recorder component | [src/components/VoiceRecorder.tsx](src/components/VoiceRecorder.tsx) |

@@ -1,4 +1,4 @@
-import { TREE_AWARDS, currentAward, nextAward, awardStage } from '../lib/treeAwards';
+import { TREE_AWARDS, currentAward, nextAward, justPlanted } from '../lib/treeAwards';
 
 // The ladder replaced a ceiling of 3 finished plans, past which the tree said
 // "In full bloom" forever. What matters here is that it keeps going and never
@@ -82,17 +82,25 @@ describe('nextAward', () => {
   });
 });
 
-describe('awardStage', () => {
-  it('never goes backwards', () => {
-    for (let n = 1; n <= 40; n++) {
-      expect(awardStage(n)).toBeGreaterThanOrEqual(awardStage(n - 1));
+describe('justPlanted', () => {
+  // This is the whole "newly earned" mechanism, and it is why nothing is
+  // stored: the planting IS the count landing exactly on a threshold.
+  it('names the tree on the count that plants it', () => {
+    for (const a of TREE_AWARDS) {
+      expect(justPlanted(a.threshold)?.id).toBe(a.id);
     }
   });
 
-  it('stays within the drawing it feeds', () => {
-    for (let n = 0; n <= 40; n++) {
-      expect(awardStage(n)).toBeGreaterThanOrEqual(0);
-      expect(awardStage(n)).toBeLessThanOrEqual(5);
+  it('plants nothing on any other count', () => {
+    for (let n = 0; n <= 120; n++) {
+      if (TREE_AWARDS.some((a) => a.threshold === n)) continue;
+      expect(justPlanted(n)).toBeNull();
+    }
+  });
+
+  it('plants nothing the day after, so the ceremony cannot repeat', () => {
+    for (const a of TREE_AWARDS) {
+      expect(justPlanted(a.threshold + 1)).toBeNull();
     }
   });
 });

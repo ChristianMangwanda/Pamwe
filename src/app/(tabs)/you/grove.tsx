@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { View, StyleSheet, ScrollView, Image, TouchableOpacity, useWindowDimensions } from 'react-native';
+import Animated, {
+  Easing, ReduceMotion, useAnimatedStyle, useSharedValue, withTiming,
+} from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Text } from '../../../components/ui/Text';
 import { BackLink } from '../../../components/ui/BackLink';
 import { BottomSheet } from '../../../components/ui/BottomSheet';
@@ -33,6 +36,9 @@ export default function GroveScreen() {
   const { colors } = useTheme();
   const { couple } = useCouple();
   const { width } = useWindowDimensions();
+  // Arriving from a planting. Session only, nothing persisted: the emphasis
+  // belongs to the transition, not to the data.
+  const { arrived } = useLocalSearchParams<{ arrived?: string }>();
 
   const [plans, setPlans] = useState<number | null>(null);
   const [rows, setRows] = useState<FinishedPlan[]>([]);
@@ -43,6 +49,21 @@ export default function GroveScreen() {
 
   const streak = couple?.streak_count ?? 0;
   const scale = width / SCENE_W;
+
+  // For the first 600ms the tree just planted holds full strength while the
+  // rest of the walk comes up behind it, then everything settles level.
+  const rest = useSharedValue(arrived ? 0.5 : 1);
+  const restStyle = useAnimatedStyle(() => ({ opacity: rest.value }));
+  useEffect(() => {
+    if (!arrived) return;
+    rest.value = withTiming(1, {
+      duration: 600,
+      easing: Easing.bezier(0.22, 1, 0.36, 1),
+      // Honours the setting: with Reduce Motion on, the walk is simply level
+      // from the first frame.
+      reduceMotion: ReduceMotion.System,
+    });
+  }, [arrived]);
 
   useEffect(() => {
     let alive = true;
@@ -57,13 +78,68 @@ export default function GroveScreen() {
   const prints = useMemo(() => footprints(plans ?? 0, streak), [plans, streak]);
   const { walked } = useMemo(() => walkFor(plans ?? 0, streak), [plans, streak]);
 
-  // Open where they stand, not at the bottom of the walk.
+  // Open where they stand, not at the bottom of the walk, and on the tree just
+  // planted when there is one. No scroll animation: the page is already there.
   const onSceneLayout = (h: number) => {
     if (scrolled.current || plans === null) return;
     scrolled.current = true;
-    const y = Math.max(0, SCENE_H * scale - walked * scale - h * 0.62);
+    const focus = trees.find((t) => t.award.id === arrived)?.bottom ?? walked;
+    const y = Math.max(0, SCENE_H * scale - focus * scale - h * 0.62);
     scrollRef.current?.scrollTo({ y, animated: false });
   };
+
+  // The wrapper must fill the scene. Absolute children resolve against their
+  // parent's frame, and a View holding only absolute children measures zero
+  // high, which would put every tree's `bottom` above the top of the walk.
+  // box-none so the stacked wrappers do not swallow each other's taps.
+  const renderTree = (t: (typeof trees)[number]) => (
+    <View key={t.award.id} style={StyleSheet.absoluteFill} pointerEvents="box-none">
+      <View
+        style={{
+          position: 'absolute',
+          left: t.labelLeft * scale,
+          top: (SCENE_H - t.bottom + 8) * scale,
+          width: t.labelWidth * scale,
+          alignItems: t.labelAlign,
+        }}
+        pointerEvents="none"
+      >
+        <View style={styles.labelRow}>
+          <Text style={[styles.mark, { color: t.earned ? colors.accent : colors.muted }]}>
+            {t.earned ? '●' : '○'}
+          </Text>
+          <Text style={[styles.labelName, { color: t.earned ? colors.accent : colors.muted }]}>
+            {t.award.name}
+          </Text>
+        </View>
+        <Text style={[styles.labelNote, { color: colors.muted }]}>
+          {t.earned ? 'planted' : `at ${t.award.threshold} plans`}
+        </Text>
+      </View>
+
+      <TouchableOpacity
+        activeOpacity={t.earned ? 1 : 0.7}
+        disabled={t.earned}
+        onPress={() => { haptics.tap(); setSheet(t.award); }}
+        accessibilityRole={t.earned ? 'image' : 'button'}
+        accessibilityLabel={t.a11y}
+        style={{
+          position: 'absolute',
+          left: t.left * scale,
+          bottom: t.bottom * scale,
+          width: t.width * scale,
+          height: t.height * scale,
+        }}
+      >
+        <Image
+          source={TREE_SOURCES[t.award.id]}
+          tintColor={colors.accent}
+          style={{ width: '100%', height: '100%', opacity: t.earned ? 1 : 0.24 }}
+          resizeMode="contain"
+        />
+      </TouchableOpacity>
+    </View>
+  );
 
   if (plans === null) {
     return (
@@ -92,79 +168,39 @@ export default function GroveScreen() {
         onLayout={(e) => onSceneLayout(e.nativeEvent.layout.height)}
       >
         <View style={{ width, height: SCENE_H * scale }}>
-          {/* The route ahead, and the ground being covered right now. */}
-          {prints.map((p) => (
-            <Image
-              key={p.key}
-              source={STEP_SOURCES[p.foot]}
-              tintColor={colors.accent2}
-              style={{
-                position: 'absolute',
-                left: p.left * scale,
-                bottom: p.bottom * scale,
-                width: p.width * scale,
-                height: p.height * scale,
-                opacity: p.opacity,
-                transform: [{ rotate: `${p.rotate}deg` }],
-              }}
-            />
-          ))}
-
-          {trees.map((t) => (
-            <View key={t.award.id}>
-              <View
+          {/* Everything except the tree just planted rides one opacity, so the
+              arriving tree can be emphasised for a beat without animating a
+              hundred prints one by one. */}
+          <Animated.View style={[StyleSheet.absoluteFill, restStyle]}>
+            {/* The route ahead, and the ground being covered right now. */}
+            {prints.map((p) => (
+              <Image
+                key={p.key}
+                source={STEP_SOURCES[p.foot]}
+                tintColor={colors.accent2}
                 style={{
                   position: 'absolute',
-                  left: t.labelLeft * scale,
-                  top: (SCENE_H - t.bottom + 8) * scale,
-                  width: t.labelWidth * scale,
-                  alignItems: t.labelAlign,
+                  left: p.left * scale,
+                  bottom: p.bottom * scale,
+                  width: p.width * scale,
+                  height: p.height * scale,
+                  opacity: p.opacity,
+                  transform: [{ rotate: `${p.rotate}deg` }],
                 }}
-                pointerEvents="none"
-              >
-                <View style={styles.labelRow}>
-                  <Text style={[styles.mark, { color: t.earned ? colors.accent : colors.muted }]}>
-                    {t.earned ? '●' : '○'}
-                  </Text>
-                  <Text style={[styles.labelName, { color: t.earned ? colors.accent : colors.muted }]}>
-                    {t.award.name}
-                  </Text>
-                </View>
-                <Text style={[styles.labelNote, { color: colors.muted }]}>
-                  {t.earned ? 'planted' : `at ${t.award.threshold} plans`}
-                </Text>
-              </View>
+              />
+            ))}
 
-              <TouchableOpacity
-                activeOpacity={t.earned ? 1 : 0.7}
-                disabled={t.earned}
-                onPress={() => { haptics.tap(); setSheet(t.award); }}
-                accessibilityRole={t.earned ? 'image' : 'button'}
-                accessibilityLabel={t.a11y}
-                style={{
-                  position: 'absolute',
-                  left: t.left * scale,
-                  bottom: t.bottom * scale,
-                  width: t.width * scale,
-                  height: t.height * scale,
-                }}
-              >
-                <Image
-                  source={TREE_SOURCES[t.award.id]}
-                  tintColor={colors.accent}
-                  style={{ width: '100%', height: '100%', opacity: t.earned ? 1 : 0.24 }}
-                  resizeMode="contain"
-                />
-              </TouchableOpacity>
-            </View>
-          ))}
+            {trees.filter((t) => t.award.id !== arrived).map(renderTree)}
 
-          {/* Above the last tree the path keeps going, unlabelled. */}
-          <Text
-            style={[styles.stillPlanting, { color: colors.muted, top: 26 * scale, width }]}
-          >
-            Still being planted
-          </Text>
+            {/* Above the last tree the path keeps going, unlabelled. */}
+            <Text
+              style={[styles.stillPlanting, { color: colors.muted, top: 26 * scale, width }]}
+            >
+              Still being planted
+            </Text>
+          </Animated.View>
+
+          {trees.filter((t) => t.award.id === arrived).map(renderTree)}
         </View>
 
         <View style={styles.ledger}>

@@ -37,6 +37,69 @@ export const popIn = new Keyframe({
   .duration(500)
   .reduceMotion(ReduceMotion.System);
 
+// The planting, on the completion screen. Its three keyframes take an explicit
+// delay so the whole timeline reads in one place in PlantingCeremony rather
+// than being spread across this file.
+//
+// `reduced` is not ReduceMotion.System: the ceremony reads the setting itself
+// and plays a different timeline, so each animation opts out of being flattened
+// a second time on top of that.
+
+/** A plain crossfade on a mark: how the planting's backdrop arrives in both
+ *  timelines, and the Reduce Motion answer to all three below. */
+export function fadeAt(delay: number, duration = 200) {
+  return new Keyframe({
+    0: { opacity: 0 },
+    100: { opacity: 1, easing: Easing.linear },
+  })
+    .duration(duration)
+    .delay(delay)
+    .reduceMotion(ReduceMotion.Never);
+}
+
+/** A footprint landing: scale .55 → 1.09 → 1 over 260ms. Scale only, so a print
+ *  keeps its angle from a static wrapper rather than animating a rotation it
+ *  never actually turns through. A uniform scale commutes with rotation, so the
+ *  result is the design's `scale() rotate()` exactly. */
+export function landStep(delay: number, reduced: boolean) {
+  if (reduced) return fadeAt(delay);
+  return new Keyframe({
+    0: { opacity: 0, transform: [{ scale: 0.55 }] },
+    65: { opacity: 1, transform: [{ scale: 1.09 }], easing: settle },
+    100: { opacity: 1, transform: [{ scale: 1 }], easing: settle },
+  })
+    .duration(260)
+    .delay(delay)
+    .reduceMotion(ReduceMotion.Never);
+}
+
+/** The tree standing up where the prints came through: scale .7 → 1.08 → 1 over
+ *  500ms. Pair with `transformOrigin: 'bottom'` so it grows out of its base
+ *  rather than swelling from its middle. */
+export function standUp(delay: number, reduced: boolean) {
+  if (reduced) return fadeAt(delay);
+  return new Keyframe({
+    0: { opacity: 0, transform: [{ scale: 0.7 }] },
+    60: { opacity: 1, transform: [{ scale: 1.08 }], easing: settle },
+    100: { opacity: 1, transform: [{ scale: 1 }], easing: settle },
+  })
+    .duration(500)
+    .delay(delay)
+    .reduceMotion(ReduceMotion.Never);
+}
+
+/** A line of the planting's text: the app's 14px rise, on its own mark. */
+export function riseAt(delay: number, reduced: boolean) {
+  if (reduced) return fadeAt(delay);
+  return new Keyframe({
+    0: { opacity: 0, transform: [{ translateY: 14 }] },
+    100: { opacity: 1, transform: [{ translateY: 0 }], easing: settle },
+  })
+    .duration(350)
+    .delay(delay)
+    .reduceMotion(ReduceMotion.Never);
+}
+
 /** How the reveal cards arrive, decided by how the ceremony above them ended. */
 export type UnsealKind = 'full' | 'skip' | 'reduced';
 

@@ -1,6 +1,7 @@
 import {
   SCENE_W, SCENE_H, sceneTrees, footprints, walkFor,
   groveSubtitle, streakFoot, cardCopy,
+  ARRIVAL_W, ARRIVAL_H, ARRIVAL_STEPS, arrivalScene, arrivalHeadline,
 } from '../lib/grove';
 import { TREE_AWARDS } from '../lib/treeAwards';
 
@@ -78,6 +79,57 @@ describe('footprints', () => {
     const prints = footprints(TOP, 0);
     expect(prints.filter((p) => p.foot === 'a').length)
       .toBe(prints.filter((p) => p.foot === 'b').length);
+  });
+});
+
+describe('the arrival', () => {
+  // The planting draws on its own small canvas, so the same off-canvas and
+  // distortion traps apply here, for every one of the six trees.
+  it('keeps the tree, the prints and the tree before inside the canvas', () => {
+    for (const award of TREE_AWARDS) {
+      const s = arrivalScene(award);
+      for (const box of [s.tree, ...(s.prev ? [s.prev] : []), ...s.steps]) {
+        expect(box.left).toBeGreaterThanOrEqual(0);
+        expect(box.left + box.width).toBeLessThanOrEqual(ARRIVAL_W);
+        expect(box.bottom).toBeGreaterThanOrEqual(0);
+        expect(box.bottom + box.height).toBeLessThanOrEqual(ARRIVAL_H);
+      }
+    }
+  });
+
+  it('never distorts the artwork', () => {
+    for (const award of TREE_AWARDS) {
+      const s = arrivalScene(award);
+      expect(s.tree.width / s.tree.height).toBeCloseTo(award.ratio, 1);
+    }
+    // The cedar is the narrow one and the fig the wide one, so both the height
+    // cap and the width cap get exercised.
+    expect(arrivalScene(TREE_AWARDS[TREE_AWARDS.length - 1]).tree.width).toBeLessThanOrEqual(150);
+  });
+
+  it('shows the tree before this one, and nothing before the first', () => {
+    expect(arrivalScene(TREE_AWARDS[0]).prev).toBeNull();
+    for (let i = 1; i < TREE_AWARDS.length; i++) {
+      expect(arrivalScene(TREE_AWARDS[i]).prev?.id).toBe(TREE_AWARDS[i - 1].id);
+    }
+  });
+
+  it('walks the last stretch in left and right strides, climbing', () => {
+    const { steps } = arrivalScene(TREE_AWARDS[0]);
+    expect(steps).toHaveLength(ARRIVAL_STEPS);
+    expect(steps.filter((s) => s.foot === 'a')).toHaveLength(ARRIVAL_STEPS / 2);
+    for (let i = 1; i < steps.length; i++) {
+      expect(steps[i].bottom).toBeGreaterThan(steps[i - 1].bottom);
+      expect(steps[i].foot).not.toBe(steps[i - 1].foot);
+    }
+  });
+
+  it('names the tree with the right article, keeping Lebanon capitalised', () => {
+    expect(arrivalHeadline(TREE_AWARDS.find((a) => a.id === 'fig')!)).toBe('A fig tree.');
+    expect(arrivalHeadline(TREE_AWARDS.find((a) => a.id === 'olive')!)).toBe('An olive tree.');
+    expect(arrivalHeadline(TREE_AWARDS.find((a) => a.id === 'oak')!)).toBe('An oak.');
+    expect(arrivalHeadline(TREE_AWARDS.find((a) => a.id === 'cedar')!)).toBe('A cedar of Lebanon.');
+    expect(arrivalHeadline(TREE_AWARDS.find((a) => a.id === 'redwood')!)).toBe('A redwood.');
   });
 });
 

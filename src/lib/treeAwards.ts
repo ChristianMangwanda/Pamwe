@@ -94,17 +94,22 @@ export function nextAward(finishedPlans: number): TreeAward | null {
   return TREE_AWARDS.find((a) => finishedPlans < a.threshold) ?? null;
 }
 
+/**
+ * The tree this exact count just planted, or null if it planted nothing.
+ *
+ * This is the whole "newly earned" mechanism: a plan finished on the count a
+ * tree is gated behind IS the planting. Nothing is stored, so nothing can go
+ * stale, and no flag can fire twice for one tree.
+ */
+export function justPlanted(finishedPlans: number): TreeAward | null {
+  return TREE_AWARDS.find((a) => a.threshold === finishedPlans) ?? null;
+}
+
 /** Every tree already planted, in ladder order. */
 export function earnedAwards(finishedPlans: number): TreeAward[] {
   return TREE_AWARDS.filter((a) => finishedPlans >= a.threshold);
 }
 
-export type TreeStage = 0 | 1 | 2 | 3 | 4 | 5;
-
-// The legacy StreakTree drawing has six stages and the ladder has six rungs, so
-// they map one to one. It still backs the completion screen until the arrival
-// sequence replaces it.
-export function awardStage(finishedPlans: number): TreeStage {
-  const i = TREE_AWARDS.findIndex((a) => a.id === currentAward(finishedPlans)?.id);
-  return (i < 0 ? 0 : Math.min(5, i + 1)) as TreeStage;
-}
+// The generic StreakTree drawing that used to back the completion screen is
+// gone, and `awardStage` with it. Every tree is now its own artwork on the
+// walk, so nothing needs a stage number.

@@ -186,6 +186,74 @@ export function footprints(finishedPlans: number, streakDays: number): Footprint
   return out;
 }
 
+// ---- The arrival: the moment a tree is planted, on the completion screen ----
+//
+// The same walk, cropped to its last stretch, on its own 300 x 370 canvas. The
+// tree before this one sits small and pale at the foot of the path, the prints
+// climb past where the new tree stands, and the tree grows last.
+//
+// The prints climb ABOVE the new tree rather than stopping at it, which is
+// deliberate and is the handoff's own composition: you came up through here,
+// the tree marks it, and the path carries on. Nothing about a planted tree is
+// an ending.
+
+export const ARRIVAL_W = 300;
+export const ARRIVAL_H = 370;
+/** Twelve prints, six strides: the last stretch, at walking pace. */
+export const ARRIVAL_STEPS = 12;
+
+export type ArrivalBox = { left: number; bottom: number; width: number; height: number };
+export type ArrivalStep = ArrivalBox & { key: string; foot: 'a' | 'b'; rotate: number };
+export type Arrival = {
+  tree: ArrivalBox;
+  /** The tree before this one. Null for the fig, which has nothing behind it. */
+  prev: (ArrivalBox & { id: string }) | null;
+  steps: ArrivalStep[];
+};
+
+export function arrivalScene(award: TreeAward): Arrival {
+  // Big enough to be the subject, never so big it leaves the canvas. The cedar
+  // is the narrow one and the fig the wide one, so both bounds matter.
+  let height = Math.min(200, award.height);
+  let width = Math.round(height * award.ratio);
+  if (width > 150) {
+    width = 150;
+    height = Math.round(150 / award.ratio);
+  }
+
+  const i = TREE_AWARDS.indexOf(award);
+  const before = i > 0 ? TREE_AWARDS[i - 1] : null;
+
+  const steps: ArrivalStep[] = [];
+  for (let n = 0; n < ARRIVAL_STEPS; n++) {
+    const right = n % 2 === 1;
+    steps.push({
+      key: `s${n}`,
+      foot: right ? 'b' : 'a',
+      left: Math.round(116 + (right ? 8 : -8) - 6),
+      bottom: 50 + n * 24 + (right ? 12 : 0),
+      width: 12,
+      height: 20,
+      rotate: right ? 7 : -7,
+    });
+  }
+
+  return {
+    tree: { left: Math.round(200 - width / 2), bottom: 56, width, height },
+    prev: before
+      ? { id: before.id, left: 6, bottom: 0, width: Math.round(64 * before.ratio), height: 64 }
+      : null,
+    steps,
+  };
+}
+
+/** What the planting is called, as a sentence on its own. */
+export function arrivalHeadline(award: TreeAward): string {
+  // Only the first letter drops case, so "Cedar of Lebanon" keeps its Lebanon.
+  const name = award.name.charAt(0).toLowerCase() + award.name.slice(1);
+  return `${'aeiou'.includes(name[0]) ? 'An' : 'A'} ${name}.`;
+}
+
 const WORDS = [
   'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
 ];
