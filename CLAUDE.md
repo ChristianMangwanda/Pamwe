@@ -84,6 +84,14 @@ supabase status                        # local URLs/keys · Studio http://127.0.
 #    repo). It must exist on disk under that exact name or Release bundles an
 #    undefined Supabase URL and step 3's grep returns 0. A fresh clone has to
 #    rebuild it from env.hosted.backup first.
+#    Source maps: the Bundle React Native build phase is wrapped with
+#    @sentry/react-native's sentry-xcode.sh (spliced by hand 2026-08-03; ios/ is
+#    gitignored, so a regenerated ios/ loses the splice AND ios/Pamwe/
+#    PrivacyInfo.xcprivacy's eight collected-data types — redo both). It reads
+#    ios/sentry.properties (gitignored: org zakia-12, project pamwe-ios, plus an
+#    org auth token Christian creates in the Sentry dashboard). Upload failures
+#    only warn (SENTRY_ALLOW_FAILURE=true in the phase), so a missing token
+#    never burns a build; it just ships minified stacks.
 cd ios && xcodebuild -workspace Pamwe.xcworkspace -scheme Pamwe -configuration Release \
   -destination "generic/platform=iOS" -archivePath /tmp/Pamwe.xcarchive \
   -allowProvisioningUpdates DEVELOPMENT_TEAM=5LX4YFCXPK archive

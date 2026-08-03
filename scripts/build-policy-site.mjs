@@ -1,7 +1,8 @@
-// Build the public privacy-policy page from docs/privacy-policy.md.
+// Build the public policy site: docs/privacy-policy.md -> index.html and
+// docs/support.md -> support.html (the App Store listing's Support URL).
 //
 // Runs in two halves so the Markdown renderer can stay out of the repo: the
-// workflow calls `prepare`, pipes the result through `npx marked`, then calls
+// workflow calls `prepare`, pipes the results through `npx marked`, then calls
 // `wrap`. Nothing is added to package.json, and the app's node_modules and its
 // patch-package postinstall are never touched by a docs build.
 //
@@ -39,16 +40,38 @@ if (command === 'prepare') {
   writeFileSync(argument, cleaned);
   console.log(`Prepared ${argument}, no unfilled placeholders.`);
 } else if (command === 'wrap') {
-  // Tables get a scroll container so a narrow phone scrolls the table, not the
-  // whole page.
-  const body = readFileSync(argument, 'utf8')
-    .replace(/<table>/g, '<div class="table-wrap"><table>')
-    .replace(/<\/table>/g, '</table></div>');
+  const supportArgument = process.argv[4];
+  if (!supportArgument) {
+    console.error('wrap needs both bodies: wrap <policy-body.html> <support-body.html>');
+    process.exit(1);
+  }
+
+  const template = readFileSync(TEMPLATE, 'utf8');
+  const page = (bodyPath, title, description) => {
+    // Tables get a scroll container so a narrow phone scrolls the table, not
+    // the whole page.
+    const body = readFileSync(bodyPath, 'utf8')
+      .replace(/<table>/g, '<div class="table-wrap"><table>')
+      .replace(/<\/table>/g, '</table></div>');
+    return template
+      .replace('{{TITLE}}', title)
+      .replace('{{DESCRIPTION}}', description)
+      .replace('{{CONTENT}}', body);
+  };
 
   mkdirSync('_site', { recursive: true });
-  writeFileSync('_site/index.html', readFileSync(TEMPLATE, 'utf8').replace('{{CONTENT}}', body));
-  console.log('Wrote _site/index.html');
+  writeFileSync('_site/index.html', page(
+    argument,
+    'Pamwe Privacy Policy',
+    'What Pamwe collects, who can see it, and how to erase it.',
+  ));
+  writeFileSync('_site/support.html', page(
+    supportArgument,
+    'Pamwe Support',
+    'How to get help with Pamwe, and answers to common questions.',
+  ));
+  console.log('Wrote _site/index.html and _site/support.html');
 } else {
-  console.error('Usage: build-policy-site.mjs prepare <out.md> | wrap <body.html>');
+  console.error('Usage: build-policy-site.mjs prepare <out.md> | wrap <policy-body.html> <support-body.html>');
   process.exit(1);
 }

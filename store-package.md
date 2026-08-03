@@ -10,16 +10,20 @@ ready to paste into App Store Connect. Where a value is a judgment call it's mar
 
 | Field | Value |
 |---|---|
-| Privacy Policy URL | https://christianmangwanda.github.io/pamwe-site/privacy.html |
-| Support URL | https://christianmangwanda.github.io/pamwe-site/ |
-| Terms of Service (EULA) | https://christianmangwanda.github.io/pamwe-site/terms.html (optional field; standard Apple EULA also fine) |
+| Privacy Policy URL | https://christianmangwanda.github.io/Pamwe/ |
+| Support URL | https://christianmangwanda.github.io/Pamwe/support.html |
+| Terms of Service (EULA) | leave blank (standard Apple EULA; the in-app Terms screen remains) |
 
-Source repo: https://github.com/ChristianMangwanda/pamwe-site (public, GitHub Pages
-from `main`). To edit: change the HTML, push to main, live in about a minute.
-The web privacy/terms copy mirrors the in-app screens, with two updates: the
-Anthropic paragraph now covers the help sheet as well as the builder, and the
-Bible sources mention bible.helloao.org (BSB). **[Christian: if you want different
-Anthropic wording, edit both the site and `you/privacy.tsx` together.]**
+Source: THIS repo's GitHub Pages. `docs/privacy-policy.md` and `docs/support.md`
+are rendered by `.github/workflows/pages.yml` on every push to main, and the
+placeholder check refuses to publish an unfinished policy. This is the policy
+that names dreams, verse notes, the widget and the anniversary, so it is the
+one that matches the nutrition labels.
+
+⚠️ The old pamwe-site pages (christianmangwanda.github.io/pamwe-site/) are STALE
+(July 16: no dreams, no verse notes, no widget). Take that site down or redirect
+it before submitting, so two contradictory policies are not both live.
+**[Christian]**
 
 ## 2. App information
 
@@ -138,7 +142,7 @@ Do not show real reflections from you and Ammy; sign in as the demo couple
 > write anything, and share it. Daniel's reflection for the day is already
 > submitted, so your submission unseals both and shows the reveal. The Reflect
 > tab holds two earlier revealed days. The Bible, Plans, and Prayers tabs are
-> fully browsable. Account deletion is under You → Delete account.
+> fully browsable. Account deletion is under You → Settings → Delete account.
 >
 > A second reviewer account (daniel@review.pamwe.app, same password) is the
 > partner side of the same couple if you need to see both ends.

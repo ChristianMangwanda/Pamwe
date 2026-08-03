@@ -1,15 +1,17 @@
-name: Publish privacy policy
+name: Publish policy site
 
-# Publishes docs/privacy-policy.md to GitHub Pages as a plain static page.
-# The Markdown is rendered at build time, so the published page needs no
-# JavaScript and no CDN to display: it is the policy, in HTML, and it renders
-# even if everything else on the internet is having a bad day.
+# Publishes docs/privacy-policy.md (index) and docs/support.md (the App Store
+# listing's Support URL) to GitHub Pages as plain static pages. The Markdown is
+# rendered at build time, so the published pages need no JavaScript and no CDN
+# to display: it is the policy, in HTML, and it renders even if everything else
+# on the internet is having a bad day.
 
 on:
   push:
     branches: [main]
     paths:
       - 'docs/privacy-policy.md'
+      - 'docs/support.md'
       - 'docs/template.html'
       - 'scripts/build-policy-site.mjs'
       - '.github/workflows/pages.yml'
@@ -45,10 +47,12 @@ jobs:
       # app's dependencies, so the React Native tree and its patches stay out
       # of this entirely.
       - name: Render Markdown to HTML
-        run: npx --yes marked@15 --gfm --input /tmp/policy.md --output /tmp/body.html
+        run: |
+          npx --yes marked@15 --gfm --input /tmp/policy.md --output /tmp/body.html
+          npx --yes marked@15 --gfm --input docs/support.md --output /tmp/support-body.html
 
       - name: Wrap in the page template
-        run: node scripts/build-policy-site.mjs wrap /tmp/body.html
+        run: node scripts/build-policy-site.mjs wrap /tmp/body.html /tmp/support-body.html
 
       - uses: actions/configure-pages@v5
 
