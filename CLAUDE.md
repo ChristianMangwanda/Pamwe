@@ -233,6 +233,34 @@ The core mechanic. Partner entries are invisible until both partners have submit
 
 UI screens go through `src/lib/*.ts` (couples, entries, plans, notifications) which wrap the Supabase client. Don't call `supabase.from(...)` directly from a screen.
 
+### A recording leaves the phone on Send, and not one moment before
+
+Christian's call, 2026-08-07, when the send was made faster. The obvious
+optimisation is to upload while the recorder sits on its preview, since the
+sender always spends a beat there and the storage policy is path-based
+(`voice_insert_own` needs no `entries` row, so it would work). **Don't.** The
+app's promise is that a reflection is yours until you decide to share it, and
+bytes on a server before that decision is not that, whatever RLS says about who
+can read them. A re-recorded take would also have to be chased and deleted.
+
+What the send does instead ([journal.tsx](src/app/(tabs)/(today)/journal.tsx)
+`handleVoiceComplete`), all of it latency removed without moving the bytes:
+
+- `ensureVoiceDraft` and `uploadVoiceRecording` run **in parallel**. The object
+  path is `{couple_plan_id}/{day_number}/{user_id}.m4a`, so the upload never
+  needed the draft row; waiting for it cost two round trips.
+- `submitVoiceEntry` attaches the audio and seals in **one** UPDATE. Two writes
+  also left a window where an entry carried audio but was not sealed. It is
+  idempotent the same way `submitEntry` is, and for the same reason.
+- **Neither send path awaits `refresh()` before navigating.** `waiting.tsx`
+  mounts its own `useTodayEntry` and refetches on arrival, and every screen
+  holds its own hook instance, so that await updated nothing anyone reads.
+- The recorder writes **mono 64 kbps** AAC (`VOICE_QUALITY` in
+  [VoiceRecorder.tsx](src/components/VoiceRecorder.tsx)), not the stereo 128 kbps
+  of `RecordingPresets.HIGH_QUALITY`, which spent 16 KB a second on a single
+  mono microphone: 4.8MB for a five-minute reflection, and the sender waited for
+  all of it.
+
 ### Decimals on the DB side, not floats
 
 `couples.streak_count`, `couple_plans.current_day`, `entries.audio_duration_seconds`, `plan_days.day_number` are all `int4`. Anything monetary or stat-y would be Postgres `numeric`, not JS `number`. There's nothing of the latter category yet.

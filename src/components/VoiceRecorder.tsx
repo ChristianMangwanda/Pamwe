@@ -7,15 +7,26 @@ import {
   useAudioPlayerStatus,
   requestRecordingPermissionsAsync,
   getRecordingPermissionsAsync,
-  setAudioModeAsync,
   RecordingPresets,
 } from 'expo-audio';
 import { Play, Pause } from 'phosphor-react-native';
 import { Text } from './ui/Text';
 import { Button } from './ui/Button';
 import { useTheme } from '../providers/ThemeProvider';
+import { hasEnded, setPlaybackAudioMode, setRecordingAudioMode } from '../lib/audioSession';
 
 const DEFAULT_MAX_SECONDS = 300;
+
+// HIGH_QUALITY is 44.1kHz stereo at 128 kbps, which is 16 KB for every second
+// of a single mono microphone: a five-minute reflection was 4.8MB, and the
+// sender waited for all of it. Mono at 64 kbps halves that and is what a voice
+// message ships at everywhere else. The rest of the preset (AAC in .m4a) is
+// unchanged, so nothing already recorded reads differently.
+const VOICE_QUALITY = {
+  ...RecordingPresets.HIGH_QUALITY,
+  numberOfChannels: 1,
+  bitRate: 64000,
+};
 const WAVEFORM_BARS = 32;
 const METERING_FLOOR_DB = -60;
 
@@ -51,7 +62,7 @@ export function VoiceRecorder({
 }: VoiceRecorderProps) {
   const { colors } = useTheme();
   const recorder = useAudioRecorder({
-    ...RecordingPresets.HIGH_QUALITY,
+    ...VOICE_QUALITY,
     isMeteringEnabled: true,
   });
   const recorderState = useAudioRecorderState(recorder, 100);
@@ -76,6 +87,11 @@ export function VoiceRecorder({
       setPermissionGranted(requested.granted);
     })();
   }, []);
+
+  // Walking away mid-recording (back gesture, tab switch) never reaches
+  // handleStop. Releasing the recorder stops the mic, but the session would
+  // stay on .playAndRecord until the app restarts.
+  useEffect(() => () => { void setPlaybackAudioMode(); }, []);
 
   useEffect(() => {
     if (!recorderState.isRecording) return;
@@ -107,9 +123,9 @@ export function VoiceRecorder({
     }
     try {
       setPreparing(true);
-      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+      await setRecordingAudioMode();
       await recorder.prepareToRecordAsync({
-        ...RecordingPresets.HIGH_QUALITY,
+        ...VOICE_QUALITY,
         isMeteringEnabled: true,
       });
       meterHistoryRef.current = Array(WAVEFORM_BARS).fill(0.05);
@@ -126,12 +142,15 @@ export function VoiceRecorder({
     try {
       const durationMs = recorderState.durationMillis;
       await recorder.stop();
+      // Hand the session back before anything can return early: a session left
+      // on .playAndRecord stays there for the rest of the launch, and every
+      // recording played afterwards comes out of the mic's route, quiet.
+      await setPlaybackAudioMode();
       const uri = recorder.uri;
       if (!uri) {
         Alert.alert("That one didn't record", 'No audio came through. Try once more.');
         return;
       }
-      await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
       setRecordedUri(uri);
       setRecordedDuration(Math.round(durationMs / 1000));
     } catch (err: any) {
@@ -211,12 +230,18 @@ function PlaybackUI({ uri, durationSeconds, onAccept, onDiscard }: { uri: string
   const playing = status.playing;
   const currentTime = status.currentTime || 0;
 
+  const onTogglePlay = async () => {
+    if (playing) return player.pause();
+    if (hasEnded(status)) await player.seekTo(0);
+    player.play();
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.playbackRow}>
         <TouchableOpacity
           accessibilityLabel={playing ? 'Pause playback' : 'Play recording'}
-          onPress={() => (playing ? player.pause() : player.play())}
+          onPress={onTogglePlay}
           activeOpacity={0.85}
           style={[styles.playButton, { backgroundColor: colors.accent }]}
         >

@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
+import type { AudioPlayer as ExpoAudioPlayer } from 'expo-audio';
 import { Play, Pause } from 'phosphor-react-native';
 import { Text } from './ui/Text';
 import { useTheme } from '../providers/ThemeProvider';
 import { getSignedAudioUrl } from '../lib/entries';
+import { hasEnded, setPlaybackAudioMode } from '../lib/audioSession';
 
 export interface AudioPlayerProps {
   audioPath: string;
@@ -23,6 +25,12 @@ function formatDuration(ms: number) {
 const SIGN_TTL_SECONDS = 3600;
 // Re-sign before the URL actually lapses so play never races the expiry.
 const RESIGN_AFTER_MS = 50 * 60 * 1000;
+
+// The reveal shows two recordings side by side and they used to talk over each
+// other. Module scope rather than a prop: whoever plays last speaks, wherever
+// the two players happen to be mounted. Cleared on unmount, so this only ever
+// holds a live player.
+let speaking: ExpoAudioPlayer | null = null;
 
 export function AudioPlayer({ audioPath, durationSeconds, label, accent = 'primary' }: AudioPlayerProps) {
   const { colors } = useTheme();
@@ -46,12 +54,24 @@ export function AudioPlayer({ audioPath, durationSeconds, label, accent = 'prima
   const player = useAudioPlayer(signedUrl);
   const status = useAudioPlayerStatus(player);
 
+  useEffect(() => () => { if (speaking === player) speaking = null; }, [player]);
+
+  // A load that failed (URL expired mid-listen, connection dropped part way)
+  // leaves an item that can never play. The button stayed live and did nothing.
+  const loadFailed = !!status.error;
+
   // #30: a signed URL lives 1 hour; a reveal left open longer used to fail
   // silently on play. Renew in place (position reset is fine, the old URL
   // couldn't have played anyway).
   const onTogglePlay = async () => {
     if (status.playing) return player.pause();
-    if (Date.now() - signedAt.current > RESIGN_AFTER_MS) {
+    // Claim the session for playback on every press: the silent switch would
+    // otherwise mute this, and a recorder left mid-flight elsewhere would leave
+    // the session on the mic's route.
+    await setPlaybackAudioMode();
+    // A fresh URL is the only way back from a failed load, so a press retries
+    // rather than repeating the press that already did nothing.
+    if (loadFailed || Date.now() - signedAt.current > RESIGN_AFTER_MS) {
       try {
         const url = await getSignedAudioUrl(audioPath, SIGN_TTL_SECONDS);
         signedAt.current = Date.now();
@@ -60,6 +80,9 @@ export function AudioPlayer({ audioPath, durationSeconds, label, accent = 'prima
         // keep the old URL; play below surfaces whatever state it's in
       }
     }
+    if (hasEnded(status)) await player.seekTo(0);
+    if (speaking && speaking !== player) speaking.pause();
+    speaking = player;
     player.play();
   };
 
@@ -97,7 +120,9 @@ export function AudioPlayer({ audioPath, durationSeconds, label, accent = 'prima
         <Text variant="body" color={colors.ink}>
           {formatDuration(currentTime * 1000)} / {formatDuration(durationSeconds * 1000)}
         </Text>
-        {label && <Text variant="label" color={colors.muted}>{label}</Text>}
+        {loadFailed
+          ? <Text variant="label" color={colors.muted}>Couldn't load this recording. Tap play to try again.</Text>
+          : label && <Text variant="label" color={colors.muted}>{label}</Text>}
       </View>
     </View>
   );

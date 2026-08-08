@@ -213,28 +213,46 @@ export async function uploadVoiceRecording(
   return objectPath;
 }
 
-export async function attachAudioToEntry(
+// Attach the audio and seal, in ONE write. These were two round trips, which
+// cost the sender a wait for no gain and left a window where an entry carried
+// audio but was not sealed. entries_update_own_draft is
+// USING (submitted_at IS NULL) WITH CHECK (user_id = auth.uid()), so a single
+// statement that fills both passes: the row is still a draft when USING is
+// evaluated. Idempotent the same way submitEntry is, and for the same reason:
+// the seal commits before the response lands, so zero rows means it already
+// went through. The transcript is not written here; it catches up later through
+// set_entry_transcript.
+export async function submitVoiceEntry(
   entryId: string,
   audioUrl: string,
   durationSeconds: number,
-  transcript?: string | null,
 ) {
+  const now = new Date().toISOString();
   const { data, error } = await supabase
     .from('entries')
     .update({
       audio_url: audioUrl,
       audio_duration_seconds: durationSeconds,
       entry_type: 'voice',
-      // Best-effort on-device transcript; null when recognition wasn't possible.
-      transcript: transcript ?? null,
-      updated_at: new Date().toISOString(),
+      submitted_at: now,
+      updated_at: now,
     })
     .eq('id', entryId)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
-  return data;
+  if (data) return data;
+
+  const { data: existing, error: readError } = await supabase
+    .from('entries')
+    .select()
+    .eq('id', entryId)
+    .maybeSingle();
+
+  if (readError) throw readError;
+  if (existing?.submitted_at) return existing;
+  throw new Error('Your recording is still here. Try sending it again.');
 }
 
 // Attach a transcript to an already-sealed voice entry. Goes through an RPC

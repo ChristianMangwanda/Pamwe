@@ -18,7 +18,7 @@ jest.mock('../lib/supabase', () => ({
 import {
   ensureVoiceDraft,
   uploadVoiceRecording,
-  attachAudioToEntry,
+  submitVoiceEntry,
 } from '../lib/entries';
 import { supabase } from '../lib/supabase';
 import { File } from 'expo-file-system';
@@ -221,22 +221,43 @@ describe('uploadVoiceRecording', () => {
   });
 });
 
-describe('attachAudioToEntry', () => {
-  it('writes audio_url, audio_duration_seconds, entry_type=voice on the entry row', async () => {
+describe('submitVoiceEntry', () => {
+  it('attaches the audio and seals in a single write', async () => {
     const updateChain = chainMock({
-      data: { id: 'entry-1', audio_url: 'cp-1/5/user-1.m4a' },
+      data: { id: 'entry-1', audio_url: 'cp-1/5/user-1.m4a', submitted_at: '2026-08-07T09:00:00.000Z' },
     });
     mockFrom.mockReturnValue(updateChain);
 
-    await attachAudioToEntry('entry-1', 'cp-1/5/user-1.m4a', 47);
+    await submitVoiceEntry('entry-1', 'cp-1/5/user-1.m4a', 47);
 
+    expect(mockFrom).toHaveBeenCalledTimes(1);
     expect(updateChain.update).toHaveBeenCalledWith(
       expect.objectContaining({
         audio_url: 'cp-1/5/user-1.m4a',
         audio_duration_seconds: 47,
         entry_type: 'voice',
+        submitted_at: expect.any(String),
       }),
     );
     expect(updateChain.eq).toHaveBeenCalledWith('id', 'entry-1');
+  });
+
+  it('treats an already-sealed entry as success, keeping the first timestamp', async () => {
+    // entries_update_own_draft is USING (submitted_at IS NULL), so a retry after
+    // a dropped response matches zero rows on a row that did land.
+    const sealed = { id: 'entry-1', submitted_at: '2026-08-07T09:00:00.000Z' };
+    mockFrom
+      .mockReturnValueOnce(chainMock({ data: null }))
+      .mockReturnValueOnce(chainMock({ data: sealed }));
+
+    await expect(submitVoiceEntry('entry-1', 'cp-1/5/user-1.m4a', 47)).resolves.toEqual(sealed);
+  });
+
+  it('throws when the row is neither updatable nor already sealed', async () => {
+    mockFrom
+      .mockReturnValueOnce(chainMock({ data: null }))
+      .mockReturnValueOnce(chainMock({ data: { id: 'entry-1', submitted_at: null } }));
+
+    await expect(submitVoiceEntry('entry-1', 'cp-1/5/user-1.m4a', 47)).rejects.toThrow();
   });
 });
