@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendExpoPush } from "../_shared/push.ts";
+import { requireWebhookSecret } from "../_shared/webhook.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -14,13 +15,39 @@ const supabase = createClient(
 // for every tap would turn the warmest part of the ritual into noise. The
 // trigger filters on kind too, so a heart never even reaches this function.
 Deno.serve(async (req) => {
+  const denied = requireWebhookSecret(req, "notify-new-response");
+  if (denied) return denied;
+
   const { record } = await req.json();
 
-  if (!record || record.kind !== "reply") {
+  if (!record?.id) {
+    return new Response("No response id", { status: 200 });
+  }
+
+  // Read the reply from the table rather than from the request. The body used to
+  // be trusted verbatim AND author_id was taken on trust, so whoever could reach
+  // this function chose both the words on the banner and the name above them,
+  // which is to say they could impersonate a partner.
+  const { data: response, error: responseErr } = await supabase
+    .from("entry_responses")
+    .select("kind, entry_id, author_id, body, parent_id")
+    .eq("id", record.id)
+    .maybeSingle();
+
+  if (responseErr) {
+    console.error("notify-new-response: response lookup failed", responseErr);
+    return new Response("response lookup failed", { status: 500 });
+  }
+
+  if (!response) {
+    return new Response("Response gone", { status: 200 });
+  }
+
+  if (response.kind !== "reply") {
     return new Response("Not a reply", { status: 200 });
   }
 
-  const { entry_id, author_id, body, parent_id } = record;
+  const { entry_id, author_id, body, parent_id } = response;
 
   // Tell whoever is being answered. Without a parent that is the entry's author,
   // the way it has always been. With one it is the author of the reply above,

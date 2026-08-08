@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendExpoPush } from "../_shared/push.ts";
+import { requireWebhookSecret } from "../_shared/webhook.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -7,9 +8,12 @@ const supabase = createClient(
 );
 
 Deno.serve(async (req) => {
+  const denied = requireWebhookSecret(req, "notify-partner");
+  if (denied) return denied;
+
   const { record } = await req.json();
 
-  if (!record.submitted_at) {
+  if (!record?.submitted_at) {
     return new Response("Draft, not submitted", { status: 200 });
   }
 

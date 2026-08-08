@@ -13,6 +13,7 @@ import {
   clearDeliveredNotifications,
   cleanupLegacyScheduled,
 } from '../lib/notifications';
+import { recordTermsAcceptance } from '../lib/account';
 
 type AuthContextType = {
   session: Session | null;
@@ -73,6 +74,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     scheduleMorningFromPrefs();
     scheduleRecapFromPrefs();
     schedulePrayerReviewFromPrefs();
+    // Stamps the first sign-in only (the update filters on a null column), so
+    // the consent the welcome screen asks for is recorded against the account.
+    recordTermsAcceptance();
     registerForPushNotifications().then((token) => {
       if (token) savePushToken(token);
     });

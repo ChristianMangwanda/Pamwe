@@ -38,7 +38,7 @@ export default function InviteScreen() {
           // #18: a code older than 7 days no longer joins anyone. Swap in a
           // fresh one so a slow start never bricks the pairing.
           if (inviteExpired(existing)) {
-            const renewed = await regenerateInviteCode(existing.id);
+            const renewed = await regenerateInviteCode();
             setCode(renewed.invite_code);
             setCoupleId(renewed.id);
             return;

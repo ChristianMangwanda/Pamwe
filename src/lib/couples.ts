@@ -1,46 +1,27 @@
 import { supabase } from './supabase';
 
-function generateCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = '';
-  for (let i = 0; i < 6; i++) {
-    code += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return code;
-}
+// Pairing goes through three SECURITY DEFINER functions rather than writing to
+// couples directly (20260808000001). The invite code is a bearer credential for
+// everything the two of you ever write, and as table writes it was neither: the
+// code was only a client-side filter, so the database let any signed-in user list
+// every pending invite and claim one without it. The code is now generated in the
+// database from a CSPRNG, and each of these lands its couple row and its profile
+// link in one transaction instead of two or three separate calls.
 
 export async function createCouple() {
   // getSession() reads locally; getUser() is a network call that can hang
   // during first-run onboarding (same for the sites below).
   const { data: { session } } = await supabase.auth.getSession();
-  const user = session?.user;
-  if (!user) throw new Error('Not authenticated');
+  if (!session?.user) throw new Error('Not authenticated');
 
-  const inviteCode = generateCode();
-  const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + 7);
-
+  // Still captured here: Intl only exists on the device. The RPC validates it and
+  // decides the code and the expiry itself.
   const timezone =
     Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
 
-  const { data, error } = await supabase
-    .from('couples')
-    .insert({
-      invite_code: inviteCode,
-      invite_expires_at: expiresAt.toISOString(),
-      partner_a_id: user.id,
-      timezone,
-    })
-    .select()
-    .single();
+  const { data, error } = await supabase.rpc('create_couple', { p_timezone: timezone });
 
   if (error) throw error;
-
-  await supabase
-    .from('users')
-    .update({ couple_id: data.id })
-    .eq('id', user.id);
-
   return data;
 }
 
@@ -50,22 +31,10 @@ export function inviteExpired(couple: { invite_expires_at?: string | null }): bo
 }
 
 // #18: a lapsed code used to brick the couple (no path ever refreshed it).
-// Only valid while unpaired; RLS (couples_update_regenerate_invite) enforces
-// that the caller is partner A and the couple has no partner B.
-export async function regenerateInviteCode(coupleId: string) {
-  const inviteCode = generateCode();
-  const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + 7);
-
-  const { data, error } = await supabase
-    .from('couples')
-    .update({
-      invite_code: inviteCode,
-      invite_expires_at: expiresAt.toISOString(),
-    })
-    .eq('id', coupleId)
-    .select()
-    .single();
+// Only valid while unpaired; the RPC derives the couple from the caller, so
+// there is no id to pass and none to tamper with.
+export async function regenerateInviteCode() {
+  const { data, error } = await supabase.rpc('regenerate_invite_code');
 
   if (error) throw error;
   return data;
@@ -73,36 +42,15 @@ export async function regenerateInviteCode(coupleId: string) {
 
 export async function joinCouple(inviteCode: string) {
   const { data: { session } } = await supabase.auth.getSession();
-  const user = session?.user;
-  if (!user) throw new Error('Not authenticated');
+  if (!session?.user) throw new Error('Not authenticated');
 
-  const { data: couple, error: findError } = await supabase
-    .from('couples')
-    .select()
-    .eq('invite_code', inviteCode.toUpperCase())
-    .is('partner_b_id', null)
-    .gt('invite_expires_at', new Date().toISOString())
-    .single();
+  const { data, error } = await supabase.rpc('join_couple', { p_code: inviteCode });
 
-  if (findError || !couple) throw new Error("That code didn't work. Check it with your partner and try again.");
-  if (couple.partner_a_id === user.id) throw new Error("You can't join your own invite");
-
-  const { error: updateError } = await supabase
-    .from('couples')
-    .update({
-      partner_b_id: user.id,
-      paired_at: new Date().toISOString(),
-    })
-    .eq('id', couple.id);
-
-  if (updateError) throw updateError;
-
-  await supabase
-    .from('users')
-    .update({ couple_id: couple.id })
-    .eq('id', user.id);
-
-  return couple;
+  // The RPC raises in the caller's words (an unknown, spent or expired code all
+  // answer the same way on purpose, so a stranger cannot tell them apart), and
+  // join.tsx shows this message.
+  if (error) throw new Error(error.message);
+  return data;
 }
 
 export async function getUserCouple(userId?: string) {

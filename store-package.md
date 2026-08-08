@@ -131,7 +131,8 @@ Do not show real reflections from you and Ammy; sign in as the demo couple
 > sign-up cannot reach the core loop. A pre-paired demo couple is set up for review:
 >
 > Email: grace@review.pamwe.app
-> Password: Pamwe-Review-2026
+> Password: (paste it here from your password manager when filling in the Notes
+> field; it is deliberately not written down in this repository, which is public)
 >
 > On the sign-in screen, type the email and a password field appears (this
 > domain signs in with a password instead of an email magic link). You will land

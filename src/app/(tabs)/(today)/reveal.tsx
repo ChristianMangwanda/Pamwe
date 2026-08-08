@@ -155,6 +155,11 @@ export default function RevealScreen() {
     // used to do it the instant both partners submitted, which pulled every
     // ritual screen onto the next empty day and ate the reveal. The final day
     // has no next day: the submit trigger retires the plan instead.
+    //
+    // That trigger is paused on hosted (20260807000003) so a phone on build 23
+    // could finish its plan; until 20260808000007 is applied, a plan's last day
+    // completes only by enrolling in the next one or by the manual button on the
+    // plan screen.
     if (!completed && couplePlan) {
       try {
         await advancePlanDay(couplePlan.id, dayNumber);

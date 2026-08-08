@@ -4,6 +4,36 @@
 
 ---
 
+## ⭐ B25 / SECURITY ROUND (2026-08-08): database done, binary up, two things left
+
+An external review raised 13 findings; all 13 verified real, two worse than
+reported. **Seven of the eight migrations are applied to hosted and build 25 is
+uploaded to TestFlight.**
+
+Done on hosted: the pairing RPCs, the users column grants, the entries scope and
+partner-filtered streak, the response foreign keys, the webhook-secret plumbing,
+the delete_account RPC, and `users.accepted_terms_at`. Verified after applying:
+`notify_config()` still locked away from the API roles, the three pairing RPCs
+callable by `authenticated`, and every recent webhook delivery still 200.
+
+**Still outstanding, in priority order:**
+
+1. **Rotate the App Review password.** Not done. `grace@review.pamwe.app` still
+   carries the password that sits in the public repo, and had 8 live sessions as
+   of tonight. Put the new one in App Store Connect review notes first, since a
+   TestFlight build is up.
+2. **Deploy the seven edge functions.** The Vault now has
+   `notify_webhook_secret`, so the triggers are already sending the header and
+   the currently deployed (old) functions ignore it. Before deploying the new
+   ones, **confirm the dashboard secret `NOTIFY_WEBHOOK_SECRET` matches the Vault
+   value** or every notification starts returning 401.
+3. **`20260808000007_resume_final_day_autocomplete.sql`**, once both phones are
+   on build 24 or later.
+
+Runbook: [`security-round-plan.md`](security-round-plan.md).
+
+---
+
 ## ⭐ B24 (UPLOADED 2026-08-08): the app answers back
 
 Six items from Pamwe Ramblings. Backend went to hosted on the 7th, the binary on

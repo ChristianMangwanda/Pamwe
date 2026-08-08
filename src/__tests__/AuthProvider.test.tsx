@@ -28,6 +28,11 @@ jest.mock('../lib/notifications', () => ({
   cleanupLegacyScheduled: jest.fn(() => Promise.resolve()),
 }));
 
+// Same reason: the sign-in effect also stamps the terms acceptance.
+jest.mock('../lib/account', () => ({
+  recordTermsAcceptance: jest.fn(() => Promise.resolve()),
+}));
+
 const mockGetSession = supabase.auth.getSession as jest.Mock;
 const mockOnAuthStateChange = supabase.auth.onAuthStateChange as jest.Mock;
 const mockSignOut = supabase.auth.signOut as jest.Mock;

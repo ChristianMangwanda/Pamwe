@@ -25,6 +25,7 @@ import {
   submitVoiceEntry,
   saveTranscript,
   getMyEntry,
+  deleteLocalRecording,
 } from '../../../lib/entries';
 
 const AUTOSAVE_INTERVAL_MS = 5000;
@@ -163,9 +164,13 @@ export default function JournalScreen() {
       // The entry is sealed and delivered above; the transcript catches up.
       // Detached on purpose: this outlives the screen, so it must not touch
       // component state, and a failure leaves the entry as it already shipped.
+      // The local file is the recognizer's input, so it has to outlive both the
+      // upload above and this call. This is the last thing that needs it, and
+      // the copy that matters is already in storage.
       transcribeRecording(result.uri)
         .then((t) => (t ? saveTranscript(draft.id, t) : undefined))
-        .catch(() => {});
+        .catch(() => {})
+        .finally(() => deleteLocalRecording(result.uri));
       // Straight to waiting. It mounts its own useTodayEntry and refetches on
       // arrival, so refreshing this screen's copy first only made the sender
       // watch a spinner through a round trip whose result nothing reads: this

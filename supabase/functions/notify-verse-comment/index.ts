@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendExpoPush } from "../_shared/push.ts";
+import { requireWebhookSecret } from "../_shared/webhook.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -14,6 +15,9 @@ const supabase = createClient(
 // a phone. Rides the same notification_note preference as the note itself,
 // because it is the same conversation and one switch should govern it.
 Deno.serve(async (req) => {
+  const denied = requireWebhookSecret(req, "notify-verse-comment");
+  if (denied) return denied;
+
   const { record } = await req.json();
   if (!record || record.kind !== "comment") {
     return new Response("Not a comment", { status: 200 });

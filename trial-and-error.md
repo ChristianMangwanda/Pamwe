@@ -984,3 +984,88 @@ cores): 280/280 each time.
 **The generalisable bit:** when one test in a file is slow and its identical twin
 is fast, stop reading the slow test. It is paying an initialisation cost that
 belongs to the file, and the fix is never in the assertion.
+
+## Adding an OUT parameter silently re-opens a function to the world (2026-08-08)
+
+`notify_config()` hands back the service-role key. It was locked with
+`REVOKE EXECUTE ... FROM public, anon, authenticated` when it was created
+(20260709000006), and that revoke is the only thing standing between a signed-in
+user and the key.
+
+Adding a third OUT parameter (the webhook secret) changes the function's return
+type, and **`CREATE OR REPLACE` cannot change a return type**. So the migration
+has to `DROP FUNCTION` first. The trap is what the drop takes with it: a
+function's ACL. A freshly created function is `EXECUTE`-able by `PUBLIC` by
+default, so the drop-and-recreate silently handed the service key back to every
+API role. Nothing errors, nothing warns, and the function still works.
+
+**Re-assert every REVOKE after any DROP + CREATE.** The probe that catches it:
+
+```sql
+set local role authenticated;
+select public.notify_config();   -- must be: permission denied
+```
+
+That assertion now lives in `scripts/rls_probe.sql` so it cannot regress quietly.
+The same applies to any definer function in this repo carrying a REVOKE, which is
+all of them: `compute_streak`, `delete_account`, `generate_invite_code`, and the
+six notify triggers.
+
+## A probe that cannot fail is worse than no probe (2026-08-08)
+
+Two bugs in `scripts/rls_probe.sql` itself, both of which made it report success
+while testing nothing.
+
+**1. The assertion swallowed by its own handler.** The shape looks right:
+
+```sql
+begin
+  perform public.join_couple(v_code);          -- should be refused
+  raise exception 'FAIL: a spent code was accepted twice';
+exception when others then
+  null;                                        -- <-- eats the FAIL too
+end;
+```
+
+If the call is wrongly *accepted*, the `raise` fires and `when others` catches it,
+so the probe passes exactly when the hole is open. Use a flag set inside the
+block and raise outside it, or exclude `P0001` (plpgsql's `raise exception`) in
+the handler.
+
+**2. The fixtures were unreadable once the probe became the user it was testing.**
+`set role authenticated` applies to temp tables too, so reading the ids out of a
+scratch table failed with `permission denied for table probe_ids` after the role
+switch. A `grant select on probe_ids to authenticated` fixes it, and
+`set_config('role', 'postgres', true)` is how to get back to the owner for the
+parts of a probe that set the scene rather than test it (`reset role` is not
+available inside a plpgsql block).
+
+**Always prove a probe fails against the broken state before trusting it against
+the fixed one.** For this round that meant re-creating `couples_select_by_invite`
+and re-granting `UPDATE ON users` inside a transaction, confirming the probe
+reported the outsider seeing pending couples and self-assigning `couple_id`, then
+rolling back. Ten minutes, and without it the whole file is decoration.
+
+## pod install rewrites PrivacyInfo.xcprivacy every time (2026-08-08)
+
+Any `pod install` (here: after aligning `@sentry/react-native` to the SDK-56 pin
+of ~7.11.0) leaves `scripts/restore_ios_patches.rb --check` reporting
+
+```
+DRIFT   PrivacyInfo.xcprivacy differs from scripts/ios/PrivacyInfo.xcprivacy
+```
+
+The drift is cosmetic: CocoaPods re-serialises the plist, sorting keys
+alphabetically and dropping the XML comment that ties the file to
+`docs/app-store-privacy-answers.md`. The eight collected-data types and their
+values survive. Apple would accept it either way.
+
+Restore it anyway (`scripts/restore_ios_patches.rb`, no flag). The canonical copy
+in `scripts/ios/` is what makes the pre-archive check a clean pass/fail, and a
+gate that is expected to be a bit red is a gate nobody reads.
+
+**Sequence that works:** `npx expo install @sentry/react-native` → revert the
+config-plugin line it adds to `app.json` (plugin props only apply through
+`expo prebuild`, which is banned here, and the Xcode splice is hand-maintained) →
+`pod install` → `restore_ios_patches.rb` → `--check` → `expo export:embed` and
+grep for the project ref.

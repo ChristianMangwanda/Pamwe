@@ -183,6 +183,23 @@ export async function ensureVoiceDraft(couplePlanId: string, dayNumber: number) 
   return data;
 }
 
+/** Remove a recording from the device's cache directory.
+ *
+ *  expo-audio records into Caches, which iOS only clears under storage pressure,
+ *  so a discarded take, a re-record and every sent reflection each used to leave
+ *  a private recording sitting on the phone indefinitely. Nothing else ever
+ *  deleted them.
+ *
+ *  Safe to call twice: a missing file is already the outcome we want. */
+export function deleteLocalRecording(uri: string | null | undefined) {
+  if (!uri) return;
+  try {
+    new File(uri).delete();
+  } catch {
+    // Already gone, or never written.
+  }
+}
+
 export async function uploadVoiceRecording(
   couplePlanId: string,
   dayNumber: number,

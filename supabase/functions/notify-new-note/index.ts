@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendExpoPush } from "../_shared/push.ts";
+import { requireWebhookSecret } from "../_shared/webhook.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -7,10 +8,28 @@ const supabase = createClient(
 );
 
 Deno.serve(async (req) => {
-  const { record } = await req.json();
-  if (!record) return new Response("No record", { status: 200 });
+  const denied = requireWebhookSecret(req, "notify-new-note");
+  if (denied) return denied;
 
-  const { couple_id, user_id: authorId, book, chapter, verse } = record;
+  const { record } = await req.json();
+  if (!record?.id) return new Response("No note id", { status: 200 });
+
+  // Read the note from the table rather than from the request. book/chapter/verse
+  // used to be pasted into the notification title straight off the payload, so
+  // the reference on the banner was free text chosen by the caller.
+  const { data: note, error: noteErr } = await supabase
+    .from("verse_notes")
+    .select("couple_id, user_id, book, chapter, verse")
+    .eq("id", record.id)
+    .maybeSingle();
+
+  if (noteErr) {
+    console.error("notify-new-note: note lookup failed", noteErr);
+    return new Response("note lookup failed", { status: 500 });
+  }
+  if (!note) return new Response("Note gone", { status: 200 });
+
+  const { couple_id, user_id: authorId, book, chapter, verse } = note;
 
   // Query errors are 5xx, never folded into "not found": as a webhook target
   // the only trace of this run is net._http_response, so a swallowed error

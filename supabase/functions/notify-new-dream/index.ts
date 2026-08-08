@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendExpoPush } from "../_shared/push.ts";
+import { requireWebhookSecret } from "../_shared/webhook.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -11,6 +12,9 @@ const supabase = createClient(
 // the dream: unlike a prayer point, a dream can be private in a way you don't
 // want sitting on a lock screen. It says one arrived, not what it said.
 Deno.serve(async (req) => {
+  const denied = requireWebhookSecret(req, "notify-new-dream");
+  if (denied) return denied;
+
   const { record } = await req.json();
 
   if (!record) {

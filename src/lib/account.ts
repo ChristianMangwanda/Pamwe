@@ -31,6 +31,24 @@ export async function updateDisplayName(name: string) {
   if (error) throw error;
 }
 
+/** Record that this user accepted the terms and privacy policy, once.
+ *
+ *  The policy says the legal basis for holding a couple's reflections is their
+ *  explicit consent, given when they create an account. The welcome screen asks
+ *  for it (continuing is agreeing); this is what makes it a fact we hold rather
+ *  than a sentence we wrote. Best effort on purpose: never block a sign-in over
+ *  it, and never overwrite the original date. */
+export async function recordTermsAcceptance() {
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
+  if (!user) return;
+  await supabase
+    .from('users')
+    .update({ accepted_terms_at: new Date().toISOString() })
+    .eq('id', user.id)
+    .is('accepted_terms_at', null);
+}
+
 export async function getMyProfile() {
   const { data: { session } } = await supabase.auth.getSession();
   const user = session?.user;
