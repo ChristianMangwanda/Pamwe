@@ -79,7 +79,30 @@ supabase status                        # local URLs/keys · Studio http://127.0.
 #    embedded widget appex CFBundleVersion MUST equal the app's or Apple processing
 #    rejects the build. (CFBundleShortVersionString is the literal 1.0.0 in both
 #    Info.plists; bump both if the marketing version ever changes.)
-# 2. Archive (Release bundles .env.production = hosted Supabase + Sentry DSN).
+# 2. Archive. ⚠️ THE BUNDLE PHASE MUST EXPORT NODE_ENV=production, and it only
+#    does because it was hand-patched (2026-08-08). @expo/env chooses its .env
+#    files from NODE_ENV. The `expo` bin wrapper (node_modules/expo/bin/cli) sets
+#    it from --dev false, which is why `npx expo export:embed` is always right,
+#    but the Xcode phase calls @expo/cli/build/bin/cli DIRECTLY through
+#    react-native-xcode.sh, bypassing that wrapper. Unset, the bundler loads only
+#    .env.local and .env, and .env is the LOCAL stack: the archive silently bakes
+#    in http://<LAN-IP>:54321 plus the LOCAL anon key and ships an app that can
+#    reach nothing. Setting NODE_ENV in the shell or as an xcodebuild build
+#    setting does NOT work: neither reaches the script phase. The fix is the
+#    `else export NODE_ENV=production` branch now living in the phase's
+#    shellScript, beside the Debug SKIP_BUNDLING branch.
+#    ios/ IS GITIGNORED, so a regenerated ios/ loses this patch too. It joins the
+#    sentry-xcode.sh splice and PrivacyInfo.xcprivacy on the redo list, and the
+#    whole list is now restored by one script (canonical copies in scripts/ios/):
+#      GEM_HOME=/opt/homebrew/Cellar/cocoapods/1.17.0/libexec \
+#        /opt/homebrew/opt/ruby/bin/ruby scripts/restore_ios_patches.rb --check
+#    --check changes nothing and exits 1 on drift, so run it BEFORE an archive;
+#    drop the flag to repair. It also catches an app/widget CURRENT_PROJECT_VERSION
+#    mismatch, which Apple rejects and which burns the build number.
+#    To check env resolution in seconds instead of a 20 minute archive:
+#      npx expo export:embed --entry-file node_modules/expo-router/entry.js \
+#        --platform ios --dev false --reset-cache --bundle-output /tmp/t.jsbundle \
+#        --assets-dest /tmp/tassets && grep -c <project-ref> /tmp/t.jsbundle
 #    ⚠️ .env.production is GITIGNORED since 2026-08-02 (it was tracked in a public
 #    repo). It must exist on disk under that exact name or Release bundles an
 #    undefined Supabase URL and step 3's grep returns 0. A fresh clone has to
@@ -92,6 +115,21 @@ supabase status                        # local URLs/keys · Studio http://127.0.
 #    org auth token Christian creates in the Sentry dashboard). Upload failures
 #    only warn (SENTRY_ALLOW_FAILURE=true in the phase), so a missing token
 #    never burns a build; it just ships minified stacks.
+#    ⚠️ THAT FLAG IS NOT AS SAFE AS IT SOUNDS (2026-08-08). sentry-cli wraps the
+#    WHOLE `export:embed` command, and export:embed is what builds the JS
+#    bundle, not just the source maps. A bundler crash is therefore swallowed
+#    as "Source maps upload failed, but continuing build" and the archive
+#    reports ** ARCHIVE SUCCEEDED ** with NO main.jsbundle inside the .app: a
+#    binary that looks shippable and launches to a red screen.
+#    CLOSED 2026-08-08: the bundle phase now re-asserts, AFTER the wrapper
+#    returns, that $CONFIGURATION_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/
+#    main.jsbundle exists and is non-empty, and fails the build when it does not.
+#    react-native-xcode.sh already checked exactly this, but its check runs
+#    INSIDE the wrapper, so sentry-cli swallowed that too; the new one sits
+#    outside where nothing can catch it. It skips when SKIP_BUNDLING is set
+#    (Debug) and still propagates the wrapper's own exit status. Step 3 below
+#    stays in the checklist anyway: this guard proves a bundle EXISTS, only the
+#    grep proves it points at the right Supabase project.
 cd ios && xcodebuild -workspace Pamwe.xcworkspace -scheme Pamwe -configuration Release \
   -destination "generic/platform=iOS" -archivePath /tmp/Pamwe.xcarchive \
   -allowProvisioningUpdates DEVELOPMENT_TEAM=5LX4YFCXPK archive
@@ -478,6 +516,8 @@ hits are authoritative and never revalidate (scripture is immutable); bible-api.
 
 `ios/` is gitignored (except `ExportOptions.plist`) but hand-maintained: entitlements, `$(CURRENT_PROJECT_VERSION)` wiring, purpose strings. A stray prebuild on 2026-07-11 reset Info.plist's `CFBundleVersion` to a literal `1` and stripped `NSPhotoLibraryUsageDescription`, which burned build 10 at Apple processing. New Expo modules need only `npm install` + `pod install` (autolinking). Only `NSPhotoLibraryUsageDescription` is mirrored in `app.json > ios.infoPlist`; the mic and speech purpose strings exist solely as plugin props (which apply only via the banned prebuild) plus the hand-maintained `ios/Pamwe/Info.plist`, which is the real source of truth for all of them.
 
+**If it happens anyway, `scripts/restore_ios_patches.rb` puts it back**: the bundle phase's NODE_ENV/`.env.production` branch and Sentry splice, `PrivacyInfo.xcprivacy` (file + Resources membership), both entitlements wirings, `$(CURRENT_PROJECT_VERSION)` in Info.plist, and the three purpose strings. Canonical copies live in git at [scripts/ios/](scripts/ios/), so the script only puts files back and rewires them, never retypes their contents. It is idempotent, `--check` is a read-only pre-archive gate, and it prints the three things it deliberately cannot restore (`ios/sentry.properties`, `.env.production`, `pod install`).
+
 ### Widgets (VerseWidget appex) — home screen 2026-07-12, lock screen 2026-07-31
 
 One app-extension, `VerseWidget`, holding **two** WidgetKit widgets. Both read the same bundled `verses.json`: a **curated** set of uplifting, standalone verses picked by calendar day-of-year (cycling if the set is shorter than the year), rolling over at local midnight. The earlier M'Cheyne-pull-quote set was dropped because it surfaced narrative fragments that mean little out of context. Widget deployment target is **iOS 17.0**; the app stays 16.4.
@@ -566,4 +606,5 @@ The voice recorder, audio upload, and partner-push flow only behave correctly on
 | Retrieval over the catalogue | `retrieve_passages(want_themes, allow_cautions, max_rows)` in [supabase/migrations/20260802000001_retrieve_passages.sql](supabase/migrations/20260802000001_retrieve_passages.sql) |
 | Seeded plan content | [supabase/seed.sql](supabase/seed.sql) (~14k lines) + `scripts/seed_{john,psalms,cord}_plan.py` |
 | Widgets, home + lock (WidgetKit/SwiftUI) | [ios/VerseWidget/](ios/VerseWidget/) (git-tracked source); target splice `scripts/add_widget_target.rb`, verse data `scripts/gen_widget_verses.py` |
+| Restoring a regenerated ios/ | [scripts/restore_ios_patches.rb](scripts/restore_ios_patches.rb) (`--check` before an archive), canonical copies [scripts/ios/](scripts/ios/) |
 | App Group bridge (anniversary → widget) | [modules/pamwe-widget/](modules/pamwe-widget/) (local Expo module), called from [src/providers/CoupleProvider.tsx](src/providers/CoupleProvider.tsx) |

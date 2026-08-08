@@ -707,3 +707,280 @@ is exactly its job. Tested in `today-entry-day.test.tsx`.
 **Note for release ordering:** the fault is client side, so a phone on an older
 build keeps losing its final-day reveal until it updates. The reflections
 themselves are never at risk, they are readable in the Reflect tab either way.
+
+---
+
+## An archive that succeeds with no JavaScript in it (2026-08-08)
+
+**Symptom:** `** ARCHIVE SUCCEEDED **`, zero `error:` lines, correct build
+number on both the app and the widget appex, every purpose string present. And
+no `main.jsbundle` anywhere inside `Pamwe.app`. The binary is 11MB of native
+code with nothing to run: a TestFlight build like this launches to a red screen.
+
+**Root cause, in two parts.** The bundler crashed on a transient I/O failure:
+
+```
+Error: ETIMEDOUT: connection timed out, read
+    at Object.readFileSync (node:fs:439:20)
+    at defaultLoadImpl (node:internal/modules/cjs/loader:1139:17)
+```
+
+`readFileSync` timing out on a local read is a stressed machine, not a bug in
+the code. The full jest suite was running concurrently and took 57 minutes on
+the same box, against a normal 30 seconds.
+
+The part that matters is what happened next:
+
+```
+Source maps upload failed, but continuing build because SENTRY_ALLOW_FAILURE=true
+```
+
+**`SENTRY_ALLOW_FAILURE=true` does not only cover the upload.** `sentry-cli
+react-native xcode` wraps the ENTIRE `export:embed` invocation, and
+`export:embed` is what builds the bundle. So a hard bundler crash is reported in
+the language of source maps, downgraded to a warning, and the archive proceeds
+without the one file the app cannot start without. Every signal a release script
+would normally trust says the build is good.
+
+**Fix:** none needed in the code, the rebuild on an idle machine produced a
+correct bundle. The lesson is about the pipeline: **step 3 of the release
+checklist is not a formality.** `grep -ac <project-ref> …/Pamwe.app/main.jsbundle`
+is the only check that distinguishes this from a shippable archive, and it
+catches it because the file is missing entirely rather than merely wrong.
+
+**If you are hardening this later:** the honest fix is to stop letting the
+Sentry wrapper decide whether the build failed. Either drop
+`SENTRY_ALLOW_FAILURE` and let a missing auth token fail loudly, or add a step
+to the build phase that tests for `$BUNDLE_FILE` and exits non-zero when it is
+absent. Do not do it mid-release: the phase is hand-spliced and `ios/` is
+gitignored, so a mistake there is not recoverable from git.
+
+**Done, 2026-08-08 (the second option).** The phase now captures the wrapper's
+status, then checks the bundle out where the wrapper cannot reach it:
+
+```sh
+/bin/sh "$SENTRY_XCODE" "$RN_XCODE"
+BUNDLE_STATUS=$?
+
+if [[ -z "$SKIP_BUNDLING" ]]; then
+  BUNDLE_OUT="$CONFIGURATION_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/${BUNDLE_NAME:-main}.jsbundle"
+  if [[ ! -s "$BUNDLE_OUT" ]]; then
+    echo "error: no JavaScript bundle at $BUNDLE_OUT. ..." >&2
+    exit 1
+  fi
+fi
+
+exit $BUNDLE_STATUS
+```
+
+Three details that are the whole point:
+
+- **`react-native-xcode.sh` already had this check** (`if [[ $DEV != true && ! -f
+  "$BUNDLE_FILE" ]]; then ... exit 2`). It never fired, because it runs INSIDE
+  the wrapped command, so `SENTRY_ALLOW_FAILURE` swallowed the guard along with
+  the crash. Position, not logic, was the bug. The new one sits after the
+  wrapper returns.
+- **`-s`, not `-f`:** a zero-byte `main.jsbundle` is just as unshippable as a
+  missing one, and a truncated write is the likelier failure.
+- **`exit $BUNDLE_STATUS` at the end** keeps a genuine wrapper failure failing.
+  Adding any command after the wrapper would otherwise make the phase's exit
+  status the guard's, quietly masking exactly what this is meant to surface.
+
+Skipped when `SKIP_BUNDLING` is set, which is Debug, the one configuration where
+producing no bundle is correct. Verified against five cases without archiving:
+bundle present, bundle missing, bundle empty, Debug, and wrapper-failed-but-
+bundle-present (which must still exit non-zero, and does).
+
+**The warning above about mistakes not being recoverable from git no longer
+applies**, and that is why this was safe to do: the phase's full shellScript now
+lives in git at `scripts/ios/bundle-phase.sh` and is re-applied by
+`scripts/restore_ios_patches.rb`. Editing the canonical file and running the
+script is how this change reached the project in the first place.
+
+---
+
+## The archive baked in the LOCAL Supabase URL (2026-08-08)
+
+**Symptom:** a clean `** ARCHIVE SUCCEEDED **` whose bundle contains
+`http://10.0.0.205:54321` and no trace of the hosted project ref. Shipped, that
+build reaches a dev stack on a LAN it will never be on again: every screen fails,
+sign-in included.
+
+**Root cause:** Release does not select `.env.production` by itself. `@expo/env`
+picks its files from `NODE_ENV`:
+
+```js
+mode = process.env.NODE_ENV,
+...
+if (!mode) logError('The NODE_ENV environment variable is required but was not
+specified. Ensure the project is bundled with Expo CLI or NODE_ENV is set.
+Using only .env.local and .env')
+```
+
+`react-native-xcode.sh` derives `DEV=false` from the configuration but never
+exports `NODE_ENV`, so the bundler ran in no mode at all and loaded `.env`, which
+is the local stack. Expo prints exactly that error, once, in a 15MB log where
+every other line is prefixed `warning: sentry-cli -`.
+
+**Where the mode goes missing.** `npx expo export:embed` is always correct,
+because `node_modules/expo/bin/cli` is a wrapper that sets `NODE_ENV` from
+`--dev false`. The Xcode phase never goes through it: `react-native-xcode.sh`
+resolves `CLI_PATH` to `@expo/cli` and runs its build entry directly, so the
+wrapper's one job is skipped.
+
+**Two fixes that look right and are not.** Neither of these reaches the script
+phase, and both were tried and rejected by the bundle grep:
+
+```bash
+NODE_ENV=production xcodebuild ... archive   # a shell var; Xcode does not pass it on
+xcodebuild ... NODE_ENV=production archive   # a build setting; not exported either
+```
+
+The second is especially convincing because `DEVELOPMENT_TEAM=` works exactly
+that way. It appears in the log once, on line 2, in the echo of the command.
+
+**The fix that works** is in the build phase's own shell, next to the Debug
+branch that sets `SKIP_BUNDLING`:
+
+```sh
+if [[ "$CONFIGURATION" = *Debug* ]]; then
+  export SKIP_BUNDLING=1
+else
+  export NODE_ENV=production
+fi
+```
+
+`ios/` is gitignored, so this patch is lost with a regenerated `ios/`, the same
+as the sentry-xcode.sh splice and PrivacyInfo.xcprivacy. All three are now put
+back by `scripts/restore_ios_patches.rb` (see below); the shipped shell is a
+little longer than the sketch above, because it also sources `.env.production`
+outright and refuses to build when that file is absent.
+
+**Check it in seconds, not in an archive.** The bundler alone answers the env
+question in about 7 seconds:
+
+```bash
+npx expo export:embed --entry-file node_modules/expo-router/entry.js --platform ios \
+  --dev false --reset-cache --bundle-output /tmp/t.jsbundle --assets-dest /tmp/ta
+grep -c <project-ref> /tmp/t.jsbundle
+```
+
+**Why this was not caught before:** it does not fail, it substitutes. The build
+is green, the version numbers match, the purpose strings are present, the app
+launches. Only the bundle grep in step 3 of the release checklist tells the two
+apart, and it tells them apart by the project ref rather than by anything the
+build system considers an error.
+
+**Two of these landed in one session** (see the entry above about
+`SENTRY_ALLOW_FAILURE` masking a bundler crash). Both produced an archive that
+every automatic signal called good. If the pipeline is ever hardened, the lesson
+is the same in both cases: verify the artifact, not the exit code.
+
+## Putting a regenerated ios/ back together (2026-08-08)
+
+**The problem this closes:** three separate hand-made patches live inside a
+gitignored `ios/`, and every one of them fails silently. A regenerated project
+(a stray `expo prebuild`, a fresh clone, `rm -rf ios`) reverts all three, and
+the build stays green:
+
+| Lost | What ships instead |
+|---|---|
+| The `NODE_ENV`/`.env.production` branch | An archive pointed at the LAN dev stack |
+| The sentry-xcode.sh splice | Minified stack traces forever |
+| `PrivacyInfo.xcprivacy` | A privacy manifest missing eight declared data types |
+| `$(CURRENT_PROJECT_VERSION)` in Info.plist | `CFBundleVersion` of literal `1`, rejected at processing |
+| The App Group entitlement | A lock-screen widget whose "In love N days" line just never appears |
+
+**`scripts/restore_ios_patches.rb`** restores all of it, on the
+`add_widget_target.rb` precedent (CocoaPods' bundled xcodeproj gem):
+
+```bash
+GEM_HOME=/opt/homebrew/Cellar/cocoapods/1.17.0/libexec \
+  /opt/homebrew/opt/ruby/bin/ruby scripts/restore_ios_patches.rb
+```
+
+`--check` reports drift and exits 1 without touching anything, which makes it a
+pre-archive gate rather than only a repair tool. `--skip-widget` leaves the appex
+alone.
+
+**The canonical copies live in `scripts/ios/`, which IS in git**: `bundle-phase.sh`
+(the phase's whole shellScript), `PrivacyInfo.xcprivacy`, `Pamwe.entitlements`.
+That is the point of the design. Embedding a 150-line plist as a Ruby heredoc
+would have drifted from the real file the first time either changed; a plain file
+copied into place cannot. `VerseWidget.entitlements` is deliberately NOT
+duplicated there, because `ios/VerseWidget/` already has its own gitignore
+exception.
+
+**It was verified by breaking the project, not by reading it.** The test applied
+the exact damage a prebuild does (stock bundle phase, privacy manifest deleted and
+unwired, entitlements unset, `CFBundleVersion` set to `1`, three purpose strings
+stripped), then confirmed the restore was byte-identical to a backup taken first:
+plists identical, shellScript identical, pbxproj differing only in one
+regenerated `PBXBuildFile` UUID pointing at the same `fileRef`. A second run
+reports "nothing to do".
+
+**What it does NOT restore**, and says so on every repair run: `ios/sentry.properties`
+(an org auth token, only obtainable from the Sentry dashboard), `.env.production`
+(rebuild from `env.hosted.backup`), and `pod install`.
+
+**One thing it reports but will not fix:** a `CURRENT_PROJECT_VERSION` that
+disagrees across the four build configs. It prints every config and its number,
+because which one is correct is a release decision, not a repair.
+
+## A test suite that timed out only when the machine was busy (2026-08-08)
+
+**Symptom:** `sign-in.test.tsx` died on jest's default 5s timeout during
+full-suite runs, and passed in 122ms when run alone. Classic "flaky test",
+except it was neither flaky nor about that test.
+
+**Root cause, from `--verbose` on a cold cache:**
+
+```
+✓ exchanges the identity token and routes through the gate (3043 ms)   ← test #1
+✓ alerts on a Supabase rejection and stays put (54 ms)                 ← same shape
+```
+
+Two structurally identical tests, 56x apart. The cost is not the assertion, it is
+the **first `render()` in the file**. React Native's `index.js` exports every
+component through a lazy getter, so `View`, `TextInput`, `ScrollView`,
+`TouchableOpacity` and friends are required and transformed the moment they are
+first *rendered*, not when the module is imported. Top-of-file imports happen
+before any test and are charged to nobody; that subtree lands inside test #1's
+budget. 3s of headroom against a 5s limit is why a loaded machine tipped it over
+and an idle one never did.
+
+**The bigger half of the fix was somewhere else entirely.** The same run printed:
+
+```
+jest-haste-map: Haste module naming collision: pamwe
+  * <rootDir>/.design-sync/.cache/web-dist/package.json
+  * <rootDir>/package.json
+```
+
+Jest was crawling and transforming 1.5MB of regenerated design-sync build output
+on every cold run. It is gitignored, but `.gitignore` means nothing to jest-haste-map.
+
+**Both fixed in the `jest` block of package.json:**
+
+```json
+"modulePathIgnorePatterns": ["<rootDir>/.design-sync/"],
+"testTimeout": 20000
+```
+
+**Measured, cold cache (`--no-cache`):**
+
+| | Before | After |
+|---|---|---|
+| sign-in.test.tsx, first test | 3043 ms | 784 ms |
+| sign-in.test.tsx, whole file | 93.5 s | 4.2 s |
+| Full suite, 29 files | — | 7.2 s |
+
+The exclusion did the heavy lifting; the raised timeout is the headroom that
+keeps a busy CI box from tipping the first render of any component suite over the
+edge. 20s still fails a genuine hang quickly enough to be useful. Verified green
+across three consecutive worst-case runs (`--no-cache --maxWorkers=20` on 10
+cores): 280/280 each time.
+
+**The generalisable bit:** when one test in a file is slow and its identical twin
+is fast, stop reading the slow test. It is paying an initialisation cost that
+belongs to the file, and the fix is never in the assertion.

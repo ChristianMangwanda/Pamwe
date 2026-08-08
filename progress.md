@@ -1,14 +1,48 @@
 # Pamwe Build Progress Summary
 
-**Last Updated:** August 7, 2026
+**Last Updated:** August 8, 2026
 
 ---
 
-## ⭐ B24 (in progress, 2026-08-07): the app answers back
+## ⭐ B24 (UPLOADED 2026-08-08): the app answers back
 
-Six items from Pamwe Ramblings. Backend is live on hosted; the client half needs
-an archive. **Nothing here reaches a phone until build 24 ships**, which matters
-for the first item below.
+Six items from Pamwe Ramblings. Backend went to hosted on the 7th, the binary on
+the 8th.
+
+**The release took seven archives, and three of them were dead on arrival.** All
+three reported `** ARCHIVE SUCCEEDED **` with correct version numbers and every
+purpose string. Full write-ups in trial-and-error.md; the short version:
+
+1. A transient `ETIMEDOUT` killed the bundler, and `SENTRY_ALLOW_FAILURE=true`
+   reported it as "Source maps upload failed, but continuing build". The archive
+   shipped with **no main.jsbundle at all**.
+2. The bundle phase calls `@expo/cli`'s build entry directly, bypassing the
+   `expo` bin wrapper that sets `NODE_ENV`. Unset, `@expo/env` loads `.env`, so
+   two archives baked in **the LOCAL Supabase URL and the LOCAL anon key**.
+   Setting `NODE_ENV` in the shell and as an xcodebuild build setting both look
+   right and both silently fail to reach the phase.
+3. The fix is in the phase's own shell: set the mode AND source
+   `.env.production`, since `@expo/env` never overrides a variable already in
+   the environment. A missing `.env.production` is now `exit 1` rather than a
+   silent fall back to local.
+
+**`ios/` is gitignored, so that patch is not in git.** It joins the
+sentry-xcode.sh splice and PrivacyInfo.xcprivacy on the redo list if `ios/` is
+ever regenerated. Step 3 of the checklist, the bundle grep, is the only thing
+that caught any of this.
+
+**Both of those are now closed (2026-08-08, after the upload):**
+
+- **The redo list is a script.** `scripts/restore_ios_patches.rb` puts back every
+  hand-made patch in `ios/`: the bundle phase, the Sentry splice,
+  `PrivacyInfo.xcprivacy`, both entitlements wirings, `$(CURRENT_PROJECT_VERSION)`
+  and the purpose strings. Canonical copies are in git at `scripts/ios/`, so the
+  phase's shell is now version-controlled for the first time. `--check` reports
+  drift without touching anything, which makes it a pre-archive gate.
+- **Failure 1 cannot happen silently again.** The bundle phase now asserts, after
+  the Sentry wrapper returns, that a non-empty `main.jsbundle` exists, and fails
+  the build when it does not. The bundle grep is still the checklist step that
+  proves the bundle points at the right *project*; this only proves one exists.
 
 - **The last day of every plan had been losing its reveal**, since the
   2026-07-14 cadence migration left its completion branch behind. The second

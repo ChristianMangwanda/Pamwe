@@ -82,7 +82,11 @@
     "testPathIgnorePatterns": [
       "<rootDir>/src/__tests__/setup.ts",
       " \\d+\\.(ts|tsx|js|jsx)$"
-    ]
+    ],
+    "modulePathIgnorePatterns": [
+      "<rootDir>/.design-sync/"
+    ],
+    "testTimeout": 20000
   },
   "private": true
 }
