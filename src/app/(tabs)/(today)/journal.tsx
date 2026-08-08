@@ -22,7 +22,7 @@ import {
   submitEntry,
   ensureVoiceDraft,
   uploadVoiceRecording,
-  attachAudioToEntry,
+  submitVoiceEntry,
   saveTranscript,
   getMyEntry,
 } from '../../../lib/entries';
@@ -124,7 +124,7 @@ export default function JournalScreen() {
             const entry = await createOrUpdateDraft(couplePlan!.id, dayNumber, text);
             entryIdRef.current = entry.id;
             await submitEntry(entry.id);
-            await refresh();
+            // Same as the voice path: waiting refetches for itself.
             router.replace({ pathname: '/(tabs)/(today)/waiting', params: { day: String(dayNumber) } });
           } catch (err: any) {
             if (await landedAnyway()) return;
@@ -148,10 +148,15 @@ export default function JournalScreen() {
     try {
       setUploadingVoice(true);
       haptics.medium();
-      const draft = await ensureVoiceDraft(couplePlan.id, dayNumber);
-      const objectPath = await uploadVoiceRecording(couplePlan.id, dayNumber, result.uri);
-      await attachAudioToEntry(draft.id, objectPath, result.durationSeconds, null);
-      await submitEntry(draft.id);
+      // Side by side, not one after the other: the object path is derived from
+      // the plan, the day and the user, so the upload never needed the draft
+      // row to exist. Waiting for it just added two round trips to a send that
+      // is already carrying a file.
+      const [draft, objectPath] = await Promise.all([
+        ensureVoiceDraft(couplePlan.id, dayNumber),
+        uploadVoiceRecording(couplePlan.id, dayNumber, result.uri),
+      ]);
+      await submitVoiceEntry(draft.id, objectPath, result.durationSeconds);
       // Transcription is deliberately NOT awaited. It runs the recognizer over
       // the whole recording with a 45s ceiling, and sending used to wait for
       // it, so the slowest part of sharing a reflection was an optional field.
@@ -161,7 +166,10 @@ export default function JournalScreen() {
       transcribeRecording(result.uri)
         .then((t) => (t ? saveTranscript(draft.id, t) : undefined))
         .catch(() => {});
-      await refresh();
+      // Straight to waiting. It mounts its own useTodayEntry and refetches on
+      // arrival, so refreshing this screen's copy first only made the sender
+      // watch a spinner through a round trip whose result nothing reads: this
+      // screen is about to unmount, and Today holds its own hook instance.
       router.replace({ pathname: '/(tabs)/(today)/waiting', params: { day: String(dayNumber) } });
     } catch (err: any) {
       if (await landedAnyway()) return;

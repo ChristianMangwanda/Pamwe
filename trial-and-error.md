@@ -627,3 +627,42 @@ Related, same round: the catalogue tables were applied locally with `psql` as
 up` would. The service role got `permission denied for table bible_vocabulary`
 before RLS was ever consulted. Explicit `grant` statements now live in the
 migration.
+---
+
+## Voice reflections play silently (2026-08-07)
+
+**Symptom:** Christian, on device: sometimes his own recording plays nothing,
+sometimes his partner's does. Not reproducible on demand, no error, the button
+switches to pause and the timer moves.
+
+Three separate causes, all of which look identical from the outside.
+
+**1. Nothing ever set a playback audio session.** iOS starts every app in
+`.soloAmbient`, which the ring/silent switch mutes. The only `setAudioModeAsync`
+call in the app was inside `VoiceRecorder`, so playback obeyed the mute switch
+unless the listener happened to have recorded something earlier in the same
+launch, which left the session on `.playback` for the rest of the process. That
+is the intermittency: same screen, same file, different session.
+
+**2. Playing a finished recording again did nothing.** AVPlayer parks at the end
+of the item, and `play()` there is silent rather than an error. expo-audio does
+not rewind, so the second listen needed a `seekTo(0)` that nobody made.
+
+**3. The recorder could leave the session on `.playAndRecord`.** Leaving the
+journal mid-recording unmounts `VoiceRecorder` without reaching `handleStop`,
+and `handleStop` itself returned early on a null uri before restoring the mode.
+Releasing the recorder stops the mic natively, but the category persists, and
+everything played afterwards came out of the mic's route.
+
+**Fix:** [src/lib/audioSession.ts](src/lib/audioSession.ts) holds the two modes
+and the `hasEnded` predicate. `AudioPlayer` claims playback mode on every press
+(self-healing: it also repairs a leaked record session) and rewinds when parked
+at the end; the recorder restores playback mode before any early return and on
+unmount. A tapped recording now plays through the silent switch, which is what a
+voice message does everywhere else.
+
+**Ruled out on the way:** the upload path is fine (`ArrayBuffer`, never a Blob,
+so no 0-byte objects), and the detached `transcribeRecording` never touches the
+session because expo-speech-recognition only calls `setupAudioSession` on the
+microphone path, not the file one.
+
