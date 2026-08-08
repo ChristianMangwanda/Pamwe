@@ -36,8 +36,11 @@ export default function RevealScreen() {
   // screen onto the next, empty day while it's still being read.
   const { day } = useLocalSearchParams<{ day?: string }>();
   const pinnedDay = day ? Number(day) : undefined;
-  const { myEntry, partnerEntry, dayNumber, planDay, loading, error, refresh } = useTodayEntry(pinnedDay);
-  const { couplePlan, partner, loading: coupleLoading, refresh: refreshCouple } = useCouple();
+  // The plan is pinned too. On the final day the mutual submit retires it, and
+  // an unpinned reveal lost the plan out from under itself the moment realtime
+  // delivered that, showing "That plan is finished" in place of the reflections.
+  const { myEntry, partnerEntry, dayNumber, planDay, loading, error, refresh, couplePlan } = useTodayEntry(pinnedDay, true);
+  const { partner, loading: coupleLoading, refresh: refreshCouple } = useCouple();
 
   const myInitial = (user?.user_metadata?.full_name || user?.email || 'Y')[0]?.toUpperCase() ?? 'Y';
   const partnerInitial = profileInitial(partner) ?? 'P';
@@ -68,6 +71,14 @@ export default function RevealScreen() {
     haptics.success();
   };
 
+  // Marked seen when the ceremony ENDS, never when it starts. Writing the flag
+  // up front burned the moment on any interruption inside those 4.3 seconds:
+  // a screen that remounts (the waiting screen's replace and a tapped partner
+  // push both navigate here) read a flag set by a ceremony nobody had watched
+  // and went straight to the cards. A skip counts as played: the skip path runs
+  // the same close, so it lands here too.
+  const markSeen = () => { if (seenKey) AsyncStorage.setItem(seenKey, '1').catch(() => {}); };
+
   useEffect(() => {
     if (!revealed) return;
     // No plan to key the flag on: show the words rather than hanging forever on
@@ -79,7 +90,6 @@ export default function RevealScreen() {
         if (!alive) return;
         if (v) { straightToWords(); return; }
         setPhase('playing');
-        AsyncStorage.setItem(seenKey, '1').catch(() => {});
       })
       // A storage failure should cost the ceremony, not the reveal.
       .catch(() => { if (alive) setPhase('playing'); });
@@ -257,6 +267,7 @@ export default function RevealScreen() {
                 dayNumber={dayNumber}
                 canRespond={false}
                 partnerName={partnerName}
+                myUserId={user?.id}
                 initial={responsesByEntry[myEntry.id] ?? []}
                 revision={responsesRev}
               />
@@ -279,6 +290,7 @@ export default function RevealScreen() {
                 dayNumber={dayNumber}
                 canRespond
                 partnerName={partnerName}
+                myUserId={user?.id}
                 initial={responsesByEntry[partnerEntry.id] ?? []}
                 revision={responsesRev}
                 entryText={partnerEntry.entry_type === 'text' ? partnerEntry.text_content : partnerEntry.transcript}
@@ -304,7 +316,7 @@ export default function RevealScreen() {
           myInitial={myInitial}
           partnerInitial={partnerInitial}
           onCardsIn={setCardMotion}
-          onDone={() => setPhase('done')}
+          onDone={() => { setPhase('done'); markSeen(); }}
         />
       )}
       {phase === 'checking' && (

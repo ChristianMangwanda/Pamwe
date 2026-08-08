@@ -627,3 +627,45 @@ Related, same round: the catalogue tables were applied locally with `psql` as
 up` would. The service role got `permission denied for table bible_vocabulary`
 before RLS was ever consulted. Explicit `grant` statements now live in the
 migration.
+
+---
+
+## The last day of every plan lost its reveal (2026-08-07)
+
+**Symptom:** Christian, in Pamwe Ramblings: "Something was off with the reveal
+today. My partner's one finished first and then I also did it but I didn't get
+that reveal animation. Something is broken there."
+
+Two independent faults, and the second is the one that eats whole finishes.
+
+**1. The ceremony was marked seen before it played.** `reveal.tsx` wrote
+`pamwe:revealSeen:<cpId>:<day>` to AsyncStorage the moment it set `phase` to
+'playing'. Anything that remounted the screen inside those 4.3 seconds read a
+flag set by a ceremony nobody had watched and went straight to the cards. Two
+routes navigate to the reveal for the same day, and on a resume from a partner
+push they can both fire: the waiting screen's `replace` and `usePushRouting`'s
+`push`. **Fix:** write the flag in `onDone`, which the skip path reaches too
+(skip runs the same close, so a skip still counts as played), and hand over from
+the waiting screen exactly once behind a ref.
+
+**2. On a plan's FINAL day, the plan vanished out from under the ritual.**
+`advance_plan_day_if_mutual_submit` sets `couple_plans.status = 'completed'` the
+instant the second partner submits day N of N. CoupleProvider hears that over
+realtime, `getActiveCouPlan` filters on `status = 'active'`, so `couplePlan`
+becomes null mid-reveal. `useTodayEntry` then cleared both entries, and
+`reveal.tsx` rendered its "That plan is finished" branch in place of the two
+reflections: no ceremony, no Amen, no completion screen, no planting. The
+waiting screen lost the partner entry the same way and waited forever.
+
+This is the same class as the 2026-07-14 `current_day` bug, which moved server
+state at mutual submit and ate the reveal. The completion branch was left behind
+in that migration and had been quietly breaking the last day of every plan since.
+
+**Fix:** `useTodayEntry(day, pinPlan)` pins the plan the way it already pinned
+the day. The ritual screens (waiting, reveal) hold the plan they opened with and
+survive its retirement; Today stays unpinned, because noticing that a plan ended
+is exactly its job. Tested in `today-entry-day.test.tsx`.
+
+**Note for release ordering:** the fault is client side, so a phone on an older
+build keeps losing its final-day reveal until it updates. The reflections
+themselves are never at risk, they are readable in the Reflect tab either way.

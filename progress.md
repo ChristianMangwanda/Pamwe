@@ -1,6 +1,42 @@
 # Pamwe Build Progress Summary
 
-**Last Updated:** August 2, 2026
+**Last Updated:** August 7, 2026
+
+---
+
+## ⭐ B24 (in progress, 2026-08-07): the app answers back
+
+Six items from Pamwe Ramblings. Backend is live on hosted; the client half needs
+an archive. **Nothing here reaches a phone until build 24 ships**, which matters
+for the first item below.
+
+- **The last day of every plan had been losing its reveal**, since the
+  2026-07-14 cadence migration left its completion branch behind. The second
+  submit retires the plan, `getActiveCouPlan` only returns active rows, so
+  `couplePlan` went null mid-ritual and the reveal showed "That plan is
+  finished" in place of the two reflections: no ceremony, no Amen, no completion
+  screen, no planting. `useTodayEntry(day, pinPlan)` now pins the plan the way it
+  already pinned the day. Full write-up in trial-and-error.md.
+- **The ceremony was marked seen before it played.** The flag went to
+  AsyncStorage when the ceremony STARTED, so anything that remounted the screen
+  inside those 4.3 seconds skipped it forever. It is written on completion now,
+  and the waiting screen hands over exactly once.
+- **Replies are a chain.** `entry_responses.parent_id`, any depth, drawn at one
+  indent past the fourth step. RLS authorises a reply against its PARENT, which
+  is what lets your words sit under your own reflection when you answer hers.
+  `notify-new-response` now tells whoever is being answered rather than always
+  the entry's author.
+- **A verse note has a discussion.** New `verse_note_responses` table and a
+  screen at `bible/verse`: the note, hearts and amens on it, and comments under
+  it. The note itself stays ONE shared note, so the second voice goes into the
+  discussion instead of overwriting the first. Pushes via `notify-verse-comment`.
+- **The reflection stopped opening on a wall of Scripture.** A slim tappable
+  banner naming the reading replaces the passage card, so a day you reopen opens
+  on the words you came back for.
+- **A plan day opens on its passage.** `parseReference` keeps both ends of a
+  range and the reader shows just those verses, with the whole chapter one tap
+  away. Catalogue-built plans have carried real ranges since v9; the reader was
+  throwing the range away and opening the chapter.
 
 ---
 

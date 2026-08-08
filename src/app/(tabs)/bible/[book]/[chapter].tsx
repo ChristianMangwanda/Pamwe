@@ -3,7 +3,7 @@ import { View, StyleSheet, ScrollView, TouchableOpacity, Pressable } from 'react
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { CaretLeft, CaretRight, BookmarkSimple, Feather, Sun, Moon, X, Prohibit, NotePencil, HandTap } from 'phosphor-react-native';
+import { CaretLeft, CaretRight, BookmarkSimple, Feather, Sun, Moon, X, Prohibit, NotePencil, HandTap, ChatCircle } from 'phosphor-react-native';
 import { Text } from '../../../../components/ui/Text';
 import { Switch } from '../../../../components/ui/Switch';
 import { BottomSheet } from '../../../../components/ui/BottomSheet';
@@ -18,6 +18,7 @@ import { supabase } from '../../../../lib/supabase';
 import { profileInitial } from '../../../../lib/couples';
 import { findBook, fetchChapterVerses, TRANSLATION_NAMES, TRANSLATION_ABBR, TRANSLATIONS, type Translation, type BibleVerse } from '../../../../lib/bible';
 import { getMarksForChapter, setHighlight, clearHighlight, type VerseHighlight, type VerseNote } from '../../../../lib/verseMarks';
+import { commentCountsForNotes } from '../../../../lib/verseDiscussion';
 import { haptics } from '../../../../lib/haptics';
 
 const SWATCH_KEYS: SwatchColor[] = ['amber', 'rose', 'sage', 'sky'];
@@ -29,12 +30,24 @@ export default function ChapterReader() {
   const insets = useSafeAreaInsets();
   const { couple, partner } = useCouple();
   const { user } = useAuth();
-  const params = useLocalSearchParams<{ book: string; chapter: string; verse?: string; couplePlanId?: string; day?: string; planTitle?: string }>();
+  const params = useLocalSearchParams<{ book: string; chapter: string; verse?: string; to?: string; couplePlanId?: string; day?: string; planTitle?: string }>();
   const bookName = decodeURIComponent(params.book ?? '');
   const chapterNum = Number(params.chapter ?? 0);
   const book = findBook(bookName);
+  // A plan day is often a PASSAGE, not a chapter: "Matthew 6:19-34". Arriving
+  // with both ends of one opens just those verses, because a couple sent to read
+  // a passage should not have to find it inside a chapter first. The rest of the
+  // chapter is one tap away and nothing is hidden, only unasked for.
+  const rangeFrom = params.verse ? Number(params.verse) : undefined;
+  const rangeTo = params.to ? Number(params.to) : undefined;
+  const hasRange = !!rangeFrom && !!rangeTo && rangeTo >= rangeFrom;
+  const [wholeChapter, setWholeChapter] = useState(false);
+  const passageOnly = hasRange && !wholeChapter;
+
   // Jump target when arriving from the marks screen ("My highlights & notes").
-  const focusVerse = params.verse ? Number(params.verse) : undefined;
+  // Showing the passage alone puts it at the top already, so there is nothing
+  // to scroll to and nothing to flash.
+  const focusVerse = passageOnly ? undefined : (params.verse ? Number(params.verse) : undefined);
 
   const [translation, setTranslation] = useState<Translation>('web');
   const [verses, setVerses] = useState<BibleVerse[]>([]);
@@ -47,6 +60,9 @@ export default function ChapterReader() {
 
   const [highlights, setHighlights] = useState<VerseHighlight[]>([]);
   const [notes, setNotes] = useState<VerseNote[]>([]);
+  // Comments under each note, by note id. Counted, not loaded: the discussion
+  // itself lives on its own screen.
+  const [noteCounts, setNoteCounts] = useState<Record<string, number>>({});
   const [selVerse, setSelVerse] = useState<number | null>(null);
 
   // Scroll-to-verse plumbing: the passage measures the focus verse's line y
@@ -92,7 +108,13 @@ export default function ChapterReader() {
   const reloadMarks = useCallback(() => {
     if (!couple?.id || !book) return;
     getMarksForChapter(couple.id, book.name, chapterNum)
-      .then((m) => { setHighlights(m.highlights); setNotes(m.notes); })
+      .then(async (m) => {
+        setHighlights(m.highlights);
+        setNotes(m.notes);
+        // How many remarks sit under each note, so the sheet can offer the
+        // discussion by name instead of hiding it behind a guess.
+        try { setNoteCounts(await commentCountsForNotes(m.notes.map((n) => n.id))); } catch {}
+      })
       .catch(() => {});
   }, [couple?.id, book?.name, chapterNum]);
 
@@ -107,6 +129,7 @@ export default function ChapterReader() {
       .channel(`verse-marks-${couple.id}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'verse_highlights', filter: `couple_id=eq.${couple.id}` }, () => reloadMarks())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'verse_notes', filter: `couple_id=eq.${couple.id}` }, () => reloadMarks())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'verse_note_responses', filter: `couple_id=eq.${couple.id}` }, () => reloadMarks())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [couple?.id, reloadMarks]);
@@ -142,6 +165,12 @@ export default function ChapterReader() {
     if (who) markInitials[m.verse] = who;
   }
 
+  // Just the passage, or all of it. Filtered at the last moment so the marks,
+  // the note sheet and the long press all still work off the whole chapter.
+  const shownVerses = passageOnly
+    ? verses.filter((v) => v.verse >= rangeFrom! && v.verse <= rangeTo!)
+    : verses;
+
   const canPrev = chapterNum > 1;
   const canNext = chapterNum < book.chapters;
   const goChapter = (n: number) => router.replace(`/(tabs)/bible/${encodeURIComponent(book.name)}/${n}` as any);
@@ -175,6 +204,15 @@ export default function ChapterReader() {
     setSelVerse(null);
     router.push({ pathname: '/(tabs)/bible/note', params: { book: book.name, chapter: String(chapterNum), verse: String(v), text } } as any);
   };
+  // A note is a thing to talk about, not a thing to overwrite: the discussion is
+  // where the second voice goes, since the note itself stays one shared note.
+  const openDiscussion = () => {
+    if (selVerse == null) return;
+    const v = selVerse;
+    setSelVerse(null);
+    haptics.tap();
+    router.push({ pathname: '/(tabs)/bible/verse', params: { book: book.name, chapter: String(chapterNum), verse: String(v) } } as any);
+  };
 
   const selRef = selVerse != null ? `${book.name} ${chapterNum}:${selVerse}` : '';
   const selNoteRow = selVerse != null ? noteByVerse[selVerse] : undefined;
@@ -182,6 +220,7 @@ export default function ChapterReader() {
   const selNoteLabel = !selNoteRow || selNoteRow.user_id === user?.id
     ? 'Your note'
     : `${partner?.display_name ?? 'Your partner'}'s note`;
+  const selNoteCount = selNoteRow ? (noteCounts[selNoteRow.id] ?? 0) : 0;
   const hasCtx = !!(params.day && params.planTitle);
 
   return (
@@ -229,7 +268,9 @@ export default function ChapterReader() {
           </View>
         )}
 
-        <Text style={[styles.title, { color: colors.ink }]}>{book.name} {chapterNum}</Text>
+        <Text style={[styles.title, { color: colors.ink }]}>
+          {book.name} {chapterNum}{passageOnly ? `:${rangeFrom}-${rangeTo}` : ''}
+        </Text>
         <Text style={[styles.transFull, { color: colors.muted }]}>{TRANSLATION_NAMES[translation]}</Text>
         <Floral variant="divider" style={styles.divider} />
 
@@ -248,7 +289,7 @@ export default function ChapterReader() {
           <>
             <View onLayout={(e) => setPassageTop(e.nativeEvent.layout.y)}>
               <VersePassage
-                verses={verses}
+                verses={shownVerses}
                 scale={scale}
                 showNums={showNums}
                 highlights={hlMap}
@@ -260,6 +301,23 @@ export default function ChapterReader() {
                 onFocusVerseLayout={setFocusY}
               />
             </View>
+            {/* The whole chapter is never withheld, only unasked for. Once it
+                is open it stays open, because someone who wanted the
+                surroundings does not want them taken away again on scroll. */}
+            {hasRange && (
+              <TouchableOpacity
+                onPress={() => { haptics.tap(); setWholeChapter((w) => !w); }}
+                activeOpacity={0.75}
+                style={[styles.wholeBtn, { borderColor: colors.line }]}
+                accessibilityRole="button"
+                accessibilityState={{ expanded: wholeChapter }}
+              >
+                <Text style={[styles.wholeLabel, { color: colors.accent2 }]}>
+                  {wholeChapter ? `Just the reading` : `Read the whole of ${book.name} ${chapterNum}`}
+                </Text>
+              </TouchableOpacity>
+            )}
+
             <View style={styles.hint}>
               <HandTap size={14} color="#B7A88C" />
               <Text style={{ color: '#B7A88C', fontFamily: fonts.sans, fontSize: 12 }}>Press and hold a verse to highlight or note it.</Text>
@@ -352,10 +410,22 @@ export default function ChapterReader() {
           </TouchableOpacity>
         </View>
         {selNote ? (
-          <View style={[styles.notePreview, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+          <TouchableOpacity
+            onPress={openDiscussion}
+            activeOpacity={0.8}
+            style={[styles.notePreview, { backgroundColor: colors.surface, borderColor: colors.line }]}
+            accessibilityRole="button"
+            accessibilityLabel={`Open the discussion on ${selRef}`}
+          >
             <Text style={[styles.noteLabel, { color: colors.accent2 }]}>{selNoteLabel}</Text>
             <Text style={{ fontFamily: fonts.serif, fontSize: 15, lineHeight: 22, color: colors.ink }}>{selNote}</Text>
-          </View>
+            <View style={styles.noteFoot}>
+              <ChatCircle size={13} color={colors.accent2} weight="regular" />
+              <Text style={[styles.noteFootLabel, { color: colors.accent2 }]}>
+                {selNoteCount ? `${selNoteCount} said back` : 'Say something back'}
+              </Text>
+            </View>
+          </TouchableOpacity>
         ) : null}
         <TouchableOpacity onPress={openNoteEditor} style={[styles.noteBtn, { borderColor: colors.accent2 }]}>
           <NotePencil size={16} color={colors.accent} />
@@ -413,6 +483,8 @@ const styles = StyleSheet.create({
   loading: { paddingVertical: 60, textAlign: 'center', fontSize: 15 },
   errorCard: { marginTop: 20, borderWidth: 1, borderRadius: 14, padding: 20, alignItems: 'center' },
   errorText: { fontFamily: fonts.sans, fontSize: 14, lineHeight: 21, textAlign: 'center' },
+  wholeBtn: { alignSelf: 'center', borderWidth: 1, borderRadius: 999, paddingHorizontal: 18, paddingVertical: 10, marginTop: 22 },
+  wholeLabel: { fontFamily: fonts.sansSemiBold, fontSize: 11, letterSpacing: 0.4 },
   hint: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 16 },
   reflectEnd: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 14, paddingVertical: 15, marginTop: 22 },
   reflectEndLabel: { fontFamily: fonts.sansSemiBold, fontSize: 11, letterSpacing: 0.7, textTransform: 'uppercase' },
@@ -432,6 +504,8 @@ const styles = StyleSheet.create({
   swatchRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 12 },
   swatch: { width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderColor: 'rgba(43,31,20,0.12)' },
   swatchClear: { width: 44, height: 44, borderRadius: 22, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  noteFoot: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10 },
+  noteFootLabel: { fontFamily: fonts.sansSemiBold, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase' },
   notePreview: { marginTop: 20, borderWidth: 1, borderRadius: 14, padding: 14 },
   noteLabel: { fontFamily: fonts.sansSemiBold, fontSize: 9, letterSpacing: 1.6, textTransform: 'uppercase', marginBottom: 6 },
   noteBtn: { marginTop: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, borderWidth: 1.5, borderRadius: 14, paddingVertical: 15 },

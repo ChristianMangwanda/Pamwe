@@ -96,3 +96,33 @@ describe('parseReference with two-chapter spans', () => {
     expect(r?.verse).toBeUndefined();
   });
 });
+
+// The far end of a range, which the reader needs to open a plan day on the
+// passage it names rather than on the whole chapter it sits in. Christian,
+// 2026-08-07: "sometimes you just want parts of a passage, not the whole thing".
+describe('parseReference end of range', () => {
+  it('keeps both ends of a range inside one chapter', () => {
+    expect(parseReference('Matthew 6:19-34')).toMatchObject({ chapter: 6, verse: 19, endVerse: 34 });
+  });
+
+  it('keeps both ends across spaces and numbered books', () => {
+    expect(parseReference('1 Corinthians 13:4 - 7')).toMatchObject({ verse: 4, endVerse: 7 });
+  });
+
+  it('leaves the end undefined for a single verse', () => {
+    expect(parseReference('John 21:15')?.endVerse).toBeUndefined();
+  });
+
+  it('leaves the end undefined for a plain chapter', () => {
+    expect(parseReference('Psalm 23')?.endVerse).toBeUndefined();
+  });
+
+  // The reader shows one chapter, so a span that runs into the next one has no
+  // end inside this chapter. It opens at the start and shows the chapter whole,
+  // which is exactly what it did before ranges existed.
+  it('leaves the end undefined for a span that crosses a chapter', () => {
+    const r = parseReference('Matthew 5:1-6:34');
+    expect(r).toMatchObject({ chapter: 5, verse: 1 });
+    expect(r?.endVerse).toBeUndefined();
+  });
+});

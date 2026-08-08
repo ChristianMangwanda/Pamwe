@@ -318,7 +318,7 @@ export async function fetchPassage(
  */
 export function parseReference(
   query: string,
-): { book: BibleBook; chapter?: number; verse?: number } | null {
+): { book: BibleBook; chapter?: number; verse?: number; endVerse?: number } | null {
   const raw = query.trim();
   // Verse, range and two-chapter span are all captured, not just tolerated.
   // Built plans cite passages like "Ruth 1:6-18" and "Matthew 5:1-6:34", and
@@ -326,7 +326,7 @@ export function parseReference(
   // failed to parse at all and the reader link fell back to the plain reading
   // screen. The reader opens one chapter, so a span resolves to where it
   // starts.
-  const m = raw.match(/^(\d?\s?[a-z][a-z ]*?)\s*(\d+)?(?::(\d+)(?:\s*-\s*(?:\d+\s*:\s*)?\d+)?)?$/i);
+  const m = raw.match(/^(\d?\s?[a-z][a-z ]*?)\s*(\d+)?(?::(\d+)(?:\s*-\s*(?:(\d+)\s*:\s*)?(\d+))?)?$/i);
   if (!m) return null;
 
   const namePart = m[1].trim().toLowerCase();
@@ -343,5 +343,17 @@ export function parseReference(
   if (chapter !== undefined) chapter = Math.max(1, Math.min(book.chapters, chapter));
   // The verse is the start of the range, so the reader can open on it.
   const verse = m[3] ? parseInt(m[3], 10) : undefined;
-  return { book, chapter, verse };
+  // The end of the range, for the readings that are a passage rather than a
+  // whole chapter ("Matthew 6:19-34"). A span that crosses into another chapter
+  // has no end inside this one, so it stays undefined and the reader shows the
+  // chapter from where the passage starts, which is what it already did.
+  const spanChapter = m[4] ? parseInt(m[4], 10) : undefined;
+  const rangeEnd = m[5] ? parseInt(m[5], 10) : undefined;
+  const endVerse = rangeEnd !== undefined
+    && (spanChapter === undefined || spanChapter === chapter)
+    && verse !== undefined
+    && rangeEnd >= verse
+    ? rangeEnd
+    : undefined;
+  return { book, chapter, verse, endVerse };
 }

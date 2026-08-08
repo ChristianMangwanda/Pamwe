@@ -124,7 +124,7 @@ src/app/
 ├── (onboarding)/                  # value-slides, name, pair-choice, invite, join, connected, plan-select
 └── (tabs)/                        # 6-tab DOCKED bar (DockedTabBar; the b7 glass oval is gone): Today · Bible · Plans · Prayers · Reflect · You
     ├── (today)/                   # home (tree streak, catch-up, nudge) → reading → journal → waiting → reveal → complete
-    ├── bible/                     # index → [book] → [book]/[chapter] reader (6 translations, 2 sources); marks, note
+    ├── bible/                     # index → [book] → [book]/[chapter] reader (6 translations, 2 sources); marks, note, verse (the discussion on one verse)
     ├── plans/                     # index (search + Build/Browse doors, Your plans / Saved for later) → [id] detail; build (generate + save), builder (by book or topic), browse (topic/length grid), finished (list)
     ├── prayers/                   # index = Prayers|Dreams toggle (swipe cards + detail sheet w/ reminders) → add · dream-add → timeline (answered)
     ├── reflect/                   # index (history + From-your-story card) → [id] detail (responses) → words (Their Words)
@@ -154,9 +154,10 @@ Auth gate in [src/app/index.tsx](src/app/index.tsx) sequences:
 | `plan_days` | Rows per plan-day: passage ref, text (**nullable** — custom plans store NULL and live-fetch), pull quote, reflection prompt. |
 | `couple_plans` | A couple's enrollment in a plan (current_day, start_date, status, `cadence_days`). |
 | `entries` | Per-user per-day reflection. Type text or voice. `submitted_at` is the locked-reveal trigger. `transcript` (nullable) holds the on-device voice transcript. |
-| `entry_responses` | Hearts/amens/replies/kept-lines a partner leaves on a revealed reflection (`kind`: heart/amen/reply/quote). RLS mirrors locked-reveal via `can_respond_to_entry()`; in the realtime publication. |
+| `entry_responses` | Hearts/amens/replies/kept-lines a partner leaves on a revealed reflection (`kind`: heart/amen/reply/quote). RLS mirrors locked-reveal via `can_respond_to_entry()`; in the realtime publication. **`parent_id` (2026-08-07) makes replies a chain of any depth**: hearts, amens and kept lines stay flat and stay on the partner's entry, but a reply may answer a reply, which is the one case where your words sit under your OWN reflection. `can_respond_to_entry()` refuses that by design, so a reply carrying a parent is authorised against the parent instead (`can_reply_to_response()`). |
 | `prayers` / `prayer_marks` | Shared prayer requests with "I prayed today" marks. `prayers.category` (family/health/work/guidance/thanks/other); author-only update/delete. |
 | `dreams` | Couple-shared dream journal (both partners read, author-only edit/delete). **Pamwe never interprets a dream** (see the rule below). |
+| `verse_note_responses` | The discussion under a verse note (`kind`: heart/amen/comment), couple-scoped and author-owned, cascading off the note row. The note itself stays ONE shared note either partner may edit, so this is where the second voice goes instead of overwriting the first. Flat, not threaded: a verse note is a thing you are both looking at. In the realtime publication; comments push via `notify-verse-comment` on the note's own `notification_note` preference, hearts and amens are filtered out at the trigger. |
 | `verse_highlights` / `verse_notes` | Per-couple shared study layer over the Bible reader (one highlight + one note per verse per couple; `user_id` = authorship, last-writer-wins via the upsert). Both are in the realtime publication since 2026-08-02, so a partner's mark appears while you are both in the same chapter; the reader carries **their initial** on what they marked, and a written note pushes them (`notify-new-note`; plain highlights stay silent, deliberately). |
 | `ask_pamwe_usage` / `partner_nudges` | Service-role-only bookkeeping (RLS on, zero policies): Ask Pamwe rate limiting (20/day + cooldown via `bump_ask_pamwe_usage` RPC) and nudge cooldowns (1/hour). |
 | `passage_prompts` | Chapter-keyed reflection questions, one per chapter, all 1,189. Keyed `'Psalm N'` like plan_days, NOT `'Psalms'` like the catalogue: normalise at any join. Its DDL lived only on hosted until the 2026-08-02 backfill migration. |
@@ -215,7 +216,7 @@ The core mechanic. Partner entries are invisible until both partners have submit
 - `notify-partner` deployed (verify_jwt=false because it's a DB webhook target)
 - Trigger `notify_partner_on_submit_trigger` on `entries` AFTER INSERT OR UPDATE OF submitted_at, calls the function via `net.http_post`. Only fires when submitted_at transitions NULL → set.
 - `entries` is in the `supabase_realtime` publication so the waiting screen subscription fires.
-- Other webhook targets (verify_jwt=false): `notify-new-prayer`, `notify-new-dream`, `notify-new-response`, `notify-new-note`. **Push banners actually deliver since b10/b11** (APNs key on Expo).
+- Other webhook targets (verify_jwt=false): `notify-new-prayer`, `notify-new-dream`, `notify-new-response`, `notify-new-note`, `notify-verse-comment`. `notify-new-response` tells whoever is being ANSWERED: the parent reply's author when there is one, the entry's author otherwise, which is what makes a chain reach the right phone. **Push banners actually deliver since b10/b11** (APNs key on Expo).
 - `delete-account` — user-invoked (verify_jwt=true): demote-don't-delete routine; the survivor keeps everything, a never-paired couple row is detached (`users.couple_id` nulled first) and deleted.
 - **`notify-nudge`** / **`notify-thinking`** — user-invoked (verify_jwt=true): "nudge my partner" and "thinking of you" from Today; each pushes to the partner, one per sender per hour **per kind** (cooldowns logged in `partner_nudges.kind`, so one never silences the other).
 - **`ask-pamwe`** (build v9, 2026-08-02) — **"Pamwe points, never preaches"** (Christian's product line: no Scripture interpretation, ever; interpretation questions deflect gently). Three schema-constrained modes: **`build`** (ONE plan, the Plans search), `plans` (2 recs, the by-book builder) and `help` (unreachable since the sheet was removed). Every schema carries a required `off_topic` flag; the server swaps flagged output for one fixed gentle line. Per-user rate limit 20/day + 10s cooldown, fail-open. **verify_jwt=true.**
@@ -514,7 +515,8 @@ The voice recorder, audio upload, and partner-push flow only behave correctly on
 | Ask Pamwe AI client | [src/lib/askPamwe.ts](src/lib/askPamwe.ts) |
 | Bible fetch/parse + verse marks | [src/lib/bible.ts](src/lib/bible.ts), [src/lib/verseMarks.ts](src/lib/verseMarks.ts) |
 | Reflections history + recaps + on-this-day | [src/lib/reflections.ts](src/lib/reflections.ts), [src/lib/recaps.ts](src/lib/recaps.ts) (returns tappable ITEMS, not joined strings; copy helpers `recapHeadline`/`recapEncouragement`/`recapInsight` are pure and tested) |
-| Reflection responses + kept lines | [src/lib/entryResponses.ts](src/lib/entryResponses.ts), [src/components/ReflectionResponses.tsx](src/components/ReflectionResponses.tsx) |
+| Reflection responses + reply chains | [src/lib/entryResponses.ts](src/lib/entryResponses.ts), [src/components/ReflectionResponses.tsx](src/components/ReflectionResponses.tsx) |
+| Verse discussion (note + reactions + comments) | [src/lib/verseDiscussion.ts](src/lib/verseDiscussion.ts), screen [bible/verse.tsx](src/app/(tabs)/bible/verse.tsx) |
 | Prayers (category, edit/delete) + reminders | [src/lib/prayers.ts](src/lib/prayers.ts), [src/lib/prayerReminders.ts](src/lib/prayerReminders.ts) |
 | Dreams (couple-shared journal) | [src/lib/dreams.ts](src/lib/dreams.ts), [src/components/DreamCard.tsx](src/components/DreamCard.tsx) |
 | Push notifications + nudge | [src/lib/notifications.ts](src/lib/notifications.ts) |

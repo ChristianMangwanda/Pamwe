@@ -2,8 +2,12 @@ import { supabase } from './supabase';
 
 // Responses a partner leaves on a revealed reflection: a heart, an "amen", a
 // short reply, or a saved line ("what stuck with me"). RLS (entry_responses)
-// enforces that these only exist on mutually revealed days and that you respond
-// to your partner's entry, never your own.
+// enforces that these only exist on mutually revealed days.
+//
+// Hearts, amens and kept lines go on your PARTNER's entry, never your own.
+// Replies start there too, but a reply can answer another reply, and answering
+// theirs puts your words under your own reflection. That is what `parent_id` is,
+// and RLS authorises those against the parent rather than the entry.
 
 export type ResponseKind = 'heart' | 'amen' | 'reply' | 'quote';
 
@@ -13,6 +17,8 @@ export type EntryResponse = {
   author_id: string;
   kind: ResponseKind;
   body: string | null;
+  /** The reply this one answers. Null for everything said to the reflection itself. */
+  parent_id: string | null;
   created_at: string;
 };
 
@@ -24,7 +30,7 @@ export async function getResponsesForDay(
 ): Promise<Record<string, EntryResponse[]>> {
   const { data, error } = await supabase
     .from('entry_responses')
-    .select('id, entry_id, author_id, kind, body, created_at')
+    .select('id, entry_id, author_id, kind, body, parent_id, created_at')
     .eq('couple_plan_id', couplePlanId)
     .eq('day_number', dayNumber)
     .order('created_at', { ascending: true });
@@ -72,15 +78,18 @@ export async function toggleReaction(
   return true;
 }
 
+// `parentId` answers an existing reply instead of the reflection itself. The
+// chain has no depth limit: RLS authorises a reply against its parent, so it
+// runs as far down as the two of you keep going.
 export async function addReply(
-  entryId: string, couplePlanId: string, dayNumber: number, body: string,
+  entryId: string, couplePlanId: string, dayNumber: number, body: string, parentId?: string | null,
 ): Promise<EntryResponse> {
   const uid = await myId();
   if (!uid) throw new Error('Not authenticated');
   const { data, error } = await supabase
     .from('entry_responses')
-    .insert({ entry_id: entryId, couple_plan_id: couplePlanId, day_number: dayNumber, author_id: uid, kind: 'reply', body: body.trim() })
-    .select('id, entry_id, author_id, kind, body, created_at')
+    .insert({ entry_id: entryId, couple_plan_id: couplePlanId, day_number: dayNumber, author_id: uid, kind: 'reply', body: body.trim(), parent_id: parentId ?? null })
+    .select('id, entry_id, author_id, kind, body, parent_id, created_at')
     .single();
   if (error) throw error;
   return data as EntryResponse;
@@ -95,7 +104,7 @@ export async function saveQuote(
   const { data, error } = await supabase
     .from('entry_responses')
     .insert({ entry_id: entryId, couple_plan_id: couplePlanId, day_number: dayNumber, author_id: uid, kind: 'quote', body: quotedText.trim() })
-    .select('id, entry_id, author_id, kind, body, created_at')
+    .select('id, entry_id, author_id, kind, body, parent_id, created_at')
     .single();
   if (error) throw error;
   return data as EntryResponse;

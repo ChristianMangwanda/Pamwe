@@ -176,6 +176,10 @@ export default function HomeScreen() {
       params: {
         book: parsed.book.name,
         chapter: String(parsed.chapter ?? 1),
+        // A day that names a passage rather than a chapter opens on that
+        // passage. The rest of the chapter is a tap away in the reader.
+        ...(parsed.verse ? { verse: String(parsed.verse) } : {}),
+        ...(parsed.endVerse ? { to: String(parsed.endVerse) } : {}),
         couplePlanId: couplePlan.id,
         day: String(dayNumber),
         planTitle,

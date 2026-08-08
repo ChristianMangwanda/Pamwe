@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -20,12 +20,15 @@ const FALLBACK_POLL_MS = 30000;
 export default function WaitingScreen() {
   const router = useRouter();
   const { colors } = useTheme();
-  const { couplePlan, partner } = useCouple();
+  const { partner } = useCouple();
   // Pinned: if the partner submits and amens while this screen is open, an
   // unpinned wait would follow current_day onto the next day and sit there
-  // waiting forever on a day neither partner has read.
+  // waiting forever on a day neither partner has read. The plan is pinned for
+  // the same reason: on the final day the partner's submit retires it, and this
+  // screen used to lose the plan, the partner entry with it, and wait forever
+  // on a day that was already finished.
   const { day } = useLocalSearchParams<{ day?: string }>();
-  const { partnerEntry, dayNumber, refresh, error } = useTodayEntry(day ? Number(day) : undefined);
+  const { partnerEntry, dayNumber, refresh, error, couplePlan } = useTodayEntry(day ? Number(day) : undefined, true);
   const partnerName = partner?.display_name ?? 'Your partner';
   const partnerInitial = profileInitial(partner) ?? '?';
 
@@ -39,8 +42,12 @@ export default function WaitingScreen() {
     return () => { supabase.removeChannel(channel); clearInterval(fallback); };
   }, [couplePlan?.id, refresh]);
 
+  // Once. A second replace remounts the reveal on top of the one already
+  // playing, and the ceremony there is worth exactly one arrival.
+  const handedOver = useRef(false);
   useEffect(() => {
-    if (partnerEntry?.submitted_at) {
+    if (partnerEntry?.submitted_at && !handedOver.current) {
+      handedOver.current = true;
       router.replace({ pathname: '/(tabs)/(today)/reveal', params: { day: String(dayNumber) } });
     }
   }, [partnerEntry?.submitted_at, dayNumber]);

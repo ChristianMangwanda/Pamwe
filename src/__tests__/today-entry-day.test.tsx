@@ -16,6 +16,10 @@ function couplePlanOnDay(current_day: number) {
   });
 }
 
+function noActivePlan() {
+  mockUseCouple.mockReturnValue({ couplePlan: null });
+}
+
 beforeEach(() => {
   jest.clearAllMocks();
   (getPlanDay as jest.Mock).mockResolvedValue({ day_number: 1 });
@@ -74,5 +78,38 @@ describe('useTodayEntry day selection', () => {
     await act(() => Promise.resolve());
 
     expect((getPartnerEntry as jest.Mock).mock.calls.length).toBe(before);
+  });
+});
+
+// A plan's FINAL day retires it at the mutual submit, and getActiveCouPlan then
+// answers null. The ritual screens have to survive that: unpinned, the reveal
+// lost its plan mid-ceremony and rendered "That plan is finished" in place of
+// the two reflections, so the last day of every plan lost its reveal and the
+// completion screen behind it.
+describe('useTodayEntry plan pinning', () => {
+  it('keeps reading the plan it opened with after the plan is retired', async () => {
+    couplePlanOnDay(7);
+    const { result, rerender } = renderHook(() => useTodayEntry(7, true));
+    await waitFor(() => expect(result.current.couplePlan?.id).toBe('cp1'));
+
+    // Both partners have now submitted day 7: the plan is completed and the
+    // active-plan query stops returning it.
+    noActivePlan();
+    rerender({});
+    await act(() => Promise.resolve());
+
+    expect(result.current.couplePlan?.id).toBe('cp1');
+    expect(result.current.dayNumber).toBe(7);
+  });
+
+  it('lets the plan go when it is not pinned, so Today can notice it ended', async () => {
+    couplePlanOnDay(7);
+    const { result, rerender } = renderHook(() => useTodayEntry());
+    await waitFor(() => expect(result.current.couplePlan?.id).toBe('cp1'));
+
+    noActivePlan();
+    rerender({});
+
+    await waitFor(() => expect(result.current.couplePlan).toBeNull());
   });
 });

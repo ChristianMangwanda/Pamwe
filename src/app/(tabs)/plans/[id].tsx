@@ -82,6 +82,8 @@ export default function PlanDetailScreen() {
       params: {
         book: parsed.book.name,
         chapter: String(parsed.chapter ?? 1),
+        ...(parsed.verse ? { verse: String(parsed.verse) } : {}),
+        ...(parsed.endVerse ? { to: String(parsed.endVerse) } : {}),
         // Plan context is what puts the Reflect button in the reader, so a day
         // the cadence gate has not opened yet is passed WITHOUT it: the passage
         // still reads, the ritual does not start early. Scripture is never

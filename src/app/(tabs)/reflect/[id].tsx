@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState, ReactNode } from 'react';
-import { View, StyleSheet, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { useEffect, useState, ReactNode } from 'react';
+import { View, StyleSheet, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { BookOpen, CaretRight } from 'phosphor-react-native';
 import { Text } from '../../../components/ui/Text';
 import { Button } from '../../../components/ui/Button';
 import { BackLink } from '../../../components/ui/BackLink';
@@ -15,10 +16,10 @@ import { useAuth } from '../../../providers/AuthProvider';
 import { useCouple } from '../../../providers/CoupleProvider';
 import { profileInitial } from '../../../lib/couples';
 import { supabase } from '../../../lib/supabase';
+import { haptics } from '../../../lib/haptics';
 import { getReflectionDetail } from '../../../lib/reflections';
 import { getResponsesForDay, EntryResponse } from '../../../lib/entryResponses';
-import { fetchPassage } from '../../../lib/bible';
-import { savePlanDayPassage } from '../../../lib/plans';
+import { parseReference } from '../../../lib/bible';
 
 export default function ReflectionDetailScreen() {
   const router = useRouter();
@@ -33,8 +34,6 @@ export default function ReflectionDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [loadErr, setLoadErr] = useState(false);
   const [attempt, setAttempt] = useState(0);
-  const [passage, setPassage] = useState<string | null>(null);
-  const [passageErr, setPassageErr] = useState(false);
   const [responsesByEntry, setResponsesByEntry] = useState<Record<string, EntryResponse[]>>({});
   const [responsesRev, setResponsesRev] = useState(0);
 
@@ -46,7 +45,6 @@ export default function ReflectionDetailScreen() {
         const d = await getReflectionDetail(couplePlanId, dayNumber);
         if (!alive) return;
         setData(d);
-        setPassage(d.planDay?.passage_text ?? null);
       } catch {
         // A discarded error used to render the day with empty cards and a
         // spinner that never resolved; show the retry card instead.
@@ -71,22 +69,25 @@ export default function ReflectionDetailScreen() {
   }, [couplePlanId, dayNumber, attempt]);
 
   const reference: string | undefined = data?.planDay?.passage_reference;
-  const planDayId: string | undefined = data?.planDay?.id;
-  const loadPassage = useCallback(async () => {
-    if (!reference) return;
-    setPassageErr(false);
-    try {
-      const text = await fetchPassage(reference);
-      setPassage(text);
-      // #23: persist so this custom-plan day never re-fetches.
-      if (planDayId) savePlanDayPassage(planDayId, text).catch(() => {});
-    } catch { setPassageErr(true); }
-  }, [reference, planDayId]);
 
-  // Live-fetch when the plan day has no seeded text (custom plans).
-  useEffect(() => {
-    if (data && !data.planDay?.passage_text && reference) loadPassage();
-  }, [data, reference, loadPassage]);
+  // The passage used to be printed here in full, above the reflections, so
+  // reopening a day meant scrolling past the whole reading to reach the words
+  // you came back for. It is one tap away in the reader instead, where the
+  // couple's highlights and notes are anyway.
+  const parsed = reference ? parseReference(reference) : null;
+  const openPassage = () => {
+    if (!parsed?.chapter) return;
+    haptics.tap();
+    router.push({
+      pathname: '/(tabs)/bible/[book]/[chapter]',
+      params: {
+        book: parsed.book.name,
+        chapter: String(parsed.chapter),
+        ...(parsed.verse ? { verse: String(parsed.verse) } : {}),
+        ...(parsed.endVerse ? { to: String(parsed.endVerse) } : {}),
+      },
+    } as any, { withAnchor: true });
+  };
 
   const partnerName = partner?.display_name ?? 'Your partner';
   const myInitial = (user?.user_metadata?.full_name || user?.email || 'Y')[0]?.toUpperCase() ?? 'Y';
@@ -131,34 +132,41 @@ export default function ReflectionDetailScreen() {
       >
         <BackLink label="Reflections" onPress={() => router.back()} />
 
-        <Text style={[styles.eyebrow, { color: colors.accent }]}>{dateLabel} · {reference}</Text>
+        <Text style={[styles.eyebrow, { color: colors.accent }]}>{dateLabel}</Text>
         <Text variant="h2" italic style={styles.title}>{title}</Text>
         <Text style={[styles.plan, { color: colors.ink2 }]}>Day {dayNumber} · {data?.planTitle}</Text>
         <Floral variant="divider" style={styles.divider} />
 
-        <View style={[styles.passageCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-          <Text variant="eyebrow" color={colors.muted}>The passage</Text>
-          {passage ? (
-            <Text style={[styles.passageText, { color: colors.ink }]}>{passage}</Text>
-          ) : passageErr ? (
-            <Text color={colors.ink2} style={styles.passageState}>Couldn't load the passage.</Text>
-          ) : (
-            <View style={styles.passageState}><ActivityIndicator color={colors.accent} /></View>
-          )}
-          <Text style={[styles.reference, { color: colors.ink2 }]}>{reference}</Text>
-        </View>
+        {!!reference && (
+          <TouchableOpacity
+            onPress={openPassage}
+            disabled={!parsed?.chapter}
+            activeOpacity={0.75}
+            accessibilityRole={parsed?.chapter ? 'button' : 'text'}
+            accessibilityLabel={parsed?.chapter ? `Open ${reference}` : reference}
+            style={[styles.banner, { backgroundColor: colors.surface2, borderColor: colors.lineAccent }]}
+          >
+            <BookOpen size={17} color={colors.accent2} weight="regular" />
+            <Text style={[styles.bannerText, { color: colors.accent }]} numberOfLines={1}>
+              You read {reference}
+            </Text>
+            {!!parsed?.chapter && <CaretRight size={14} color={colors.muted} weight="bold" />}
+          </TouchableOpacity>
+        )}
 
         <Text variant="eyebrow" color={colors.muted} style={styles.section}>What you each wrote</Text>
         <ReflectionCard label="You wrote" voiceLabel="You recorded" initial={myInitial} entry={data?.mine} accent="primary" filled={false} colors={colors}>
           {data?.mine && (
             <ReflectionResponses entry={data.mine} couplePlanId={couplePlanId} dayNumber={dayNumber}
-              canRespond={false} partnerName={partnerName} initial={responsesByEntry[data.mine.id] ?? []} revision={responsesRev} />
+              canRespond={false} partnerName={partnerName} myUserId={user?.id}
+              initial={responsesByEntry[data.mine.id] ?? []} revision={responsesRev} />
           )}
         </ReflectionCard>
         <ReflectionCard label={`${partnerName} wrote`} voiceLabel={`${partnerName} recorded`} initial={partnerInitial} entry={data?.partner} accent="partner" filled colors={colors}>
           {data?.partner && (
             <ReflectionResponses entry={data.partner} couplePlanId={couplePlanId} dayNumber={dayNumber}
-              canRespond partnerName={partnerName} initial={responsesByEntry[data.partner.id] ?? []} revision={responsesRev}
+              canRespond partnerName={partnerName} myUserId={user?.id}
+              initial={responsesByEntry[data.partner.id] ?? []} revision={responsesRev}
               entryText={data.partner.entry_type === 'text' ? data.partner.text_content : data.partner.transcript} />
           )}
         </ReflectionCard>
@@ -210,9 +218,12 @@ const styles = StyleSheet.create({
   divider: { width: 130, height: 26, marginTop: 12, opacity: 0.8 },
   passageCard: { marginTop: 18, borderWidth: 1, borderRadius: 16, paddingHorizontal: 20, paddingVertical: 18 },
   passageText: { fontFamily: fonts.serif, fontSize: 15, lineHeight: 24, marginTop: 10 },
-  passageState: { marginTop: 12, alignItems: 'center' },
   retry: { marginTop: 14 },
-  reference: { fontFamily: fonts.sansSemiBold, fontSize: 10, letterSpacing: 1.6, textTransform: 'uppercase', textAlign: 'right', marginTop: 10 },
+  banner: {
+    marginTop: 18, flexDirection: 'row', alignItems: 'center', gap: 10,
+    borderWidth: 1, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 13,
+  },
+  bannerText: { flex: 1, fontFamily: fonts.serifMedium, fontSize: 14 },
   section: { marginTop: 22 },
   reflCard: { marginTop: 10, borderWidth: 1, borderRadius: 16, paddingHorizontal: 18, paddingVertical: 16 },
   reflHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },

@@ -20,37 +20,56 @@ Deno.serve(async (req) => {
     return new Response("Not a reply", { status: 200 });
   }
 
-  const { entry_id, author_id, body } = record;
+  const { entry_id, author_id, body, parent_id } = record;
 
-  // The reply is on an entry; whoever WROTE that entry is the one to tell.
+  // Tell whoever is being answered. Without a parent that is the entry's author,
+  // the way it has always been. With one it is the author of the reply above,
+  // which is what makes a chain work: answering her reply on MY OWN reflection
+  // has to reach her, and the entry's author there is me.
+  //
   // Report a query error as a 5xx rather than folding it into "not found": as a
   // webhook target the only trace of this run is net._http_response.
-  const { data: entry, error: entryErr } = await supabase
-    .from("entries")
-    .select("user_id")
-    .eq("id", entry_id)
-    .single();
+  let recipientId: string | null = null;
 
-  if (entryErr) {
-    console.error("notify-new-response: entry lookup failed", entryErr);
-    return new Response("entry lookup failed", { status: 500 });
+  if (parent_id) {
+    const { data: parent, error: parentErr } = await supabase
+      .from("entry_responses")
+      .select("author_id")
+      .eq("id", parent_id)
+      .single();
+    if (parentErr) {
+      console.error("notify-new-response: parent lookup failed", parentErr);
+      return new Response("parent lookup failed", { status: 500 });
+    }
+    recipientId = parent?.author_id ?? null;
+  } else {
+    const { data: entry, error: entryErr } = await supabase
+      .from("entries")
+      .select("user_id")
+      .eq("id", entry_id)
+      .single();
+    if (entryErr) {
+      console.error("notify-new-response: entry lookup failed", entryErr);
+      return new Response("entry lookup failed", { status: 500 });
+    }
+    recipientId = entry?.user_id ?? null;
   }
 
-  if (!entry) {
-    return new Response("No entry found", { status: 200 });
+  if (!recipientId) {
+    return new Response("No recipient found", { status: 200 });
   }
 
-  // Replying to your own reflection isn't possible through the app, but never
-  // push someone their own words if it ever becomes so.
-  if (entry.user_id === author_id) {
-    return new Response("Own entry", { status: 200 });
+  // Answering yourself is possible in a chain (two of your own replies in a
+  // row). Never push someone their own words.
+  if (recipientId === author_id) {
+    return new Response("Own words", { status: 200 });
   }
 
   const [{ data: recipient, error: recipientErr }, { data: author }] = await Promise.all([
     supabase
       .from("users")
       .select("expo_push_token, notification_partner")
-      .eq("id", entry.user_id)
+      .eq("id", recipientId)
       .single(),
     supabase
       .from("users")
@@ -76,7 +95,7 @@ Deno.serve(async (req) => {
   const { result } = await sendExpoPush(supabase, "notify-new-response", [{
     to: recipient.expo_push_token,
     sound: "default",
-    title: `${name} replied to your reflection`,
+    title: parent_id ? `${name} replied to you` : `${name} replied to your reflection`,
     body: preview,
     data: { type: "response" },
   }]);

@@ -14,6 +14,7 @@ export default function BibleStackLayout() {
       <Stack.Screen name="[book]/[chapter]" />
       <Stack.Screen name="marks" />
       <Stack.Screen name="search" />
+      <Stack.Screen name="verse" />
       {/* fullScreenModal, not modal: KeyboardAvoidingView measures its frame
           relative to its parent while the keyboard reports in window
           coordinates. In a page-sheet those differ by the sheet's top inset,

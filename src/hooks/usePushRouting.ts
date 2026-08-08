@@ -59,6 +59,14 @@ export function usePushRouting() {
           params: { book: String(data.book), chapter: String(data.chapter), verse: String(data.verse) },
         } as any, { withAnchor: true });
         break;
+      case 'verse_comment':
+        // The words are on the discussion page, so land there rather than in
+        // the chapter with the note still one long press away.
+        router.push({
+          pathname: '/(tabs)/bible/verse',
+          params: { book: String(data.book), chapter: String(data.chapter), verse: String(data.verse) },
+        } as any, { withAnchor: true });
+        break;
       case 'recap':
         router.push('/(tabs)/you/recaps' as any, { withAnchor: true });
         break;
