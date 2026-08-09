@@ -94,6 +94,19 @@ begin
         platform = coalesce(excluded.platform, public.push_tokens.platform),
         updated_at = now();
 
+  -- If this handset was still registered to somebody else, let them go.
+  --
+  -- Found on hosted while shipping this: TWO real accounts held the same token,
+  -- meaning one phone had been signed into both and the sign-out never released
+  -- it, so one person's partner notifications were landing on a device someone
+  -- else now uses. The old code could not repair that, because it only ever
+  -- wrote the current account's own column. Claiming a device now releases it
+  -- everywhere, so the next launch on that phone puts it right by itself.
+  update public.users u
+     set expo_push_token = null
+   where u.id <> v_uid
+     and u.expo_push_token = btrim(p_token);
+
   perform public.sync_legacy_push_token(v_uid);
 end;
 $$;

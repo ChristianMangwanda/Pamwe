@@ -685,6 +685,21 @@ begin
     raise exception 'FAIL: the legacy column did not fall back to the remaining device (%)', v_legacy;
   end if;
 
+  -- Claiming a handset releases it from whoever held it before. Hosted had two
+  -- real accounts pointing at one token, from a sign-out that never let go, so
+  -- one person's partner notifications were reaching a phone someone else uses.
+  perform pg_temp.asowner();
+  update public.users set expo_push_token = 'ExponentPushToken[shared-phone]' where id = v_b;
+  perform pg_temp.be(v_a);
+  perform public.save_push_token('ExponentPushToken[shared-phone]', 'ios');
+  perform pg_temp.asowner();
+  select expo_push_token into v_legacy from public.users where id = v_b;
+  if v_legacy is not null then
+    raise exception 'FAIL: a handset stayed registered to its previous account (%)', v_legacy;
+  end if;
+  perform pg_temp.be(v_a);
+  perform public.clear_push_token('ExponentPushToken[shared-phone]');
+
   -- A partner cannot read, plant or remove another person's devices.
   perform pg_temp.be(v_b);
   select count(*) into v_seen from public.push_tokens where user_id = v_a;
