@@ -148,9 +148,30 @@ export type BuiltPlan = {
 export type BuildResult =
   | { kind: 'plan'; plan: BuiltPlan }
   | { kind: 'off_topic'; message: string }
-  | { kind: 'error'; message: string };
+  | { kind: 'error'; message: string; unavailable?: boolean };
 
 const BUILD_TIMEOUT_MS = 30_000; // two model passes, so roughly double the one-shot budget
+
+/**
+ * Recovers the server's own sentence from a failed invoke().
+ *
+ * functions.invoke() turns any non-2xx into an `error` and leaves `data` null,
+ * so every specific thing the function had to say was thrown away and replaced
+ * with the generic line below. That is how a dead model account reads on the
+ * phone as "resting for a moment": the server knew, said so, and nobody heard
+ * it. FunctionsHttpError carries the untouched Response on `.context`.
+ */
+async function serverSaid(error: unknown): Promise<BuildResult | null> {
+  const res = (error as { context?: Response })?.context;
+  if (!res || typeof res.json !== 'function') return null;
+  try {
+    const body = await res.json();
+    if (typeof body?.error !== 'string' || !body.error.trim()) return null;
+    return { kind: 'error', message: body.error, unavailable: body.unavailable === true };
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Normalises a generated plan without flattening it.
@@ -206,7 +227,11 @@ export async function buildPlan(query: string): Promise<BuildResult> {
       body: { query, mode: 'build' },
       signal: controller.signal,
     });
-    if (error) throw error;
+    if (error) {
+      const said = await serverSaid(error);
+      if (said) return said;
+      throw error;
+    }
 
     if (data?.off_topic) {
       return { kind: 'off_topic', message: String(data.message ?? OFF_TOPIC_FALLBACK) };
@@ -217,6 +242,10 @@ export async function buildPlan(query: string): Promise<BuildResult> {
     if (!plan) return { kind: 'error', message: "Pamwe couldn't shape that one. Try saying it a different way." };
     return { kind: 'plan', plan };
   } catch {
+    // Only the genuinely transient reaches here now: the 30s abort, a dead
+    // network, or a response with no readable body. Anything the server had an
+    // opinion about was returned above in its own words, so this line is finally
+    // true when it appears.
     return { kind: 'error', message: 'Pamwe is resting for a moment. Try again in a bit.' };
   } finally {
     clearTimeout(timer);

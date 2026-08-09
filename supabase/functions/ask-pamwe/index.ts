@@ -56,6 +56,53 @@ const json = (body: unknown, status = 200) =>
 const OFF_TOPIC_MESSAGE =
   "Pamwe stays in its lane: Scripture, prayer, and the two of you. For that one, you'll want another guide.";
 
+// A model call fails two ways and they are not the same thing.
+//
+// A 500, a dropped connection or a rate limit is weather: it clears, and "try
+// again in a bit" is true. A rejected key or an empty credit balance is a wall:
+// it stays until someone tops up the account, and telling a couple to try again
+// is a lie that hides an outage.
+//
+// It has hidden one twice. B21 found hosted ask-pamwe running against an
+// Anthropic account with no credits, dead for an unknown number of days; on
+// 2026-08-09 BOTH providers were exhausted at once and it read, on the phone,
+// as "Pamwe is resting for a moment." Nobody reports resting.
+const UNAVAILABLE_MESSAGE =
+  "Pamwe cannot build plans right now. This one is on our side, not on you or your connection. Everything in Browse is still here.";
+
+class ModelError extends Error {
+  constructor(readonly status: number, readonly body: string) {
+    super(`model ${status}: ${body.slice(0, 200)}`);
+  }
+}
+
+// True when the provider refused the ACCOUNT rather than this request. OpenAI
+// answers 429 + insufficient_quota / credit_balance_exhausted; Anthropic answers
+// 400 with "credit balance is too low", which is why the body is read as well as
+// the status. A bare 429 stays transient: that is an ordinary rate limit.
+function isAccountFailure(status: number, body: string): boolean {
+  if (status === 401 || status === 402) return true;
+  const b = body.toLowerCase();
+  return b.includes("insufficient_quota") ||
+    b.includes("credit_balance_exhausted") ||
+    b.includes("credit balance") ||
+    b.includes("invalid_api_key");
+}
+
+// deno-lint-ignore no-explicit-any
+function modelFailed(err: any) {
+  const status = err instanceof ModelError
+    ? err.status
+    : (typeof err?.status === "number" ? err.status : 0);
+  const body = err instanceof ModelError ? err.body : String(err?.message ?? err);
+  if (isAccountFailure(status, body)) {
+    // 503, and a flag the client can key on, so this is distinguishable from a
+    // bad answer without parsing copy.
+    return json({ error: UNAVAILABLE_MESSAGE, unavailable: true }, 503);
+  }
+  return json({ error: "Pamwe is resting for a moment. Ask again soon." }, 502);
+}
+
 const PLANS_SCHEMA = {
   type: "object",
   additionalProperties: false,
@@ -129,7 +176,7 @@ async function luna(
       response_format: { type: "json_schema", json_schema: { name, strict: true, schema } },
     }),
   });
-  if (!resp.ok) throw new Error(`openai ${resp.status}: ${(await resp.text()).slice(0, 200)}`);
+  if (!resp.ok) throw new ModelError(resp.status, await resp.text());
   const data = await resp.json();
   const msg = data?.choices?.[0]?.message;
   if (!msg?.content || msg.refusal) throw new Error("refusal");
@@ -604,7 +651,7 @@ Deno.serve(async (req) => {
       );
     } catch (err) {
       console.error("ask-pamwe build error:", err);
-      return json({ error: "Pamwe is resting for a moment. Ask again soon." }, 502);
+      return modelFailed(err);
     }
   }
 
@@ -649,6 +696,6 @@ Deno.serve(async (req) => {
     return json(parsed, 200);
   } catch (err) {
     console.error("ask-pamwe error:", err);
-    return json({ error: "Pamwe is resting for a moment. Ask again soon." }, 502);
+    return modelFailed(err);
   }
 });

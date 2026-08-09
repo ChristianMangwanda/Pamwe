@@ -1,6 +1,58 @@
 # Pamwe Build Progress Summary
 
-**Last Updated:** August 8, 2026
+**Last Updated:** August 9, 2026
+
+---
+
+## 🔴 LIVE OUTAGE (2026-08-09): Ask Pamwe is dead on both providers, out of credits
+
+Christian hit "Build the plan" on "Dealing with insecurities" and got **"Pamwe is
+resting for a moment. Try again in a bit."** The screen is fine. The backend is
+not: **both API accounts have a zero credit balance**, so every mode of Ask Pamwe
+fails.
+
+- **OpenAI** (`build`, the Plans search): `429 insufficient_quota`,
+  `credit_balance_exhausted`. The key authenticates and `gpt-5.6-luna` is still
+  listed on the account, so this is billing, not a key or a model change.
+- **Anthropic** (`plans`, the by-book builder): `400 invalid_request_error`,
+  "Your credit balance is too low to access the Anthropic API."
+
+Confirmed in the hosted edge logs: `POST | 502 | ask-pamwe`, 2,938ms, version 14.
+`luna()` throws on the non-2xx intake call, the build handler catches it, and
+returns 502. Everything else in that handler returns 200 with a specific line, so
+**a 502 from ask-pamwe means an exception, and an exception here means the model
+call.**
+
+**Half of it is fixed in the working tree** (not deployed, not built). The server
+now classifies the thrown model error and answers **503 + `unavailable: true`**
+when the provider refused the ACCOUNT rather than the request, keeping the 502
+"resting" for genuine weather. The client reads the server's sentence back off
+`FunctionsHttpError.context`, which it never did before: `functions.invoke()`
+reports every non-2xx as an error with `data` null, so the function's own words
+were always thrown away. Four tests in `build-plan-errors.test.ts`; 30 suites /
+284 Jest green, tsc clean. **Ships when ask-pamwe is redeployed and build 26 goes
+up.** Until then the phone still says "resting".
+
+Deliberately unchanged: `askPamwe()` (the by-book builder) still falls back to
+stock recommendations on any failure. That is a documented product decision, the
+builder always offers something, and reversing it is Christian's call rather than
+a side effect of this fix.
+
+**The rest of the defect is that this is invisible.** "Resting for a moment. Try again in
+a bit." describes something transient and self-healing. This is neither: it stays
+broken until someone adds credits. **This is the second time it has happened** (b21:
+"Hosted ask-pamwe ran v8 against an Anthropic account with no credits, so every
+plan-generation request died", found only because the round happened to touch it).
+Same failure, other provider, same friendly copy hiding it. Two things worth doing
+beyond topping up:
+
+1. Distinguish "the model is unreachable" from "try again", so a dead account
+   reads as broken rather than busy.
+2. The spend alerts in [store-package.md](store-package.md) section 7 were never
+   set. An alert at 50% would have caught both of these before a couple did.
+
+Nothing else in the app depends on either provider. The catalogue is data, plans
+already built still open, and every other tab is unaffected.
 
 ---
 
