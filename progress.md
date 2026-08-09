@@ -4,6 +4,58 @@
 
 ---
 
+## 🔒 TRUNCATE was never guarded by RLS (2026-08-09, fixed on hosted)
+
+Found while writing a probe for the new verse search. Asserting "Scripture is
+read-only" means trying to write it, and the UPDATE was correctly refused, but
+the grant list read `DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE,
+UPDATE` for `anon` and `authenticated`, on **all 22 tables**, locally and on
+hosted.
+
+DELETE and UPDATE are row operations, so RLS governs them. **TRUNCATE is not.**
+Postgres checks the table privilege and stops, so `truncate public.entries` as
+`authenticated` empties every reflection every couple has written, policies and
+all. Verified locally: 31,103 verses to zero in one transaction, rolled back.
+
+Reach today is low and worth stating plainly: PostgREST has no TRUNCATE verb, so
+the API cannot ask for it. What it closes is the gap between what the policies
+say and what the database enforces. These three privileges come from Supabase's
+own bootstrap `grant all`, not from `20260708000004`, so they land on any new
+project and on every new table unless the defaults change too. Both are done.
+
+Worth recording: the first draft of the fix ended with a tidying
+`grant select, insert, update, delete on all tables`, and the probe caught it on
+the very next run. A blanket grant undoes every narrowing before it, and that
+line had handed back whole-table UPDATE on `users` and `entries` and the writes
+on `couples` and `push_tokens`. The migration only takes away now.
+
+---
+
+## ⭐ AUDIT RESPONSE ROUND 3 (2026-08-09): follow the phone, find the verse, keep the recording
+
+Committed (`6a62fbf`, `ef7b35a`), both migrations applied to hosted.
+
+- **Auto appearance.** The system scheme was a seed read once at mount, so a
+  phone going dark at sunset stayed light until relaunch, and there was no way
+  to ask for that. The provider now follows the OS while Auto is chosen, and
+  hands the scheme back rather than pinning one.
+- **Scripture search.** A stored tsvector and GIN index over all 31,103 verses,
+  with a `search_verses` function that ranks them (PostgREST cannot order by a
+  computed rank). Every word must appear, so the top hit is the verse being
+  reached for; a phrase remembered from another translation can be genuinely
+  absent, and the empty state says so rather than reading as broken.
+- **Pairing by link and QR.** `pamwe://join?invite=` plus a code the join screen
+  fills in, surviving the case where the tap arrives before there is an account.
+  The code stays spelled out in the message, because a custom-scheme link does
+  nothing on a phone without the app. **No name preview**, deliberately: that
+  lookup is the enumeration oracle the security round closed.
+- **A failed voice send keeps the recording.** "Your recording is still here"
+  was only true while the journal screen stayed mounted.
+- **Accessibility.** Button announces busy and disabled; BottomSheet is a modal
+  to VoiceOver as well as to the eye, with an escape gesture.
+
+---
+
 ## ⭐ AUDIT RESPONSE ROUND 2 (2026-08-09): every device, the right moment, and a record
 
 Committed (`b6bb3a8`, `a6dd6fb`) and both migrations applied to hosted. Ships

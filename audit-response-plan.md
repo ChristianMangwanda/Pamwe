@@ -156,7 +156,30 @@ wait.
 
 ---
 
-## Round 3 — Polish and reach → build 28
+## Round 3 — DONE in the working tree (2026-08-09)
+
+Committed as `6a62fbf` + `ef7b35a`, pushed, both migrations applied to hosted.
+All five items landed: Auto appearance, Button/BottomSheet accessibility, invite
+link + QR (no name preview, per decision 7), scripture full-text search, and
+voice draft retention.
+
+Verified: 39 Jest suites / 354 tests, `tsc --noEmit` clean, `rls_probe.sql` now
+18 sections green against a database rebuilt from migrations.
+
+**Found while writing the search probe: TRUNCATE was never guarded by RLS.**
+All 22 tables carried TRUNCATE, TRIGGER and REFERENCES for `anon` and
+`authenticated`, from Supabase's own bootstrap `grant all`. RLS does not apply
+to TRUNCATE, so `truncate public.entries` as authenticated would empty every
+reflection in the app. Not reachable through PostgREST (no TRUNCATE verb), but
+revoked on both sides, with default privileges changed so new tables do not
+inherit it, and a probe section to keep it that way.
+
+The first draft of that fix ended with a tidying blanket grant, which the probe
+caught immediately: it undid the column-level narrowing on `users` and `entries`
+and the write revokes on `couples` and `push_tokens`. The migration only takes
+away now.
+
+### What Round 3 contained
 
 1. **System theme**: `ThemePreference = 'light'|'dark'|'system'` alongside existing `ThemeMode`; [ThemeProvider.tsx](src/providers/ThemeProvider.tsx) stores preference in the same `pamwe:theme` key, resolves via `Appearance.getColorScheme()` + `addChangeListener` while system, stops forcing `setColorScheme` in that case; third "Auto" option in [you/index.tsx](src/app/(tabs)/you/index.tsx:117).
 2. **Accessibility**: [Button.tsx](src/components/ui/Button.tsx) `accessibilityState={{disabled, busy}}`; [BottomSheet.tsx](src/components/ui/BottomSheet.tsx) `accessibilityViewIsModal`, scrim role, `onAccessibilityEscape`.
