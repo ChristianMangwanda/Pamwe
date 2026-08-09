@@ -4,6 +4,39 @@
 
 ---
 
+## ⭐ AUDIT RESPONSE ROUND 2 (2026-08-09): every device, the right moment, and a record
+
+Committed (`b6bb3a8`, `a6dd6fb`) and both migrations applied to hosted. Ships
+with the next build alongside Round 1.
+
+- **A push token was a column on the account, so a person had one phone.** A
+  second device overwrote the first and the first went quiet; signing out on
+  either silenced both. Tokens are rows now (`push_tokens`), written only
+  through `save_push_token` / `clear_push_token`. `users.expo_push_token` stays
+  and is kept in step by the database, because it is what the currently
+  deployed edge functions read, and it is what makes the sign-out fix work
+  before they are redeployed.
+- **The permission prompt fired at sign-in**, before a couple had paired or
+  seen a reflection. iOS asks once, so a no there is permanent. Launch now
+  registers only a device that already said yes; the ask lives on the connected
+  screen, with a second door in Settings.
+- **An Activity list**, reached from a quiet bell on Today that carries a dot
+  and never a number. Derived at read time by one function over the five tables
+  that already hold the truth, so it cannot drift. Own actions filtered out.
+- The eight notify-* functions fan out over every device **in the tree**, ready
+  for the deploy still waiting on the webhook-secret check.
+- `@supabase/supabase-js` was floating on `@2` in ten of eleven edge imports.
+  Pinned.
+
+**Found on hosted while applying this: two real accounts held the same push
+token.** One phone had been signed into both and the sign-out never released
+it, so one person's partner notifications were arriving on a device someone
+else now uses. `save_push_token` now releases a handset from every other
+account when it is claimed, so the next launch on that phone repairs it with no
+one doing anything.
+
+---
+
 ## ⭐ AUDIT RESPONSE ROUND 1 (2026-08-09): the ritual stops losing moments
 
 A second external audit (codex) reviewed the whole app. Every claim was checked

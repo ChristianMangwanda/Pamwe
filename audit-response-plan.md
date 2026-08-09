@@ -109,7 +109,30 @@ upload. Round 0's ops items are Christian's and are unblocked by none of this.
 
 ---
 
-## Round 2 — Notifications: right moment, every device → build 27
+## Round 2 — DONE in the working tree (2026-08-09)
+
+Committed as `b6bb3a8` + `a6dd6fb`, pushed, both migrations applied to hosted.
+All three parts landed: permission priming, per-device push tokens, and the
+derived Activity feed with a quiet bell on Today.
+
+Verified: 36 Jest suites / 333 tests, `tsc --noEmit` clean, `rls_probe.sql` now
+16 sections green against a database rebuilt from migrations, and all twelve
+edge files parse clean (no deno locally, so the rewrite was parse-checked with
+the TypeScript compiler API rather than typechecked).
+
+**Found on hosted while applying it:** two real accounts held the same push
+token, from a sign-out that never released the handset. `save_push_token` now
+releases a device from every other account when it is claimed, so the next
+launch repairs it. Probed.
+
+**Not done, and deliberately:** the eight notify-* functions are rewritten to
+fan out but NOT deployed. The precondition from Round 0 still stands, that the
+dashboard `NOTIFY_WEBHOOK_SECRET` must be confirmed to match the Vault value or
+every notification starts returning 401. The legacy `users.expo_push_token`
+column is kept in step by the database precisely so nothing breaks while they
+wait.
+
+### What Round 2 contained
 
 ### 1. Permission priming
 - [notifications.ts](src/lib/notifications.ts): split into `getPushTokenIfGranted()` (never prompts) and `requestPushPermission()` (the prompt). [AuthProvider.tsx](src/providers/AuthProvider.tsx:80) uses the former — granted users keep working, fresh installs never prompted at sign-in.
