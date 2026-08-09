@@ -4,6 +4,41 @@
 
 ---
 
+## ⭐ AUDIT RESPONSE ROUND 1 (2026-08-09): the ritual stops losing moments
+
+A second external audit (codex) reviewed the whole app. Every claim was checked
+against the code: the correctness findings are real, several suggestions
+contradict decisions already made on purpose and were rejected with reasons, and
+the operational blockers it named were the ones already in this file. Roadmap and
+the full triage: [`audit-response-plan.md`](audit-response-plan.md).
+
+**Round 1 is committed (`a1ad996`, pushed) and its two migrations are applied to
+hosted. It ships as build 26.** Six fixes:
+
+1. **A reveal one partner never watched was quietly lost.** The day advances on
+   either partner's Amen, which stays, but "seen" was a flag in one phone's
+   AsyncStorage. `entries.reveal_seen_at` now, written only by
+   `mark_reveal_seen()`, with Today offering the oldest unwatched reveal back.
+   Existing days backfilled except the one a couple is standing on.
+2. **Plan switching is one transaction** (`switch_plan`). It was an UPDATE then a
+   separate INSERT, and a failure between them left a couple with no active plan
+   and no way back, with the half-read plan vanishing from every list.
+3. **Today stops dressing failures as empty states.** A failed fetch rendered the
+   brand-new-couple copy; the hook now distinguishes network from missing-day and
+   keeps the last good content.
+4. **"End this plan"** replaces an early "Mark plan complete" that played the full
+   ceremony and reported the plan's whole length as days read. Quiet now, no tree,
+   and the plan stays in history reading "Read 3 of 21 days".
+5. **Amen has an in-flight guard and a visible failure.** It was Sentry-only.
+6. **One source for your own name**, plus a way to change it, which never existed.
+
+Also: CI runs jest and tsc on every push (lint reports, does not gate yet),
+generated database types are wired in, `rls_probe.sql` grew to 14 sections
+covering the new objects and the gaps it already had, and `local_dev_seed.sh` no
+longer seeds dev users into whichever Supabase container Docker listed first.
+
+---
+
 ## 🔴 LIVE OUTAGE (2026-08-09): Ask Pamwe is dead on both providers, out of credits
 
 Christian hit "Build the plan" on "Dealing with insecurities" and got **"Pamwe is
