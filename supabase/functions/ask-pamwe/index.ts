@@ -34,7 +34,7 @@
 // SUPABASE_SERVICE_ROLE_KEY are injected automatically by the platform.
 
 import Anthropic from "npm:@anthropic-ai/sdk@0.68.0";
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.112.2";
 
 const MODEL = Deno.env.get("ANTHROPIC_MODEL") ?? "claude-haiku-4-5";
 const MAX_QUERY = 300;

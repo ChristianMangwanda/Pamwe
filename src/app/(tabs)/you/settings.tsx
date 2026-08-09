@@ -19,6 +19,8 @@ import {
   getNotificationPrefs, updateNotificationPrefs, getNotificationPermissionStatus,
   scheduleMorningNotification, scheduleWeeklyRecap, cancelWeeklyRecap,
   schedulePrayerReview, cancelPrayerReview, NotificationPrefs,
+  requestPushPermission, getPushTokenIfGranted, savePushToken,
+  scheduleMorningFromPrefs,
 } from '../../../lib/notifications';
 
 const MORNING_PRESETS = ['06:00', '06:30', '07:00', '07:30', '08:00'];
@@ -106,6 +108,22 @@ export default function SettingsScreen() {
 
   const notificationsOff = permission === 'denied';
 
+  // Taking the offer here also schedules the local reminders, which
+  // scheduleMorningFromPrefs and friends skip while permission is unresolved.
+  // Without that, saying yes from Settings turned on partner pushes but left
+  // the morning reminder silently unscheduled until the next sign-in.
+  const enablePush = async () => {
+    haptics.tap();
+    const granted = await requestPushPermission().catch(() => false);
+    setPermission(granted ? 'granted' : 'denied');
+    if (!granted) return;
+    const token = await getPushTokenIfGranted().catch(() => null);
+    if (token) await savePushToken(token).catch(() => {});
+    scheduleMorningFromPrefs();
+    if (prefs?.notification_recap ?? true) scheduleWeeklyRecap();
+    if (prefs?.notification_prayer ?? true) schedulePrayerReview();
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -118,6 +136,17 @@ export default function SettingsScreen() {
             <TouchableOpacity style={[styles.banner, { backgroundColor: colors.line2 }]} activeOpacity={0.7} onPress={() => Linking.openSettings()}>
               <Text variant="body" color={colors.accent}>
                 Notifications are turned off for Pamwe in your phone settings. Tap to turn them back on.
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          {/* Never asked, or asked and put off at the connected screen. The
+              toggles below are all preferences about pushes this phone cannot
+              receive yet, so the offer belongs above them. */}
+          {permission === 'undetermined' && (
+            <TouchableOpacity style={[styles.banner, { backgroundColor: colors.line2 }]} activeOpacity={0.7} onPress={enablePush}>
+              <Text variant="body" color={colors.accent}>
+                Turn on notifications to know when your partner has written, without checking.
               </Text>
             </TouchableOpacity>
           )}

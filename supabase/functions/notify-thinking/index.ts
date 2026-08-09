@@ -5,8 +5,8 @@
 // It shares the partner_nudges cooldown table with the read-nudge but under
 // kind = 'thinking', so the two never silence each other.
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { sendExpoPush } from "../_shared/push.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.112.2";
+import { sendExpoPush, tokensFor, fanOut } from "../_shared/push.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -93,19 +93,24 @@ Deno.serve(async (req) => {
     return json({ ok: false, reason: "server" }, 500);
   }
 
-  if (!partner?.expo_push_token) return json({ ok: true, delivered: false, reason: "no_token" }, 200);
+
   if (partner.notification_partner === false) {
     return json({ ok: true, delivered: false, reason: "notifications_off" }, 200);
   }
 
   const myName = (me.display_name ?? "Your partner").trim() || "Your partner";
-  const { ok } = await sendExpoPush(admin, "notify-thinking", [{
-    to: partner.expo_push_token,
+  // Every phone they are signed in on, not just the last one to register.
+  const deviceTokens = await tokensFor(admin, partnerId, partner?.expo_push_token);
+  if (deviceTokens.length === 0) {
+    return json({ ok: true, delivered: false, reason: "no_token" }, 200);
+  }
+
+  const { ok } = await sendExpoPush(admin, "notify-thinking", fanOut(deviceTokens, {
     sound: "default",
     title: `${myName} is thinking of you`,
     body: "No task, no reading. Just that.",
     data: { type: "thinking" },
-  }]);
+  }));
   if (!ok) return json({ ok: true, delivered: false, reason: "push_failed" }, 200);
   return json({ ok: true, delivered: true }, 200);
 });

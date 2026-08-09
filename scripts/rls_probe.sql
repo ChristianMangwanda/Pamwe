@@ -644,4 +644,133 @@ begin
 end $$;
 rollback;
 
+-- ==================================================================
+-- 15. push_tokens: a device each, and nobody else's (20260811000001)
+-- ==================================================================
+begin;
+do $$
+declare v_a uuid; v_b uuid; v_seen int; v_legacy text;
+begin
+  select alice, bob into v_a, v_b from probe_ids;
+
+  -- Alice signs in on two phones.
+  perform pg_temp.be(v_a);
+  perform public.save_push_token('ExponentPushToken[alice-phone]', 'ios');
+  perform public.save_push_token('ExponentPushToken[alice-ipad]', 'ios');
+
+  perform pg_temp.asowner();
+  select count(*) into v_seen from public.push_tokens where user_id = v_a;
+  if v_seen <> 2 then
+    raise exception 'FAIL: a second device replaced the first (% rows)', v_seen;
+  end if;
+
+  -- The legacy column still names a live device, which is what the currently
+  -- deployed edge functions read.
+  select expo_push_token into v_legacy from public.users where id = v_a;
+  if v_legacy is null then
+    raise exception 'FAIL: the legacy push column was left empty';
+  end if;
+
+  -- Signing out on one phone leaves the other registered. The old code nulled
+  -- the account's single column, silencing every device at once.
+  perform pg_temp.be(v_a);
+  perform public.clear_push_token('ExponentPushToken[alice-phone]');
+  perform pg_temp.asowner();
+  select count(*) into v_seen from public.push_tokens where user_id = v_a;
+  if v_seen <> 1 then
+    raise exception 'FAIL: signing out on one device left % rows', v_seen;
+  end if;
+  select expo_push_token into v_legacy from public.users where id = v_a;
+  if v_legacy is distinct from 'ExponentPushToken[alice-ipad]' then
+    raise exception 'FAIL: the legacy column did not fall back to the remaining device (%)', v_legacy;
+  end if;
+
+  -- A partner cannot read, plant or remove another person's devices.
+  perform pg_temp.be(v_b);
+  select count(*) into v_seen from public.push_tokens where user_id = v_a;
+  if v_seen <> 0 then
+    raise exception 'FAIL: one partner can list the other''s devices';
+  end if;
+
+  begin
+    insert into public.push_tokens (token, user_id) values ('ExponentPushToken[forged]', v_a);
+    raise exception 'FAIL: a token row was written straight from the client';
+  exception when insufficient_privilege then null;
+  end;
+
+  perform public.clear_push_token('ExponentPushToken[alice-ipad]');
+  perform pg_temp.asowner();
+  select count(*) into v_seen from public.push_tokens where user_id = v_a;
+  if v_seen <> 1 then
+    raise exception 'FAIL: one partner removed the other''s device';
+  end if;
+
+  -- The legacy sync is internal: a signed-in user must not be able to point
+  -- somebody else's push column wherever they like.
+  perform pg_temp.be(v_b);
+  begin
+    perform public.sync_legacy_push_token(v_a);
+    raise exception 'FAIL: sync_legacy_push_token is callable by a signed-in user';
+  exception when insufficient_privilege then null;
+  end;
+end $$;
+rollback;
+
+-- ==================================================================
+-- 16. activity_feed: the partner's motion, and only within the couple
+-- (20260811000002)
+-- ==================================================================
+begin;
+do $$
+declare
+  v_a uuid; v_b uuid; v_m uuid; v_c uuid; v_note uuid;
+  v_total int; v_mine int; v_unread int;
+begin
+  select alice, bob, mallory, couple into v_a, v_b, v_m, v_c from probe_ids;
+
+  -- Bob leaves things around the app; Alice leaves one of her own.
+  perform pg_temp.be(v_b);
+  insert into public.prayers (couple_id, author_id, text) values (v_c, v_b, 'for her interview');
+  insert into public.dreams  (couple_id, author_id, text) values (v_c, v_b, 'a house by water');
+  insert into public.verse_notes (couple_id, user_id, book, chapter, verse, text)
+    values (v_c, v_b, 'John', 1, 1, 'the Word was God') returning id into v_note;
+  insert into public.verse_note_responses (note_id, couple_id, user_id, kind, body)
+    values (v_note, v_c, v_b, 'comment', 'this one stays with me');
+
+  perform pg_temp.be(v_a);
+  insert into public.prayers (couple_id, author_id, text) values (v_c, v_a, 'my own prayer');
+
+  select count(*) into v_total from public.activity_feed(null, 40);
+  select count(*) into v_mine from public.activity_feed(null, 40) f where f.actor_id = v_a;
+
+  if v_mine <> 0 then
+    raise exception 'FAIL: your own activity came back in your own feed';
+  end if;
+  if v_total <> 4 then
+    raise exception 'FAIL: expected the partner''s 4 items, got %', v_total;
+  end if;
+
+  -- An outsider sees nothing: the function runs as the caller, so the couple
+  -- policies on all five tables are what scope it.
+  perform pg_temp.be(v_m);
+  select count(*) into v_total from public.activity_feed(null, 40);
+  if v_total <> 0 then
+    raise exception 'FAIL: an outsider read % rows of a couple''s activity', v_total;
+  end if;
+
+  -- The dot: everything is unread until the list is opened.
+  perform pg_temp.be(v_a);
+  select public.unread_activity_count() into v_unread;
+  if v_unread < 4 then
+    raise exception 'FAIL: unread count was % with 4 new items', v_unread;
+  end if;
+
+  update public.users set last_seen_activity_at = now() where id = v_a;
+  select public.unread_activity_count() into v_unread;
+  if v_unread <> 0 then
+    raise exception 'FAIL: the dot stayed lit after reading (%)', v_unread;
+  end if;
+end $$;
+rollback;
+
 select 'rls_probe: all probes held' as result;

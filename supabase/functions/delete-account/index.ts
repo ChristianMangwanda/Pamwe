@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.112.2";
 import { sendExpoPush } from "../_shared/push.ts";
 
 // Demote, don't delete: the survivor keeps everything. See

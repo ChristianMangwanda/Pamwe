@@ -20,6 +20,42 @@ export interface ExpoPushOutcome {
   result: unknown;      // Expo's raw response body
 }
 
+/** Every device a person is signed in on.
+ *
+ *  Tokens moved to their own table (20260811000001) because one column per
+ *  account meant one phone per person: a second device overwrote the first and
+ *  the first went quiet. `legacy` is users.expo_push_token, still kept in step
+ *  by the database, and it is the fallback for a device that registered before
+ *  this shipped and has not relaunched since. */
+export async function tokensFor(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  userId: string,
+  legacy?: string | null,
+): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("push_tokens")
+    .select("token")
+    .eq("user_id", userId);
+
+  if (error) {
+    console.error("tokensFor: lookup failed, falling back to the legacy column", error);
+    return legacy ? [legacy] : [];
+  }
+
+  const tokens = (data ?? []).map((r: { token: string }) => r.token).filter(Boolean);
+  if (legacy && !tokens.includes(legacy)) tokens.push(legacy);
+  return tokens;
+}
+
+/** The same notification, addressed to each of a person's devices. */
+export function fanOut(
+  tokens: string[],
+  message: Omit<ExpoPushMessage, "to">,
+): ExpoPushMessage[] {
+  return tokens.map((to) => ({ ...message, to }));
+}
+
 export async function sendExpoPush(
   // deno-lint-ignore no-explicit-any
   supabase: any,
@@ -45,12 +81,28 @@ export async function sendExpoPush(
     anyError = true;
     console.error(`${tag}: expo push rejected`, ticket);
     if (ticket?.details?.error === "DeviceNotRegistered" && messages[i]?.to) {
-      const { error } = await supabase
-        .from("users")
-        .update({ expo_push_token: null })
-        .eq("expo_push_token", messages[i].to);
+      // Remove the dead DEVICE, not the person's whole registration: an
+      // uninstalled second phone must not silence the one still in their hand.
+      const dead = messages[i].to;
+      const { data: row, error } = await supabase
+        .from("push_tokens")
+        .delete()
+        .eq("token", dead)
+        .select("user_id")
+        .maybeSingle();
       if (error) console.error(`${tag}: dead-token cleanup failed`, error);
       else console.log(`${tag}: cleared dead push token`);
+
+      // Keep the legacy column pointing at a device that still exists. It is
+      // what older deployed functions read, and what this one falls back to.
+      if (row?.user_id) {
+        const { error: syncErr } = await supabase.rpc("sync_legacy_push_token", {
+          p_user: row.user_id,
+        });
+        if (syncErr) console.error(`${tag}: legacy token sync failed`, syncErr);
+      } else {
+        await supabase.from("users").update({ expo_push_token: null }).eq("expo_push_token", dead);
+      }
     }
   }
 

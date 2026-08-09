@@ -720,6 +720,35 @@ export type Database = {
           },
         ]
       }
+      push_tokens: {
+        Row: {
+          platform: string | null
+          token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          platform?: string | null
+          token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          platform?: string | null
+          token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           accepted_terms_at: string | null
@@ -730,6 +759,7 @@ export type Database = {
           email: string
           expo_push_token: string | null
           id: string
+          last_seen_activity_at: string | null
           notification_dream: boolean
           notification_morning_time: string | null
           notification_note: boolean
@@ -746,6 +776,7 @@ export type Database = {
           email: string
           expo_push_token?: string | null
           id: string
+          last_seen_activity_at?: string | null
           notification_dream?: boolean
           notification_morning_time?: string | null
           notification_note?: boolean
@@ -762,6 +793,7 @@ export type Database = {
           email?: string
           expo_push_token?: string | null
           id?: string
+          last_seen_activity_at?: string | null
           notification_dream?: boolean
           notification_morning_time?: string | null
           notification_note?: boolean
@@ -924,6 +956,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      activity_feed: {
+        Args: { p_before?: string; p_limit?: number }
+        Returns: {
+          actor_id: string
+          happened_at: string
+          id: string
+          kind: string
+          preview: string
+          target: Json
+        }[]
+      }
       bump_ask_pamwe_usage: {
         Args: { p_user: string }
         Returns: {
@@ -944,6 +987,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      clear_push_token: { Args: { p_token?: string }; Returns: undefined }
       compute_streak: {
         Args: { p_couple: string }
         Returns: {
@@ -1078,6 +1122,10 @@ export type Database = {
           verse_start: number
         }[]
       }
+      save_push_token: {
+        Args: { p_platform?: string; p_token: string }
+        Returns: undefined
+      }
       set_couple_anniversary: {
         Args: { p_anniversary: string }
         Returns: string
@@ -1106,6 +1154,8 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      sync_legacy_push_token: { Args: { p_user: string }; Returns: undefined }
+      unread_activity_count: { Args: never; Returns: number }
     }
     Enums: {
       [_ in never]: never

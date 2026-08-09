@@ -17,7 +17,9 @@ jest.mock('../lib/supabase', () => ({
 // AuthProvider owns push wiring now (auth-scoped registration); the tests here
 // exercise session state only.
 jest.mock('../lib/notifications', () => ({
-  registerForPushNotifications: jest.fn(() => Promise.resolve(null)),
+  // Registration only: the prompt moved to the connected screen, so nothing
+  // AuthProvider calls can put a permission dialog in front of anyone.
+  getPushTokenIfGranted: jest.fn(() => Promise.resolve(null)),
   savePushToken: jest.fn(() => Promise.resolve()),
   clearPushToken: jest.fn(() => Promise.resolve()),
   watchPushTokenRotation: jest.fn(() => ({ remove: jest.fn() })),

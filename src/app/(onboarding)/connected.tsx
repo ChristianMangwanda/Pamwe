@@ -13,6 +13,12 @@ import { GUTTER } from '../../theme/tokens';
 import { useTheme } from '../../providers/ThemeProvider';
 import { getUserCouple, getPartnerProfile, profileInitial } from '../../lib/couples';
 import { getMyProfile } from '../../lib/account';
+import {
+  getNotificationPermissionStatus,
+  requestPushPermission,
+  getPushTokenIfGranted,
+  savePushToken,
+} from '../../lib/notifications';
 
 export default function ConnectedScreen() {
   const router = useRouter();
@@ -21,6 +27,11 @@ export default function ConnectedScreen() {
   const [myInitial, setMyInitial] = useState('?');
   const [partner, setPartner] = useState<string>('your partner');
   const [partnerInitial, setPartnerInitial] = useState('?');
+  // The permission ask lives here, not at sign-in. iOS asks once and a refusal
+  // is permanent, so it should arrive when there is a person to name and a
+  // reason to say yes, rather than in the first seconds of an empty account.
+  const [askPush, setAskPush] = useState(false);
+  const [asking, setAsking] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -31,8 +42,26 @@ export default function ConnectedScreen() {
       const p = await getPartnerProfile(couple);
       if (p?.display_name) setPartner(p.display_name);
       setPartnerInitial(profileInitial(p) ?? '?');
+
+      // Only offer where the OS has not already been answered. A phone that
+      // said yes long ago just registers; one that said no is not nagged here.
+      const status = await getNotificationPermissionStatus().catch(() => null);
+      if (status === 'undetermined') setAskPush(true);
+      else if (status === 'granted') getPushTokenIfGranted().then((t) => { if (t) savePushToken(t); });
     })();
   }, []);
+
+  const enablePush = async () => {
+    setAsking(true);
+    haptics.tap();
+    const granted = await requestPushPermission().catch(() => false);
+    if (granted) {
+      const token = await getPushTokenIfGranted().catch(() => null);
+      if (token) await savePushToken(token).catch(() => {});
+    }
+    setAsking(false);
+    router.replace('/');
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
@@ -52,10 +81,31 @@ export default function ConnectedScreen() {
 
         <Text style={[styles.title, { color: colors.ink }]}>You're linked.</Text>
         <Text italic color={colors.ink2} style={styles.line}>{me} & {partner}, walking together from today.</Text>
+
+        {askPush && (
+          <View style={[styles.prime, { backgroundColor: colors.surface, borderColor: colors.lineAccent }]}>
+            <Text style={[styles.primeText, { color: colors.ink }]}>
+              Pamwe can tell you the moment {partner} has written, so neither of you is left waiting
+              without knowing.
+            </Text>
+          </View>
+        )}
       </View>
 
       <SafeAreaView edges={['bottom']} style={styles.footer}>
-        <Button title="Enter Pamwe" onPress={() => router.replace('/')} />
+        {askPush ? (
+          <>
+            <Button title={`Tell me when ${partner} writes`} onPress={enablePush} loading={asking} />
+            <Button
+              title="Not now"
+              variant="secondary"
+              onPress={() => { haptics.tap(); router.replace('/'); }}
+              style={styles.secondary}
+            />
+          </>
+        ) : (
+          <Button title="Enter Pamwe" onPress={() => router.replace('/')} />
+        )}
       </SafeAreaView>
     </View>
   );
@@ -77,5 +127,8 @@ const styles = StyleSheet.create({
   avatarInitial: { fontFamily: fonts.serif, fontSize: 26 },
   title: { fontFamily: fonts.serifLight, fontSize: 34, lineHeight: 36, marginTop: 26, textAlign: 'center' },
   line: { fontSize: 16, marginTop: 12, textAlign: 'center' },
+  prime: { marginTop: 30, borderWidth: 1, borderRadius: 16, paddingHorizontal: 18, paddingVertical: 15 },
+  primeText: { fontFamily: fonts.serif, fontSize: 14, lineHeight: 21.5, textAlign: 'center' },
   footer: { paddingHorizontal: GUTTER, paddingBottom: 12 },
+  secondary: { marginTop: 10 },
 });

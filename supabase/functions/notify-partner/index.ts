@@ -1,5 +1,5 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { sendExpoPush } from "../_shared/push.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.112.2";
+import { sendExpoPush, tokensFor, fanOut } from "../_shared/push.ts";
 import { requireWebhookSecret } from "../_shared/webhook.ts";
 
 const supabase = createClient(
@@ -73,8 +73,8 @@ Deno.serve(async (req) => {
     return new Response("partner lookup failed", { status: 500 });
   }
 
-  if (!partner?.expo_push_token || partner.notification_partner === false) {
-    return new Response("Partner has no token or opted out", { status: 200 });
+  if (partner?.notification_partner === false) {
+    return new Response("Partner opted out", { status: 200 });
   }
 
   const { data: partnerEntry } = await supabase
@@ -97,9 +97,14 @@ Deno.serve(async (req) => {
         body: "Write yours and open them together.",
       };
 
+  // Every phone they are signed in on, not just the last one to register.
+  const deviceTokens = await tokensFor(supabase, partnerId, partner?.expo_push_token);
+  if (deviceTokens.length === 0) {
+    return new Response("No devices to notify", { status: 200 });
+  }
+
   // sendExpoPush logs rejected tickets and clears DeviceNotRegistered tokens.
-  const { result } = await sendExpoPush(supabase, "notify-partner", [{
-    to: partner.expo_push_token,
+  const { result } = await sendExpoPush(supabase, "notify-partner", fanOut(deviceTokens, {
     sound: "default",
     title: message.title,
     body: message.body,
@@ -108,7 +113,7 @@ Deno.serve(async (req) => {
     // the sender had already amened, that is the NEXT day, where neither
     // partner has written. The reveal then reported a connection problem.
     data: { type: "partner_entry", reveal: partnerAlsoSubmitted, day: day_number },
-  }]);
+  }));
   return new Response(JSON.stringify(result), {
     headers: { "Content-Type": "application/json" },
   });

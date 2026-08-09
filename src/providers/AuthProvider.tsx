@@ -3,7 +3,7 @@ import { AppState } from 'react-native';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import {
-  registerForPushNotifications,
+  getPushTokenIfGranted,
   savePushToken,
   clearPushToken,
   watchPushTokenRotation,
@@ -77,7 +77,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Stamps the first sign-in only (the update filters on a null column), so
     // the consent the welcome screen asks for is recorded against the account.
     recordTermsAcceptance();
-    registerForPushNotifications().then((token) => {
+    // Registers a device that has ALREADY been given permission, and never
+    // prompts. The prompt used to fire here, on the first render after
+    // sign-in, before there was a partner or a reflection to point at; iOS
+    // asks once, so a no there was permanent. The onboarding "connected"
+    // screen asks now, and Settings offers it later.
+    getPushTokenIfGranted().then((token) => {
       if (token) savePushToken(token);
     });
     const rotationSub = watchPushTokenRotation();

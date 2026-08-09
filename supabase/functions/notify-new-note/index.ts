@@ -1,5 +1,5 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { sendExpoPush } from "../_shared/push.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.112.2";
+import { sendExpoPush, tokensFor, fanOut } from "../_shared/push.ts";
 import { requireWebhookSecret } from "../_shared/webhook.ts";
 
 const supabase = createClient(
@@ -65,22 +65,27 @@ Deno.serve(async (req) => {
   const partner = people?.find((p) => p.id === partnerId);
   const author = people?.find((p) => p.id === authorId);
 
-  if (!partner?.expo_push_token || partner.notification_note === false) {
+  if (partner?.notification_note === false) {
     return new Response("Partner has no token or opted out", { status: 200 });
   }
 
   const who = author?.display_name?.trim() || "Your partner";
   const ref = `${book} ${chapter}:${verse}`;
 
-  const { result } = await sendExpoPush(supabase, "notify-new-note", [{
-    to: partner.expo_push_token,
+  // Every phone they are signed in on, not just the last one to register.
+  const deviceTokens = await tokensFor(supabase, partnerId, partner?.expo_push_token);
+  if (deviceTokens.length === 0) {
+    return new Response("No devices to notify", { status: 200 });
+  }
+
+  const { result } = await sendExpoPush(supabase, "notify-new-note", fanOut(deviceTokens, {
     sound: "default",
     title: `${who} took note of ${ref}`,
     body: "Want to see it?",
     // The note itself is deliberately not in the payload: it lands on a lock
     // screen, and this is the one place the couple write only to each other.
     data: { type: "note", book, chapter, verse },
-  }]);
+  }));
 
   return new Response(JSON.stringify(result), {
     headers: { "Content-Type": "application/json" },

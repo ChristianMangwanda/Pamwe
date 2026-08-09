@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { GearSix } from 'phosphor-react-native';
+import { GearSix, BellSimple } from 'phosphor-react-native';
 import { Text } from '../../../components/ui/Text';
 import { PamweLoading } from '../../../components/ui/PamweLoading';
 import { Button } from '../../../components/ui/Button';
@@ -25,6 +25,7 @@ import { daysBehind, todayInTimezone, canOpenDay, opensOn, opensLabel } from '..
 import { nudgePartner } from '../../../lib/notifications';
 import { lastFinishedPlan, FinishedPlan } from '../../../lib/planHistory';
 import { getUnseenReveals } from '../../../lib/entries';
+import { unreadActivityCount } from '../../../lib/activity';
 import { haptics } from '../../../lib/haptics';
 
 export default function HomeScreen() {
@@ -87,6 +88,20 @@ export default function HomeScreen() {
         .catch(() => {});
       return () => { alive = false; };
     }, [couplePlanId, dayNumber]),
+  );
+
+  // The bell's dot. Re-read on focus so it clears on the way back from the
+  // list, and stays quiet (0) whenever the count cannot be fetched: a dot that
+  // appears because the network blipped would train people to ignore it.
+  const [unread, setUnread] = useState(0);
+  useFocusEffect(
+    useCallback(() => {
+      let alive = true;
+      unreadActivityCount()
+        .then((n) => { if (alive) setUnread(n); })
+        .catch(() => { if (alive) setUnread(0); });
+      return () => { alive = false; };
+    }, []),
   );
 
   const onRefresh = async () => {
@@ -282,6 +297,18 @@ export default function HomeScreen() {
         <Floral variant="corner" style={styles.floral} />
 
         <View style={styles.gearRow}>
+          {/* A dot, never a count. The point is that something is there, and a
+              number turns a quiet record into a tally to clear. */}
+          <TouchableOpacity
+            onPress={() => { haptics.tap(); router.push('/(tabs)/(today)/activity'); }}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel={unread > 0 ? 'Activity, new since you last looked' : 'Activity'}
+            style={styles.bell}
+          >
+            <BellSimple size={21} color={colors.ink2} weight="regular" />
+            {unread > 0 && <View style={[styles.dot, { backgroundColor: colors.accent, borderColor: colors.bg }]} />}
+          </TouchableOpacity>
           <TouchableOpacity
             onPress={() => { haptics.tap(); router.push('/(tabs)/you/settings', { withAnchor: true }); }}
             hitSlop={12}
@@ -441,7 +468,9 @@ const styles = StyleSheet.create({
   doneFloral: { width: 150, height: 26, marginBottom: 18, opacity: 0.85 },
   scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 32 },
   floral: { position: 'absolute', top: -6, left: -16, width: 116, height: 116, opacity: 0.82 },
-  gearRow: { flexDirection: 'row', justifyContent: 'flex-end', zIndex: 2 },
+  gearRow: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 16, zIndex: 2 },
+  bell: { position: 'relative' },
+  dot: { position: 'absolute', top: -1, right: -1, width: 9, height: 9, borderRadius: 4.5, borderWidth: 1.5 },
   header: { alignItems: 'center', marginTop: 4 },
   dateLabel: { letterSpacing: 2.2 },
   dayNum: { fontFamily: fonts.serifLight, fontSize: 34, lineHeight: 36, marginTop: 6 },

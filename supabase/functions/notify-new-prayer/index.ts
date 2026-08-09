@@ -1,5 +1,5 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { sendExpoPush } from "../_shared/push.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.112.2";
+import { sendExpoPush, tokensFor, fanOut } from "../_shared/push.ts";
 import { requireWebhookSecret } from "../_shared/webhook.ts";
 
 const supabase = createClient(
@@ -82,20 +82,25 @@ Deno.serve(async (req) => {
     return new Response("partner lookup failed", { status: 500 });
   }
 
-  if (!partner?.expo_push_token || partner.notification_prayer === false) {
+  if (partner?.notification_prayer === false) {
     return new Response("Partner has no token or opted out", { status: 200 });
   }
 
   const preview = (text ?? "").length > 80 ? text.slice(0, 77) + "…" : (text ?? "");
 
   // sendExpoPush logs rejected tickets and clears DeviceNotRegistered tokens.
-  const { result } = await sendExpoPush(supabase, "notify-new-prayer", [{
-    to: partner.expo_push_token,
+  // Every phone they are signed in on, not just the last one to register.
+  const deviceTokens = await tokensFor(supabase, partnerId, partner?.expo_push_token);
+  if (deviceTokens.length === 0) {
+    return new Response("No devices to notify", { status: 200 });
+  }
+
+  const { result } = await sendExpoPush(supabase, "notify-new-prayer", fanOut(deviceTokens, {
     sound: "default",
     title: "Your partner added a prayer",
     body: preview,
     data: { type: "prayer" },
-  }]);
+  }));
   return new Response(JSON.stringify(result), {
     headers: { "Content-Type": "application/json" },
   });
