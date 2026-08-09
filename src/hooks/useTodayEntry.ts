@@ -3,9 +3,17 @@ import { useCouple } from '../providers/CoupleProvider';
 import { getPlanDay } from '../lib/plans';
 import { getMyEntry, getPartnerEntry } from '../lib/entries';
 
+/** What went wrong, because the two need different words.
+ *
+ *  'network' is a fetch that failed and may work on the next try. 'missing-day'
+ *  is the plan genuinely having no such row, which retrying cannot fix. Today
+ *  used to render both, and a healthy brand-new couple, through one empty
+ *  state. */
+export type TodayError = 'network' | 'missing-day' | null;
+
 type TodayState = {
   loading: boolean;
-  error: boolean;
+  error: TodayError;
   planDay: any | null;
   myEntry: any | null;
   partnerEntry: any | null;
@@ -47,7 +55,7 @@ export function useTodayEntry(dayOverride?: number, pinPlan = false): TodayState
   const couplePlan = livePlan ?? (pinPlan ? pinnedPlan : null);
 
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<TodayError>(null);
   const [planDay, setPlanDay] = useState<any | null>(null);
   const [myEntry, setMyEntry] = useState<any | null>(null);
   const [partnerEntry, setPartnerEntry] = useState<any | null>(null);
@@ -86,10 +94,17 @@ export function useTodayEntry(dayOverride?: number, pinPlan = false): TodayState
       setPlanDay(pd);
       setMyEntry(mine);
       setPartnerEntry(partner);
-      setError(false);
+      setError(null);
       loadedOnce.current = true;
-    } catch {
-      setError(true);
+    } catch (err) {
+      // Keep whatever was already on screen. A blip should cost the refresh,
+      // not the content: clearing here is what let a network failure read as
+      // "you have no plan".
+      //
+      // PGRST116 is PostgREST's "no rows for .single()", which getPlanDay
+      // raises when the plan really has no such day. Everything else, offline
+      // included, is worth another try.
+      setError((err as { code?: string })?.code === 'PGRST116' ? 'missing-day' : 'network');
     } finally {
       setLoading(false);
     }

@@ -26,6 +26,9 @@ module.exports = defineConfig([
       'scripts/**/*.py',
       'scripts/**/*.rb',
       'scripts/**/*.sql',
+      // `supabase gen types typescript --local`, regenerated after every
+      // migration. Nothing here is hand-written.
+      'src/types/database.ts',
     ],
   },
 ]);

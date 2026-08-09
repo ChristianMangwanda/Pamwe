@@ -355,4 +355,293 @@ begin
 end $$;
 rollback;
 
+-- ==================================================================
+-- 9. create_couple and regenerate_invite_code
+--
+-- Section 1 and 2 set their scene by inserting into couples directly, so until
+-- now two of the three pairing functions were never actually called here: the
+-- code generation, the expiry and the already-paired refusal were all untested.
+-- ==================================================================
+begin;
+do $$
+declare v_m uuid; v_couple public.couples; v_first text;
+begin
+  select mallory into v_m from probe_ids;
+  perform pg_temp.be(v_m);
+
+  v_couple := public.create_couple('Africa/Harare');
+
+  if length(v_couple.invite_code) <> 6 then
+    raise exception 'FAIL: create_couple minted a % character code', length(v_couple.invite_code);
+  end if;
+  -- Decided in the database. The client used to send this, so a modified one
+  -- could mint an invite that never expired.
+  if v_couple.invite_expires_at < now() + interval '6 days'
+     or v_couple.invite_expires_at > now() + interval '8 days' then
+    raise exception 'FAIL: create_couple set an expiry of %', v_couple.invite_expires_at;
+  end if;
+  if v_couple.timezone <> 'Africa/Harare' then
+    raise exception 'FAIL: create_couple lost the timezone (got %)', v_couple.timezone;
+  end if;
+  if not exists (select 1 from public.users where id = v_m and couple_id = v_couple.id) then
+    raise exception 'FAIL: create_couple left the profile unlinked';
+  end if;
+
+  -- The lapsed-code escape hatch draws a new one and pushes the expiry out.
+  v_first := v_couple.invite_code;
+  v_couple := public.regenerate_invite_code();
+  if v_couple.invite_code = v_first then
+    raise exception 'FAIL: regenerate_invite_code returned the same code';
+  end if;
+  if v_couple.invite_expires_at < now() + interval '6 days' then
+    raise exception 'FAIL: regenerate_invite_code did not refresh the expiry';
+  end if;
+
+  -- A second invite from someone already in a couple is refused.
+  begin
+    perform public.create_couple('UTC');
+    raise exception 'FAIL: create_couple opened a second invite for a paired user';
+  exception when others then
+    if sqlerrm not like '%already connected%' then raise; end if;
+  end;
+end $$;
+rollback;
+
+-- ==================================================================
+-- 10. An expired code answers exactly like an unknown one
+--
+-- Not tidiness. A distinguishable refusal is an oracle telling a stranger which
+-- codes are real, which is the enumeration 20260808000001 closed.
+-- ==================================================================
+begin;
+do $$
+declare v_unknown text; v_expired text; v_spent text;
+begin
+  insert into public.couples (invite_code, invite_expires_at, partner_a_id, timezone)
+  values ('PROBEX', now() - interval '1 day', (select alice from probe_ids), 'UTC');
+  insert into public.couples (invite_code, invite_expires_at, partner_a_id, partner_b_id, paired_at, timezone)
+  values ('PROBES', now() + interval '7 days', (select alice from probe_ids),
+          (select bob from probe_ids), now(), 'UTC');
+
+  perform pg_temp.be((select mallory from probe_ids));
+
+  begin perform public.join_couple('NOPE99');
+  exception when others then get stacked diagnostics v_unknown = message_text; end;
+
+  begin perform public.join_couple('PROBEX');
+  exception when others then get stacked diagnostics v_expired = message_text; end;
+
+  begin perform public.join_couple('PROBES');
+  exception when others then get stacked diagnostics v_spent = message_text; end;
+
+  if v_expired is distinct from v_unknown then
+    raise exception 'FAIL: an expired code is distinguishable (% vs %)', v_expired, v_unknown;
+  end if;
+  if v_spent is distinct from v_unknown then
+    raise exception 'FAIL: a spent code is distinguishable (% vs %)', v_spent, v_unknown;
+  end if;
+end $$;
+rollback;
+
+-- ==================================================================
+-- 11. delete_account is service-role only, and the users grant holds
+-- (20260808000006, 20260808000008)
+-- ==================================================================
+begin;
+do $$
+declare v_a uuid;
+begin
+  select alice into v_a from probe_ids;
+  perform pg_temp.be((select mallory from probe_ids));
+
+  begin
+    perform public.delete_account(v_a);
+    raise exception 'FAIL: a signed-in user can delete another account';
+  exception when insufficient_privilege then null;
+  end;
+
+  -- The column grant: consent is writable by its owner, the email mirror is not.
+  perform pg_temp.be(v_a);
+  update public.users set accepted_terms_at = now() where id = v_a;
+
+  begin
+    update public.users set email = 'moved@pamwe.dev' where id = v_a;
+    raise exception 'FAIL: a user can rewrite the email mirrored from auth.users';
+  exception when insufficient_privilege then null;
+  end;
+end $$;
+rollback;
+
+-- ==================================================================
+-- 12. mark_reveal_seen: mine only, sealed only, and by the function only
+-- (20260810000001)
+-- ==================================================================
+begin;
+do $$
+declare v_a uuid; v_b uuid; v_cp uuid; v_seen timestamptz;
+begin
+  select alice, bob, couple_plan into v_a, v_b, v_cp from probe_ids;
+
+  perform pg_temp.be(v_a);
+  insert into public.entries (couple_plan_id, day_number, user_id, entry_type, text_content, submitted_at)
+  values (v_cp, 1, v_a, 'text', 'mine', now());
+  -- A draft, left open, to test the column grant where the policy still allows
+  -- an update at all.
+  insert into public.entries (couple_plan_id, day_number, user_id, entry_type, text_content)
+  values (v_cp, 2, v_a, 'text', 'still writing');
+
+  perform pg_temp.be(v_b);
+  insert into public.entries (couple_plan_id, day_number, user_id, entry_type, text_content, submitted_at)
+  values (v_cp, 1, v_b, 'text', 'theirs', now());
+
+  -- Alice marks her own copy of day 1.
+  perform pg_temp.be(v_a);
+  perform public.mark_reveal_seen(v_cp, 1);
+
+  perform pg_temp.asowner();
+  select reveal_seen_at into v_seen from public.entries
+   where couple_plan_id = v_cp and day_number = 1 and user_id = v_a;
+  if v_seen is null then
+    raise exception 'FAIL: mark_reveal_seen did not mark the caller''s own entry';
+  end if;
+
+  -- and only her own: the partner still has their reveal waiting.
+  select reveal_seen_at into v_seen from public.entries
+   where couple_plan_id = v_cp and day_number = 1 and user_id = v_b;
+  if v_seen is not null then
+    raise exception 'FAIL: one partner marked the other''s reveal as seen';
+  end if;
+
+  -- An unsealed day is not a reveal, so there is nothing to mark.
+  perform pg_temp.be(v_a);
+  perform public.mark_reveal_seen(v_cp, 2);
+  perform pg_temp.asowner();
+  select reveal_seen_at into v_seen from public.entries
+   where couple_plan_id = v_cp and day_number = 2 and user_id = v_a;
+  if v_seen is not null then
+    raise exception 'FAIL: an unsubmitted entry was marked as a watched reveal';
+  end if;
+
+  -- The function is the only writer. The policy would allow this update (the
+  -- row is still a draft), so it is the column grant that has to refuse.
+  perform pg_temp.be(v_a);
+  begin
+    update public.entries set reveal_seen_at = now()
+     where couple_plan_id = v_cp and day_number = 2 and user_id = v_a;
+    raise exception 'FAIL: reveal_seen_at is writable straight from the client';
+  exception when insufficient_privilege then null;
+  end;
+
+  -- and the columns the journal really writes still are.
+  update public.entries set text_content = 'more words', updated_at = now()
+   where couple_plan_id = v_cp and day_number = 2 and user_id = v_a;
+
+  -- Including the ones only an OLD build writes. Up to b23 the voice send
+  -- attached audio and transcript inline to the draft and threw on failure, so
+  -- a phone that has not updated would lose voice sending if this were revoked.
+  update public.entries
+     set entry_type = 'voice', audio_url = 'x/y/z.m4a', audio_duration_seconds = 12,
+         transcript = 'what I said', updated_at = now()
+   where couple_plan_id = v_cp and day_number = 2 and user_id = v_a;
+end $$;
+rollback;
+
+-- ==================================================================
+-- 13. switch_plan: one transaction, one active plan, and not for outsiders
+-- (20260810000002)
+-- ==================================================================
+begin;
+do $$
+declare v_a uuid; v_couple uuid; v_other uuid; v_active int; v_row public.couple_plans;
+begin
+  select alice, couple into v_a, v_couple from probe_ids;
+  -- A plan to switch TO. Made here rather than looked up, because the dev seed
+  -- carries only M'Cheyne and the other curated plans come from separate
+  -- scripts that a fresh machine has not run.
+  insert into public.plans (title, duration_days, is_curated)
+  values ('Probe plan', 7, true) returning id into v_other;
+
+  -- An outsider cannot enrol a couple they are not in. SECURITY INVOKER, so
+  -- couple_plans_insert is what refuses.
+  perform pg_temp.be((select mallory from probe_ids));
+  begin
+    perform public.switch_plan(v_couple, v_other, 1);
+    raise exception 'FAIL: an outsider started a plan for someone else''s couple';
+  exception when insufficient_privilege then null;
+  end;
+
+  -- A rhythm the app does not offer is refused rather than stored.
+  perform pg_temp.be(v_a);
+  begin
+    perform public.switch_plan(v_couple, v_other, 3);
+    raise exception 'FAIL: switch_plan accepted a cadence of 3';
+  exception when others then
+    if sqlerrm not like '%Unknown rhythm%' then raise; end if;
+  end;
+
+  -- The switch itself: the old plan retires and the new one starts, together.
+  v_row := public.switch_plan(v_couple, v_other, 2);
+  if v_row.plan_id <> v_other or v_row.status <> 'active' or v_row.cadence_days <> 2 then
+    raise exception 'FAIL: switch_plan returned %', v_row;
+  end if;
+  if v_row.current_day <> 1 then
+    raise exception 'FAIL: the new plan started on day %', v_row.current_day;
+  end if;
+  -- start_date is the function's to decide now, not the device's.
+  if v_row.start_date is null then
+    raise exception 'FAIL: switch_plan left start_date null';
+  end if;
+
+  perform pg_temp.asowner();
+  select count(*) into v_active from public.couple_plans
+   where couple_id = v_couple and status = 'active';
+  if v_active <> 1 then
+    raise exception 'FAIL: the couple has % active plans after a switch', v_active;
+  end if;
+end $$;
+rollback;
+
+-- ==================================================================
+-- 14. set_couple_anniversary still accepts null, which means "clear it"
+--
+-- Here because the generated Supabase types cannot express a nullable
+-- argument: they widen p_anniversary to a plain string, so src/lib/couples.ts
+-- casts past it. That cast is only safe while this holds.
+-- ==================================================================
+begin;
+do $$
+declare v_a uuid; v_stored date;
+begin
+  select alice into v_a from probe_ids;
+  perform pg_temp.be(v_a);
+
+  perform public.set_couple_anniversary('2024-06-01');
+  perform pg_temp.asowner();
+  select c.anniversary into v_stored from public.couples c
+    join public.users u on u.couple_id = c.id where u.id = v_a;
+  if v_stored is null then
+    raise exception 'FAIL: set_couple_anniversary did not store a date';
+  end if;
+
+  perform pg_temp.be(v_a);
+  perform public.set_couple_anniversary(null);
+  perform pg_temp.asowner();
+  select c.anniversary into v_stored from public.couples c
+    join public.users u on u.couple_id = c.id where u.id = v_a;
+  if v_stored is not null then
+    raise exception 'FAIL: clearing the anniversary left % behind', v_stored;
+  end if;
+
+  -- and a future date is still refused, since the widget has no room to
+  -- explain a negative day count.
+  perform pg_temp.be(v_a);
+  begin
+    perform public.set_couple_anniversary(current_date + 1);
+    raise exception 'FAIL: an anniversary in the future was accepted';
+  exception when others then
+    if sqlerrm not like '%future%' then raise; end if;
+  end;
+end $$;
+rollback;
+
 select 'rls_probe: all probes held' as result;

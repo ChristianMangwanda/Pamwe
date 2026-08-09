@@ -4,11 +4,15 @@ import { useAuth } from './AuthProvider';
 import { getUserCouple, getPartnerProfile, togetherSince, toISODate } from '../lib/couples';
 import { shareAnniversary } from '../../modules/pamwe-widget';
 import { getActiveCouPlan } from '../lib/plans';
+import { getMyProfile } from '../lib/account';
 import { supabase } from '../lib/supabase';
 
 type CoupleContextType = {
   couple: any | null;
   partner: any | null;
+  /** My own users row. Screens read their own name from here, the same place
+   *  the partner's comes from, so the two can never disagree. */
+  me: any | null;
   couplePlan: any | null;
   loading: boolean;
   refresh: () => Promise<void>;
@@ -17,6 +21,7 @@ type CoupleContextType = {
 const CoupleContext = createContext<CoupleContextType>({
   couple: null,
   partner: null,
+  me: null,
   couplePlan: null,
   loading: true,
   refresh: async () => {},
@@ -26,6 +31,7 @@ export function CoupleProvider({ children }: { children: React.ReactNode }) {
   const { session } = useAuth();
   const [couple, setCouple] = useState<any | null>(null);
   const [partner, setPartner] = useState<any | null>(null);
+  const [me, setMe] = useState<any | null>(null);
   const [couplePlan, setCouplePlan] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -38,12 +44,18 @@ export function CoupleProvider({ children }: { children: React.ReactNode }) {
     if (!userId) {
       setCouple(null);
       setPartner(null);
+      setMe(null);
       setCouplePlan(null);
       setLoading(false);
       return;
     }
 
     try {
+      // Best effort, and deliberately not inside the try/catch below's scope
+      // for the couple: a profile read that blips should not cost the couple
+      // state that the whole app routes on.
+      getMyProfile().then(setMe).catch(() => {});
+
       const c = await getUserCouple(userId);
       setCouple(c);
       setPartner(c ? await getPartnerProfile(c, userId) : null);
@@ -107,7 +119,7 @@ export function CoupleProvider({ children }: { children: React.ReactNode }) {
   }, [loading, sinceISO]);
 
   return (
-    <CoupleContext.Provider value={{ couple, partner, couplePlan, loading, refresh }}>
+    <CoupleContext.Provider value={{ couple, partner, me, couplePlan, loading, refresh }}>
       {children}
     </CoupleContext.Provider>
   );

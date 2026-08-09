@@ -180,6 +180,8 @@ export default function SettingsScreen() {
 
         <Text variant="eyebrow" color={colors.muted} style={styles.sectionLabel}>Account</Text>
         <Card style={styles.card}>
+          <ActionRow label="Your name" onPress={() => router.push('/(tabs)/you/name')} colors={colors} />
+          <View style={[styles.divider, { backgroundColor: colors.line }]} />
           {user?.email ? (
             <>
               <Text variant="body" color={colors.ink2} style={styles.rowLabel}>Signed in as</Text>

@@ -154,6 +154,12 @@ export function daysTogether(
 /** Set (or clear, with null) the couple's anniversary. Goes through an RPC
  *  because no UPDATE policy on couples reaches a paired member's own row. */
 export async function setAnniversary(anniversary: string | null): Promise<void> {
-  const { error } = await supabase.rpc('set_couple_anniversary', { p_anniversary: anniversary });
+  // The cast is the generated types being unable to say "nullable parameter":
+  // Postgres does not mark arguments NOT NULL, so gen types widens every one to
+  // a plain string. Clearing is a real, tested path (the function's own null
+  // branch, and a probe in rls_probe.sql), so the type is what is wrong here.
+  const { error } = await supabase.rpc('set_couple_anniversary', {
+    p_anniversary: anniversary as string,
+  });
   if (error) throw error;
 }

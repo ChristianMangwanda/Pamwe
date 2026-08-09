@@ -1,6 +1,5 @@
-import { useEffect, useState, ReactNode } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useEffect, useRef, useState, ReactNode } from 'react';
+import { View, StyleSheet, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated from 'react-native-reanimated';
@@ -26,6 +25,7 @@ import { profileInitial } from '../../../lib/couples';
 import { advancePlanDay } from '../../../lib/plans';
 import { supabase } from '../../../lib/supabase';
 import { getResponsesForDay, EntryResponse } from '../../../lib/entryResponses';
+import { markRevealSeen } from '../../../lib/entries';
 
 export default function RevealScreen() {
   const router = useRouter();
@@ -40,9 +40,12 @@ export default function RevealScreen() {
   // an unpinned reveal lost the plan out from under itself the moment realtime
   // delivered that, showing "That plan is finished" in place of the reflections.
   const { myEntry, partnerEntry, dayNumber, planDay, loading, error, refresh, couplePlan } = useTodayEntry(pinnedDay, true);
-  const { partner, loading: coupleLoading, refresh: refreshCouple } = useCouple();
+  const { partner, me, loading: coupleLoading, refresh: refreshCouple } = useCouple();
 
-  const myInitial = (user?.user_metadata?.full_name || user?.email || 'Y')[0]?.toUpperCase() ?? 'Y';
+  // My own initial comes from my profile, the same place the partner's does.
+  const myInitial = me?.avatar_initial
+    ?? (user?.user_metadata?.full_name || user?.email || 'Y')[0]?.toUpperCase()
+    ?? 'Y';
   const partnerInitial = profileInitial(partner) ?? 'P';
   const partnerName = partner?.display_name ?? 'Your partner';
   const totalDays = couplePlan?.plan?.duration_days;
@@ -55,13 +58,12 @@ export default function RevealScreen() {
   // twice stops being a moment and becomes a toll gate.
   //
   // 'checking' renders an opaque cover, so the cards can never flash behind the
-  // ceremony while the stored flag is being read.
+  // ceremony while the entry is still loading.
   const [phase, setPhase] = useState<'checking' | 'playing' | 'done'>('checking');
   // How the cards arrive, and whether they are on the tree at all. The ceremony
   // sets this when it starts its lift, 140ms before the veil has cleared, so
   // they unfurl underneath it as its closing beat rather than after it.
   const [cardMotion, setCardMotion] = useState<UnsealKind | null>(null);
-  const seenKey = couplePlan?.id ? `pamwe:revealSeen:${couplePlan.id}:${dayNumber}` : null;
 
   // Nothing here plays the ceremony, so this is the one place left to mark the
   // moment: its own score ends in deliberate silence and a skip fires none.
@@ -71,30 +73,29 @@ export default function RevealScreen() {
     haptics.success();
   };
 
-  // Marked seen when the ceremony ENDS, never when it starts. Writing the flag
-  // up front burned the moment on any interruption inside those 4.3 seconds:
-  // a screen that remounts (the waiting screen's replace and a tapped partner
+  // Marked seen when the ceremony ENDS, never when it starts. Writing it up
+  // front burned the moment on any interruption inside those 4.3 seconds: a
+  // screen that remounts (the waiting screen's replace and a tapped partner
   // push both navigate here) read a flag set by a ceremony nobody had watched
   // and went straight to the cards. A skip counts as played: the skip path runs
   // the same close, so it lands here too.
-  const markSeen = () => { if (seenKey) AsyncStorage.setItem(seenKey, '1').catch(() => {}); };
+  //
+  // This lives in the database now (entries.reveal_seen_at), not in this
+  // phone's AsyncStorage. The flag decides whether Today offers the reveal
+  // back, and the partner who did not tap Amen is exactly the one who needs
+  // that offer, possibly on another device or after a reinstall.
+  const markSeen = () => {
+    if (!couplePlan?.id) return;
+    markRevealSeen(couplePlan.id, dayNumber).catch(() => {});
+  };
 
   useEffect(() => {
-    if (!revealed) return;
-    // No plan to key the flag on: show the words rather than hanging forever on
-    // the opaque cover that exists to stop them flashing.
-    if (!seenKey) { straightToWords(); return; }
-    let alive = true;
-    AsyncStorage.getItem(seenKey)
-      .then((v) => {
-        if (!alive) return;
-        if (v) { straightToWords(); return; }
-        setPhase('playing');
-      })
-      // A storage failure should cost the ceremony, not the reveal.
-      .catch(() => { if (alive) setPhase('playing'); });
-    return () => { alive = false; };
-  }, [revealed, seenKey]);
+    // Decided once, on arrival. Marking seen refetches the entry, and without
+    // the phase guard that would run this again and fire a second haptic.
+    if (!revealed || phase !== 'checking') return;
+    if (myEntry.reveal_seen_at) straightToWords();
+    else setPhase('playing');
+  }, [revealed, phase, myEntry?.reveal_seen_at]);
 
   // Responses layer: what each of us left on the other's reflection. Live:
   // realtime on entry_responses refetches, and `revision` tells the cards to
@@ -136,7 +137,17 @@ export default function RevealScreen() {
     }
   }, [loading, coupleLoading, couplePlan, error, revealed, myEntry, dayNumber]);
 
+  // The tap is guarded by a ref, not by the state below: state is for the
+  // button's look, and a second tap can land before React has re-rendered with
+  // it. advancePlanDay is already idempotent (it guards on current_day), but
+  // two taps also fired two navigations.
+  const [amening, setAmening] = useState(false);
+  const amenInFlight = useRef(false);
+
   const onAmen = async () => {
+    if (amenInFlight.current) return;
+    amenInFlight.current = true;
+    setAmening(true);
     haptics.tap();
     // Capture the plan before refresh: completing the final day retires it,
     // and the celebration screen needs to know what was finished.
@@ -164,9 +175,23 @@ export default function RevealScreen() {
       try {
         await advancePlanDay(couplePlan.id, dayNumber);
       } catch (err) {
-        // Staying on the day is recoverable (Today re-derives its CTA from
-        // server state), so let them leave the reveal either way.
+        // This used to be swallowed into Sentry and then navigate anyway, so a
+        // failed advance dropped you back on Today with the day unchanged and
+        // nothing said. Worse, the ceremony was already marked seen, so
+        // reopening went straight to the words. Staying here IS recoverable,
+        // but only if you know to try again.
         Sentry.captureException(err);
+        amenInFlight.current = false;
+        setAmening(false);
+        Alert.alert(
+          "Couldn't mark the day complete",
+          'Your reflections are safe. Check your connection and try again.',
+          [
+            { text: 'Back to Today', style: 'cancel', onPress: () => router.replace('/(tabs)/(today)') },
+            { text: 'Try again', onPress: () => { onAmen(); } },
+          ],
+        );
+        return;
       }
     }
     await refreshCouple();
@@ -308,9 +333,19 @@ export default function RevealScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
-        <TouchableOpacity onPress={onAmen} activeOpacity={0.85} style={[styles.amenBtn, { backgroundColor: colors.accent }]} accessibilityRole="button" accessibilityLabel="Amen, mark day complete">
+        <TouchableOpacity
+          onPress={onAmen}
+          disabled={amening}
+          activeOpacity={0.85}
+          style={[styles.amenBtn, { backgroundColor: colors.accent }, amening && styles.amenBtnBusy]}
+          accessibilityRole="button"
+          accessibilityLabel="Amen, mark day complete"
+          accessibilityState={{ disabled: amening, busy: amening }}
+        >
           <HandsPraying size={16} color={colors.bg} weight="fill" />
-          <Text style={[styles.amenLabel, { color: colors.bg }]}>Amen · mark day complete</Text>
+          <Text style={[styles.amenLabel, { color: colors.bg }]}>
+            {amening ? 'Marking the day' : 'Amen · mark day complete'}
+          </Text>
         </TouchableOpacity>
       </View>
       </KeyboardAvoidingView>
@@ -378,5 +413,6 @@ const styles = StyleSheet.create({
   cardLabel: { fontFamily: fonts.sansMedium, fontSize: 11, letterSpacing: 0.6, textTransform: 'uppercase' },
   footer: { paddingHorizontal: GUTTER, paddingTop: 12, paddingBottom: 12 },
   amenBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, borderRadius: 14, paddingVertical: 17 },
+  amenBtnBusy: { opacity: 0.6 },
   amenLabel: { fontFamily: fonts.sansSemiBold, fontSize: 13, letterSpacing: 1.2, textTransform: 'uppercase' },
 });

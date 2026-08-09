@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { GearSix } from 'phosphor-react-native';
 import { Text } from '../../../components/ui/Text';
 import { PamweLoading } from '../../../components/ui/PamweLoading';
@@ -24,14 +24,15 @@ import { getPlanDay } from '../../../lib/plans';
 import { daysBehind, todayInTimezone, canOpenDay, opensOn, opensLabel } from '../../../lib/catchup';
 import { nudgePartner } from '../../../lib/notifications';
 import { lastFinishedPlan, FinishedPlan } from '../../../lib/planHistory';
+import { getUnseenReveals } from '../../../lib/entries';
 import { haptics } from '../../../lib/haptics';
 
 export default function HomeScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { user } = useAuth();
-  const { couple, partner, couplePlan, refresh: refreshCouple } = useCouple();
-  const { loading, planDay, myEntry, partnerEntry, dayNumber, refresh } = useTodayEntry();
+  const { couple, partner, me, couplePlan, refresh: refreshCouple } = useCouple();
+  const { loading, error, planDay, myEntry, partnerEntry, dayNumber, refresh } = useTodayEntry();
   const [refreshing, setRefreshing] = useState(false);
   const [nudging, setNudging] = useState(false);
   const [nudged, setNudged] = useState(false);
@@ -71,6 +72,23 @@ export default function HomeScreen() {
     lastFinishedPlan(couple.id).then(setFinished).catch(() => {});
   }, [couple?.id, couplePlan]);
 
+  // A reveal the OTHER partner already amened past. The day advances on either
+  // partner's Amen, so whoever did not tap it can land on a fresh day having
+  // never seen the last one, and until this card there was nothing on Today
+  // that said so. Re-read on focus, so watching one clears it on the way back.
+  const [unseenReveal, setUnseenReveal] = useState<number | null>(null);
+  const couplePlanId = couplePlan?.id ?? null;
+  useFocusEffect(
+    useCallback(() => {
+      if (!couplePlanId || dayNumber <= 1) { setUnseenReveal(null); return; }
+      let alive = true;
+      getUnseenReveals(couplePlanId, dayNumber)
+        .then((days) => { if (alive) setUnseenReveal(days[0] ?? null); })
+        .catch(() => {});
+      return () => { alive = false; };
+    }, [couplePlanId, dayNumber]),
+  );
+
   const onRefresh = async () => {
     setRefreshing(true);
     try {
@@ -85,6 +103,40 @@ export default function HomeScreen() {
       <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
         <View style={styles.center}>
           <PamweLoading />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // A plan we could not READ is not a plan you do not have. Both used to land
+  // on the empty state below, so a cache miss on a train told a couple three
+  // months into M'Cheyne to go and choose their first plan.
+  if (couplePlan && !planDay && error) {
+    const missing = error === 'missing-day';
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
+        <View style={styles.center}>
+          <Text variant="h2" italic style={styles.centerTitle}>
+            {missing ? "This day isn't there" : "Couldn't load today"}
+          </Text>
+          <Text color={colors.ink2} style={styles.centerText}>
+            {missing
+              ? 'Your plan has no reading for this day. Your reflections are all still here.'
+              : 'Your plan and your words are safe. Check your connection and try again.'}
+          </Text>
+          <View style={styles.centerCta}>
+            {missing ? (
+              <Button title="Go to your plans" onPress={() => router.push('/(tabs)/plans')} />
+            ) : (
+              <Button title="Try again" onPress={onRefresh} />
+            )}
+            <Button
+              title="Read your reflections"
+              variant="secondary"
+              onPress={() => router.push('/(tabs)/reflect')}
+              style={styles.centerCta2}
+            />
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -139,7 +191,9 @@ export default function HomeScreen() {
   const partnerSubmitted = !!partnerEntry?.submitted_at;
   const bothSubmitted = mySubmitted && partnerSubmitted;
 
-  const myInitial = (user?.user_metadata?.full_name || user?.email || 'Y')[0]?.toUpperCase() ?? 'Y';
+  const myInitial = me?.avatar_initial
+    ?? (user?.user_metadata?.full_name || user?.email || 'Y')[0]?.toUpperCase()
+    ?? 'Y';
   const partnerInitial = profileInitial(partner) ?? '?';
   const partnerName = partner?.display_name ?? 'Your partner';
   const myStatus = mySubmitted ? 'Done' : 'Today';
@@ -270,6 +324,41 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        {/* Offered before anything about today: a moment you have not had yet
+            should not sit under an invitation to move further past it. */}
+        {unseenReveal !== null && (
+          <TouchableOpacity
+            onPress={() => {
+              haptics.tap();
+              router.push({ pathname: '/(tabs)/(today)/reveal', params: { day: String(unseenReveal) } });
+            }}
+            activeOpacity={0.85}
+            style={[styles.unseen, { backgroundColor: colors.surface, borderColor: colors.lineAccent }]}
+            accessibilityRole="button"
+            accessibilityLabel={`Open the reveal for day ${unseenReveal}`}
+          >
+            <Text variant="eyebrow" color={colors.accent2}>Waiting for you</Text>
+            <Text style={[styles.unseenText, { color: colors.ink }]}>
+              {unseenReveal === dayNumber - 1
+                ? `${partnerName} marked yesterday complete. You haven't read it together yet.`
+                : `Day ${unseenReveal} was revealed and you haven't read it together yet.`}
+            </Text>
+            <Text variant="chip" color={colors.accent} style={styles.unseenCta}>
+              Open day {unseenReveal}
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        {/* The content below is the last good copy of it. Say the refresh
+            failed without taking the day away. */}
+        {error === 'network' && (
+          <TouchableOpacity onPress={onRefresh} activeOpacity={0.7} style={styles.staleRow} accessibilityRole="button">
+            <Text variant="chip" color={colors.muted} style={styles.staleText}>
+              Couldn't refresh just now. Tap to try again.
+            </Text>
+          </TouchableOpacity>
+        )}
+
         {behind > 0 && !bothSubmitted && (
           <View style={[styles.catchup, { backgroundColor: colors.surface2, borderColor: colors.lineAccent }]}>
             <Text style={[styles.catchupText, { color: colors.ink }]}>
@@ -359,6 +448,11 @@ const styles = StyleSheet.create({
   planTitle: { fontSize: 14, marginTop: 3 },
   progressWrap: { marginTop: 18 },
   progressRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 },
+  unseen: { marginTop: 18, borderWidth: 1, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, gap: 6 },
+  unseenText: { fontFamily: fonts.serif, fontSize: 14, lineHeight: 21 },
+  unseenCta: { fontSize: 11, letterSpacing: 0.8, marginTop: 2 },
+  staleRow: { alignItems: 'center', marginTop: 14 },
+  staleText: { fontSize: 11, letterSpacing: 0.6 },
   catchup: { marginTop: 16, borderWidth: 1, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 13 },
   catchupText: { fontFamily: fonts.serif, fontSize: 14, lineHeight: 21, textAlign: 'center' },
   verseCard: {

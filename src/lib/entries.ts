@@ -284,6 +284,55 @@ export async function saveTranscript(entryId: string, transcript: string) {
   if (error) throw error;
 }
 
+// Mark this day's reveal as watched, for me. Goes through an RPC because a
+// sealed entry is invisible to entries_update_own_draft, and reveal_seen_at is
+// not in the client's column grant (20260810000001 explains both).
+//
+// Best-effort at every call site: the worst a failure costs is one ceremony
+// played twice, which is a far smaller loss than a reveal never offered.
+export async function markRevealSeen(couplePlanId: string, dayNumber: number) {
+  const { error } = await supabase.rpc('mark_reveal_seen', {
+    p_couple_plan: couplePlanId,
+    p_day: dayNumber,
+  });
+  if (error) throw error;
+}
+
+/** Past days that were revealed but that I have not watched, oldest first.
+ *
+ *  The day advances on either partner's Amen, so the one who did not tap it can
+ *  arrive at a new day having never seen the last one. This is what Today reads
+ *  to offer it back. */
+export async function getUnseenReveals(couplePlanId: string, currentDay: number): Promise<number[]> {
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from('entries')
+    .select('day_number, user_id, reveal_seen_at')
+    .eq('couple_plan_id', couplePlanId)
+    .lt('day_number', currentDay)
+    .not('submitted_at', 'is', null);
+
+  if (error) throw error;
+
+  // A day is revealed when both partners' sealed rows come back. RLS returns a
+  // partner's entry only once you have both submitted, so what comes back IS
+  // the mutual-seal test and nothing else needs checking.
+  const mineSeen = new Map<number, boolean>();
+  const theirs = new Set<number>();
+  for (const row of (data ?? []) as any[]) {
+    if (row.user_id === user.id) mineSeen.set(row.day_number, !!row.reveal_seen_at);
+    else theirs.add(row.day_number);
+  }
+
+  return [...mineSeen.entries()]
+    .filter(([day, seen]) => !seen && theirs.has(day))
+    .map(([day]) => day)
+    .sort((a, b) => a - b);
+}
+
 export async function countMySubmittedEntries(couplePlanId: string) {
   const { data: { session } } = await supabase.auth.getSession();
   const user = session?.user;

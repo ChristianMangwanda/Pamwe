@@ -22,7 +22,7 @@ export default function YouScreen() {
   const router = useRouter();
   const { colors, mode, setMode } = useTheme();
   const { user, signOut } = useAuth();
-  const { couple, partner } = useCouple();
+  const { couple, partner, me } = useCouple();
 
   const [stats, setStats] = useState({ days: 0, reflections: 0, prayers: 0 });
   const [finishedPlans, setFinishedPlans] = useState<number | null>(null);
@@ -67,8 +67,14 @@ export default function YouScreen() {
     finishedPlanCount(couple.id).then(setFinishedPlans).catch(() => {});
   }, [couple?.id]);
 
-  const myName = user?.user_metadata?.full_name || (user?.email ? user.email.split('@')[0] : 'You');
-  const myInitial = myName[0]?.toUpperCase() ?? 'Y';
+  // The name YOU chose at onboarding, which is the one your partner sees and
+  // the one the morning reminder greets you by. This screen used to derive it
+  // from auth metadata or the email prefix instead, so the same person could be
+  // "Christian" to their partner and "christianmangwanda" to themselves.
+  const myName = me?.display_name
+    || user?.user_metadata?.full_name
+    || (user?.email ? user.email.split('@')[0] : 'You');
+  const myInitial = me?.avatar_initial ?? myName[0]?.toUpperCase() ?? 'Y';
   const partnerName = partner?.display_name ?? 'your partner';
   const streak = couple?.streak_count ?? 0;
 
