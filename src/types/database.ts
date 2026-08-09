@@ -163,6 +163,7 @@ export type Database = {
           book: string
           caution: string[]
           chapter: number
+          search: unknown
           text: string
           themes: string[]
           tone: string
@@ -172,6 +173,7 @@ export type Database = {
           book: string
           caution?: string[]
           chapter: number
+          search?: unknown
           text: string
           themes?: string[]
           tone: string
@@ -181,6 +183,7 @@ export type Database = {
           book?: string
           caution?: string[]
           chapter?: number
+          search?: unknown
           text?: string
           themes?: string[]
           tone?: string
@@ -1125,6 +1128,16 @@ export type Database = {
       save_push_token: {
         Args: { p_platform?: string; p_token: string }
         Returns: undefined
+      }
+      search_verses: {
+        Args: { p_limit?: number; p_query: string }
+        Returns: {
+          book: string
+          chapter: number
+          rank: number
+          text: string
+          verse: number
+        }[]
       }
       set_couple_anniversary: {
         Args: { p_anniversary: string }

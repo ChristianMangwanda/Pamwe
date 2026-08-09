@@ -100,7 +100,7 @@ export default function BibleBooks() {
         style={[styles.searchEntry, { borderColor: colors.line }]}
       >
         <MagnifyingGlass size={18} color={colors.accent2} weight="regular" />
-        <Text style={[styles.searchEntryText, { color: colors.accent }]}>Search your notes & reflections</Text>
+        <Text style={[styles.searchEntryText, { color: colors.accent }]}>Search Scripture & your notes</Text>
         <CaretRight size={15} color={colors.accent2} />
       </TouchableOpacity>
 

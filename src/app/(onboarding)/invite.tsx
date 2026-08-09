@@ -3,7 +3,8 @@ import { View, StyleSheet, TouchableOpacity, Share, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
-import { Copy, ShareNetwork, Check } from 'phosphor-react-native';
+import { Copy, ShareNetwork, Check, QrCode } from 'phosphor-react-native';
+import QRCode from 'react-native-qrcode-svg';
 import { Text } from '../../components/ui/Text';
 import { BackLink } from '../../components/ui/BackLink';
 import { Spinner } from '../../components/ui/Spinner';
@@ -13,6 +14,7 @@ import { useTheme } from '../../providers/ThemeProvider';
 import { useCouple } from '../../providers/CoupleProvider';
 import { haptics } from '../../lib/haptics';
 import { createCouple, getUserCouple, inviteExpired, regenerateInviteCode } from '../../lib/couples';
+import { inviteLink, inviteMessage } from '../../lib/invite';
 import { supabase } from '../../lib/supabase';
 
 const FALLBACK_POLL_MS = 30000;
@@ -24,6 +26,7 @@ export default function InviteScreen() {
   const [code, setCode] = useState<string | null>(null);
   const [coupleId, setCoupleId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [showQr, setShowQr] = useState(false);
   const started = useRef(false);
 
   // Idempotent: reuse an existing unpaired couple (e.g. after relaunch), else create one.
@@ -85,7 +88,10 @@ export default function InviteScreen() {
   const onShare = async () => {
     if (!code) return;
     haptics.tap();
-    await Share.share({ message: `I want us to read the Bible together, a little each day. Join me on Pamwe. Enter this code to link with me: ${code}` });
+    // Carries a tappable link now as well as the code. The code stays in the
+    // message on purpose: a custom-scheme link does nothing on a phone without
+    // the app, and a link that does nothing is worse than six characters.
+    await Share.share({ message: inviteMessage(code) });
   };
 
   return (
@@ -101,6 +107,33 @@ export default function InviteScreen() {
         <View style={[styles.codeCard, { backgroundColor: colors.surface, borderColor: colors.accent2 }]}>
           <Text style={[styles.code, { color: colors.accent }]}>{code ?? '····'}</Text>
         </View>
+
+        {/* For the partner sitting next to you, which is most of them. The
+            QR is always rendered on white: a dark-mode inversion is not
+            reliably scannable, and this square is not decoration. */}
+        {code && showQr && (
+          <View style={[styles.qrCard, { borderColor: colors.line }]}>
+            <QRCode value={inviteLink(code)} size={168} backgroundColor="#FFFFFF" color="#17130F" />
+            <Text style={[styles.qrHint, { color: colors.ink2 }]}>
+              Point their camera at this.
+            </Text>
+          </View>
+        )}
+
+        {code && (
+          <TouchableOpacity
+            onPress={() => { haptics.tap(); setShowQr((v) => !v); }}
+            style={styles.qrToggle}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: showQr }}
+            accessibilityLabel={showQr ? 'Hide the QR code' : 'Show a QR code to scan'}
+          >
+            <QrCode size={15} color={colors.accent2} />
+            <Text style={[styles.qrToggleLabel, { color: colors.accent2 }]}>
+              {showQr ? 'Hide QR code' : 'Show a QR code instead'}
+            </Text>
+          </TouchableOpacity>
+        )}
 
         <View style={styles.actions}>
           <TouchableOpacity onPress={onCopy} style={[styles.action, { borderColor: colors.line }]} accessibilityRole="button" accessibilityLabel="Copy code">
@@ -137,6 +170,18 @@ const styles = StyleSheet.create({
     paddingVertical: 26,
     alignItems: 'center',
   },
+  qrCard: {
+    marginTop: 18,
+    borderWidth: 1,
+    borderRadius: 20,
+    padding: 20,
+    alignItems: 'center',
+    // Always white, in both themes: an inverted QR does not scan reliably.
+    backgroundColor: '#FFFFFF',
+  },
+  qrHint: { fontFamily: fonts.sans, fontSize: 12, marginTop: 12, color: '#5B5148' },
+  qrToggle: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 16 },
+  qrToggleLabel: { fontFamily: fonts.sansMedium, fontSize: 12 },
   code: { fontFamily: fonts.serifSemiBold, fontSize: 34, letterSpacing: 4.8 },
   actions: { flexDirection: 'row', gap: 10, marginTop: 16, width: '100%' },
   action: {

@@ -18,6 +18,9 @@ import { useTodayEntry } from '../../../hooks/useTodayEntry';
 import { haptics } from '../../../lib/haptics';
 import { transcribeRecording } from '../../../lib/transcription';
 import {
+  getPendingVoice, rememberPendingVoice, forgetPendingVoice, type PendingVoice,
+} from '../../../lib/pendingVoice';
+import {
   createOrUpdateDraft,
   submitEntry,
   ensureVoiceDraft,
@@ -62,6 +65,9 @@ export default function JournalScreen() {
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [uploadingVoice, setUploadingVoice] = useState(false);
+  // A recording that was made but never landed. Read back on mount, so leaving
+  // this screen (or closing the app) after a failed send no longer loses it.
+  const [pendingVoice, setPendingVoice] = useState<PendingVoice | null>(null);
   const lastSavedRef = useRef(text);
   const entryIdRef = useRef<string | null>(myEntry?.id ?? null);
 
@@ -144,6 +150,38 @@ export default function JournalScreen() {
     ]);
   };
 
+  // Only offered while the day is genuinely still unsent: a sealed entry means
+  // the send landed on some other attempt, and the file is no longer wanted.
+  useEffect(() => {
+    if (!couplePlan?.id || myEntry?.submitted_at) { setPendingVoice(null); return; }
+    let alive = true;
+    getPendingVoice(couplePlan.id, dayNumber)
+      .then((p) => { if (alive) setPendingVoice(p); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [couplePlan?.id, dayNumber, myEntry?.submitted_at]);
+
+  const discardPendingVoice = () => {
+    if (!couplePlan) return;
+    Alert.alert(
+      'Discard this recording?',
+      'It has not been sent, and this cannot be undone.',
+      [
+        { text: 'Keep it', style: 'cancel' },
+        {
+          text: 'Discard',
+          style: 'destructive',
+          onPress: () => {
+            haptics.medium();
+            deleteLocalRecording(pendingVoice?.uri);
+            forgetPendingVoice(couplePlan.id, dayNumber).catch(() => {});
+            setPendingVoice(null);
+          },
+        },
+      ],
+    );
+  };
+
   const handleVoiceComplete = async (result: VoiceRecorderResult) => {
     if (!couplePlan) return;
     try {
@@ -158,6 +196,8 @@ export default function JournalScreen() {
         uploadVoiceRecording(couplePlan.id, dayNumber, result.uri),
       ]);
       await submitVoiceEntry(draft.id, objectPath, result.durationSeconds);
+      // It landed, so there is nothing left waiting to be sent.
+      forgetPendingVoice(couplePlan.id, dayNumber).catch(() => {});
       // Transcription is deliberately NOT awaited. It runs the recognizer over
       // the whole recording with a 45s ceiling, and sending used to wait for
       // it, so the slowest part of sharing a reflection was an optional field.
@@ -179,6 +219,15 @@ export default function JournalScreen() {
     } catch (err: any) {
       if (await landedAnyway()) return;
       Sentry.captureException(err);
+      // "Your recording is still here" was only true while this screen stayed
+      // mounted: the recorder held the preview, and walking away lost the
+      // pointer to a file still sitting in the cache. Remember it, so the offer
+      // survives leaving, and closing the app.
+      await rememberPendingVoice(couplePlan.id, dayNumber, {
+        uri: result.uri,
+        durationSeconds: result.durationSeconds,
+      });
+      setPendingVoice({ uri: result.uri, durationSeconds: result.durationSeconds });
       Alert.alert(
         "Couldn't send the recording",
         isNetworkError(err)
@@ -284,6 +333,28 @@ export default function JournalScreen() {
         ) : (
           <ScrollView contentContainerStyle={styles.voiceBody} keyboardShouldPersistTaps="handled">
             {PromptCard}
+            {/* A recording that was made but never landed. Above the recorder,
+                because starting a new take would leave this one stranded. */}
+            {pendingVoice && !uploadingVoice && (
+              <View style={[styles.pending, { backgroundColor: colors.surface, borderColor: colors.lineAccent }]}>
+                <Text style={[styles.pendingTitle, { color: colors.ink }]}>
+                  Your recording is still here
+                </Text>
+                <Text style={[styles.pendingText, { color: colors.ink2 }]}>
+                  {Math.max(1, Math.round(pendingVoice.durationSeconds))} seconds, saved on this phone
+                  and never sent.
+                </Text>
+                <View style={styles.pendingActions}>
+                  <Button title="Send it now" onPress={() => handleVoiceComplete(pendingVoice)} />
+                  <Button
+                    title="Discard"
+                    variant="secondary"
+                    onPress={discardPendingVoice}
+                    style={styles.pendingDiscard}
+                  />
+                </View>
+              </View>
+            )}
             <VoiceRecorder onComplete={handleVoiceComplete} />
             {LockHint}
             {uploadingVoice && (
@@ -318,4 +389,9 @@ const styles = StyleSheet.create({
   voiceBody: { paddingHorizontal: GUTTER, paddingTop: 16, flexGrow: 1 },
   uploadOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', gap: 12 },
   uploadingText: { textAlign: 'center' },
+  pending: { borderWidth: 1, borderRadius: 16, paddingHorizontal: 18, paddingVertical: 16, marginBottom: 18 },
+  pendingTitle: { fontFamily: fonts.serif, fontSize: 16 },
+  pendingText: { fontFamily: fonts.sans, fontSize: 13, lineHeight: 19, marginTop: 5 },
+  pendingActions: { marginTop: 14 },
+  pendingDiscard: { marginTop: 8 },
 });

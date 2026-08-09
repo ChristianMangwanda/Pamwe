@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { View, StyleSheet, ScrollView, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { MagnifyingGlass, NotePencil, Highlighter, Feather, CaretRight } from 'phosphor-react-native';
+import { MagnifyingGlass, NotePencil, Highlighter, Feather, BookOpen, CaretRight } from 'phosphor-react-native';
 import { Text } from '../../../components/ui/Text';
 import { BackLink } from '../../../components/ui/BackLink';
 import { SectionEyebrow } from '../../../components/ui/SectionEyebrow';
@@ -10,27 +10,39 @@ import { fonts } from '../../../constants/typography';
 import { GUTTER } from '../../../theme/tokens';
 import { useTheme } from '../../../providers/ThemeProvider';
 import { useCouple } from '../../../providers/CoupleProvider';
-import { searchSharedLayer, SearchResults } from '../../../lib/search';
+import { searchSharedLayer, searchScripture, SearchResults, VerseHit } from '../../../lib/search';
 import { parseReference } from '../../../lib/bible';
 import { haptics } from '../../../lib/haptics';
 
-// One search box over everything the couple has made together: notes,
-// highlights, and revealed reflections. Debounced; each result jumps to source.
+// One search box over everything the couple has made together (notes,
+// highlights, revealed reflections) AND over Scripture itself. Until the verse
+// search existed, looking for a half-remembered line found nothing unless one
+// of them had already written a note about it, which is backwards.
+// Debounced; each result jumps to its source.
 export default function SharedSearchScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { couple } = useCouple();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResults | null>(null);
+  const [verses, setVerses] = useState<VerseHit[] | null>(null);
   const [searching, setSearching] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const runSearch = useCallback((q: string) => {
-    if (!couple?.id || q.trim().length < 2) { setResults(null); setSearching(false); return; }
+    if (q.trim().length < 2) { setResults(null); setVerses(null); setSearching(false); return; }
     setSearching(true);
-    searchSharedLayer(couple.id, q)
-      .then(setResults)
-      .catch(() => setResults(null))
+    // Independent: Scripture is reference data and needs no couple, so a
+    // signed-in user with no couple yet still gets verse results, and one
+    // failing half never blanks the other.
+    Promise.allSettled([
+      couple?.id ? searchSharedLayer(couple.id, q) : Promise.resolve(null),
+      searchScripture(q),
+    ])
+      .then(([shared, scripture]) => {
+        setResults(shared.status === 'fulfilled' ? shared.value : null);
+        setVerses(scripture.status === 'fulfilled' ? scripture.value : null);
+      })
       .finally(() => setSearching(false));
   }, [couple?.id]);
 
@@ -44,20 +56,31 @@ export default function SharedSearchScreen() {
     haptics.tap();
     router.push({ pathname: '/(tabs)/bible/[book]/[chapter]', params: { book, chapter: String(chapter) } });
   };
+  // Opens the chapter with the verse flashed, the same landing the note push
+  // uses, so a result arrives in its context rather than alone.
+  const openVerse = (v: VerseHit) => {
+    haptics.tap();
+    router.push({
+      pathname: '/(tabs)/bible/[book]/[chapter]',
+      params: { book: v.book, chapter: String(v.chapter), verse: String(v.verse) },
+    });
+  };
   const openReflection = (couplePlanId: string, day: number) => {
     haptics.tap();
     router.push({ pathname: '/(tabs)/reflect/[id]', params: { id: couplePlanId, day: String(day) } }, { withAnchor: true });
   };
 
-  const total = results ? results.notes.length + results.highlights.length + results.reflections.length : 0;
-  const showEmpty = !!results && total === 0 && query.trim().length >= 2 && !searching;
+  const shared = results ? results.notes.length + results.highlights.length + results.reflections.length : 0;
+  const total = shared + (verses?.length ?? 0);
+  const showEmpty = (results !== null || verses !== null) && total === 0
+    && query.trim().length >= 2 && !searching;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <BackLink label="Bible" onPress={() => router.back()} />
         <Text variant="h2" style={styles.title}>Search together</Text>
-        <Text color={colors.ink2} style={styles.sub}>Your notes, highlights, and reflections.</Text>
+        <Text color={colors.ink2} style={styles.sub}>Scripture, and everything the two of you have written.</Text>
 
         <View style={[styles.search, { backgroundColor: colors.surface, borderColor: colors.line }]}>
           <MagnifyingGlass size={18} color={colors.muted} weight="regular" />
@@ -74,7 +97,37 @@ export default function SharedSearchScreen() {
         </View>
 
         {showEmpty && (
-          <Text color={colors.muted} style={styles.empty}>Nothing yet for "{query.trim()}".</Text>
+          <View style={styles.emptyWrap}>
+            <Text color={colors.muted} style={styles.empty}>Nothing for "{query.trim()}".</Text>
+            {/* Every word has to appear, and this Bible is the WEB, so a phrase
+                remembered from another translation can be genuinely absent.
+                Saying so beats an empty screen that reads as broken. */}
+            <Text color={colors.muted} style={styles.emptyHint}>
+              Try fewer words. Wording differs between translations, so the line you remember
+              may read a little differently here.
+            </Text>
+          </View>
+        )}
+
+        {verses && verses.length > 0 && (
+          <View style={styles.group}>
+            <SectionEyebrow style={styles.groupLabel}>Scripture</SectionEyebrow>
+            {verses.map((v) => (
+              <TouchableOpacity
+                key={`${v.book}-${v.chapter}-${v.verse}`}
+                activeOpacity={0.8}
+                onPress={() => openVerse(v)}
+                style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.line }]}
+              >
+                <BookOpen size={17} color={colors.accent2} weight="regular" />
+                <View style={styles.flex}>
+                  <Text style={[styles.rowRef, { color: colors.accent }]}>{v.book} {v.chapter}:{v.verse}</Text>
+                  <Text style={[styles.rowText, { color: colors.ink }]} numberOfLines={3}>{v.text}</Text>
+                </View>
+                <CaretRight size={14} color={colors.muted} weight="bold" />
+              </TouchableOpacity>
+            ))}
+          </View>
         )}
 
         {results && results.reflections.length > 0 && (
@@ -139,7 +192,9 @@ const styles = StyleSheet.create({
   sub: { fontSize: 14, marginTop: 6 },
   search: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 13, marginTop: 16 },
   searchInput: { flex: 1, fontFamily: fonts.sans, fontSize: 16, padding: 0 },
-  empty: { fontSize: 14, marginTop: 24, textAlign: 'center' },
+  emptyWrap: { marginTop: 24 },
+  empty: { fontSize: 14, textAlign: 'center' },
+  emptyHint: { fontSize: 13, lineHeight: 20, marginTop: 8, textAlign: 'center' },
   group: { marginTop: 22 },
   groupLabel: { marginBottom: 10 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderRadius: 14, paddingHorizontal: 15, paddingVertical: 13, marginBottom: 8 },

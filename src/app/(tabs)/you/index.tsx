@@ -3,7 +3,7 @@ import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-nat
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { Bell, BookBookmark, ChartLineUp, Heart, ShieldCheck, Scroll, Sun, MoonStars, CaretRight } from 'phosphor-react-native';
+import { Bell, BookBookmark, ChartLineUp, Heart, ShieldCheck, Scroll, Sun, MoonStars, CircleHalf, CaretRight } from 'phosphor-react-native';
 import { Text } from '../../../components/ui/Text';
 import { Floral } from '../../../components/ui/Floral';
 import { fonts } from '../../../constants/typography';
@@ -20,7 +20,7 @@ import { haptics } from '../../../lib/haptics';
 
 export default function YouScreen() {
   const router = useRouter();
-  const { colors, mode, setMode } = useTheme();
+  const { colors, preference, setMode } = useTheme();
   const { user, signOut } = useAuth();
   const { couple, partner, me } = useCouple();
 
@@ -118,10 +118,14 @@ export default function YouScreen() {
           <GroveCard count={finishedPlans} onPress={() => go('/(tabs)/you/grove')} />
         )}
 
+        {/* Selected off the PREFERENCE, not the mode on screen: with Auto
+            chosen on a dark phone, highlighting "Dark" would say the choice was
+            something the user did not make. */}
         <Text variant="eyebrow" color={colors.muted} style={styles.section}>Appearance</Text>
         <View style={[styles.appearance, { backgroundColor: colors.line2 }]}>
-          <AppearanceOption active={mode === 'light'} label="Light" onPress={() => { haptics.tap(); setMode('light'); }} colors={colors} icon={<Sun size={16} color={mode === 'light' ? colors.bg : colors.ink2} weight="regular" />} />
-          <AppearanceOption active={mode === 'dark'} label="Dark" onPress={() => { haptics.tap(); setMode('dark'); }} colors={colors} icon={<MoonStars size={16} color={mode === 'dark' ? colors.bg : colors.ink2} weight="regular" />} />
+          <AppearanceOption active={preference === 'light'} label="Light" onPress={() => { haptics.tap(); setMode('light'); }} colors={colors} icon={<Sun size={16} color={preference === 'light' ? colors.bg : colors.ink2} weight="regular" />} />
+          <AppearanceOption active={preference === 'dark'} label="Dark" onPress={() => { haptics.tap(); setMode('dark'); }} colors={colors} icon={<MoonStars size={16} color={preference === 'dark' ? colors.bg : colors.ink2} weight="regular" />} />
+          <AppearanceOption active={preference === 'system'} label="Auto" onPress={() => { haptics.tap(); setMode('system'); }} colors={colors} icon={<CircleHalf size={16} color={preference === 'system' ? colors.bg : colors.ink2} weight="regular" />} />
         </View>
 
         <Text variant="eyebrow" color={colors.muted} style={styles.section}>Settings</Text>

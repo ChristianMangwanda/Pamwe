@@ -788,4 +788,82 @@ begin
 end $$;
 rollback;
 
+-- ==================================================================
+-- 17. search_verses reads Scripture, and Scripture stays read-only
+-- (20260812000001)
+-- ==================================================================
+begin;
+do $$
+declare v_hits int; v_top record;
+begin
+  perform pg_temp.be((select mallory from probe_ids));
+
+  -- Reference data: readable by any signed-in user, couple or not. An outsider
+  -- SHOULD be able to search the Bible.
+  select count(*) into v_hits from public.search_verses('praying without ceasing', 5);
+  if v_hits < 1 then
+    raise exception 'FAIL: a plain verse search found nothing';
+  end if;
+
+  select book, chapter, verse into v_top
+  from public.search_verses('be still and know', 1);
+  if v_top.book is distinct from 'Psalms' or v_top.chapter <> 46 or v_top.verse <> 10 then
+    raise exception 'FAIL: ranking put % %:% first', v_top.book, v_top.chapter, v_top.verse;
+  end if;
+
+  -- A stray quote must not raise: websearch_to_tsquery tolerates what
+  -- to_tsquery would reject, and a search box takes whatever is typed.
+  perform public.search_verses('he said "peace" and', 5);
+  select count(*) into v_hits from public.search_verses('   ', 5);
+  if v_hits <> 0 then
+    raise exception 'FAIL: an empty query returned % rows', v_hits;
+  end if;
+
+  -- and the catalogue is still nobody's to edit. RLS answers this one by
+  -- matching no rows rather than by raising, because bible_verses carries a
+  -- SELECT policy and nothing else.
+  update public.bible_verses set text = 'tampered'
+   where book = 'Psalms' and chapter = 46 and verse = 10;
+  get diagnostics v_hits = row_count;
+  if v_hits <> 0 then
+    raise exception 'FAIL: a signed-in user rewrote Scripture';
+  end if;
+end $$;
+rollback;
+
+-- ==================================================================
+-- 18. TRUNCATE is not a row operation, so RLS never sees it
+-- (20260812000002)
+--
+-- Found while writing probe 17. Every table in the schema carried TRUNCATE,
+-- TRIGGER and REFERENCES for anon and authenticated, from Supabase's own
+-- `grant all` bootstrap. `truncate public.entries` as authenticated emptied
+-- every reflection every couple has written, policies and all.
+-- ==================================================================
+begin;
+do $$
+declare v_left int;
+begin
+  perform pg_temp.be((select mallory from probe_ids));
+
+  begin
+    truncate public.entries cascade;
+    raise exception 'FAIL: a signed-in user truncated every reflection in the app';
+  exception when insufficient_privilege then null;
+  end;
+
+  begin
+    truncate public.bible_verses cascade;
+    raise exception 'FAIL: a signed-in user truncated the Bible';
+  exception when insufficient_privilege then null;
+  end;
+
+  perform pg_temp.asowner();
+  select count(*) into v_left from public.bible_verses;
+  if v_left < 31000 then
+    raise exception 'FAIL: the catalogue lost rows (% left)', v_left;
+  end if;
+end $$;
+rollback;
+
 select 'rls_probe: all probes held' as result;
