@@ -866,4 +866,44 @@ begin
 end $$;
 rollback;
 
+-- ==================================================================
+-- 19. The new notification controls are writable, and nothing else became
+-- writable with them (20260813000001)
+-- ==================================================================
+begin;
+do $$
+declare v_a uuid; v_b uuid; v_pref text;
+begin
+  select alice, bob into v_a, v_b from probe_ids;
+  perform pg_temp.be(v_a);
+
+  update public.users
+     set notification_morning = false, notification_preview = 'generic'
+   where id = v_a;
+
+  perform pg_temp.asowner();
+  select notification_preview into v_pref from public.users where id = v_a;
+  if v_pref is distinct from 'generic' then
+    raise exception 'FAIL: the preview preference did not save (%)', v_pref;
+  end if;
+
+  -- The check constraint is what stops a modified client inventing a third
+  -- setting the edge functions would not recognise and would treat as 'full'.
+  perform pg_temp.be(v_a);
+  begin
+    update public.users set notification_preview = 'silent' where id = v_a;
+    raise exception 'FAIL: an unknown preview setting was accepted';
+  exception when check_violation then null;
+  end;
+
+  -- One person's lock screen is not another's to decide.
+  update public.users set notification_preview = 'generic' where id = v_b;
+  perform pg_temp.asowner();
+  select notification_preview into v_pref from public.users where id = v_b;
+  if v_pref is distinct from 'full' then
+    raise exception 'FAIL: a partner changed the other''s preview setting';
+  end if;
+end $$;
+rollback;
+
 select 'rls_probe: all probes held' as result;

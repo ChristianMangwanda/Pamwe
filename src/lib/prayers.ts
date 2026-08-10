@@ -136,6 +136,25 @@ export async function countPrayers(coupleId: string) {
   return count ?? 0;
 }
 
+/** Put an answered prayer back among the ones still being carried.
+ *
+ *  Marking answered used to be a one-way door, and it is the easiest tap in the
+ *  app to make by accident: it sits on a swipe card. It is also a thing people
+ *  genuinely change their minds about, when what looked like an answer turns
+ *  out to be a pause. The note goes with it rather than lingering on a prayer
+ *  that is open again. */
+export async function reopenPrayer(prayerId: string) {
+  const { data, error } = await supabase
+    .from('prayers')
+    .update({ status: 'active', answered_at: null, answer_note: null })
+    .eq('id', prayerId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
 export async function markAnswered(prayerId: string, note?: string) {
   const { data, error } = await supabase
     .from('prayers')

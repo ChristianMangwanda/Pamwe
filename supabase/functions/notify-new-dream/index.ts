@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
 
   const { data: partner, error: partnerErr } = await supabase
     .from("users")
-    .select("expo_push_token, notification_dream")
+    .select("expo_push_token, notification_dream, notification_preview")
     .eq("id", partnerId)
     .single();
 
@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
     title: "Your partner wrote down a dream",
     body: "Open Pamwe to read it together.",
     data: { type: "dream" },
-  }));
+  }, partner?.notification_preview));
   return new Response(JSON.stringify(result), {
     headers: { "Content-Type": "application/json" },
   });

@@ -189,6 +189,15 @@ export async function scheduleMorningFromPrefs() {
     const status = await getNotificationPermissionStatus();
     if (status !== 'granted') return;
     const prefs = await getNotificationPrefs();
+
+    // Off is a real answer. Until this existed the only way to stop the morning
+    // reminder was to turn off notifications for the whole app, which also took
+    // away the partner's reflection landing, the thing people actually want.
+    if (prefs?.notification_morning === false) {
+      await cancelMorningReminders();
+      return;
+    }
+
     const [hour, minute] = (prefs?.notification_morning_time ?? '06:30:00')
       .split(':')
       .map(Number);
@@ -337,11 +346,16 @@ export async function schedulePrayerReviewFromPrefs() {
 
 export type NotificationPrefs = {
   notification_morning_time: string; // 'HH:MM:SS'
+  notification_morning: boolean;
   notification_partner: boolean;
   notification_prayer: boolean;
   notification_dream: boolean;
   notification_note: boolean;
   notification_recap: boolean;
+  // 'full' says what happened; 'generic' says only that something did. These
+  // banners carry the most private material the app holds, and they render on
+  // a locked phone in front of whoever is looking at it.
+  notification_preview: 'full' | 'generic';
 };
 
 export async function getNotificationPrefs(): Promise<NotificationPrefs | null> {
@@ -351,7 +365,7 @@ export async function getNotificationPrefs(): Promise<NotificationPrefs | null> 
 
   const { data, error } = await supabase
     .from('users')
-    .select('notification_morning_time, notification_partner, notification_prayer, notification_dream, notification_note, notification_recap')
+    .select('notification_morning_time, notification_morning, notification_partner, notification_prayer, notification_dream, notification_note, notification_recap, notification_preview')
     .eq('id', user.id)
     .single();
 
@@ -433,6 +447,13 @@ const MORNING_ID = 'pamwe-morning';
 // time, so those get individually dated reminders, topped up on each launch.
 const MORNING_AHEAD = 12;
 const morningIdAt = (i: number) => `${MORNING_ID}-${i}`;
+
+/** Stop the morning reminder entirely, for someone who does not want one.
+ *  Exported so Settings can act the moment the switch moves, rather than
+ *  waiting for the next sign-in to reconcile. */
+export async function cancelMorningNotification() {
+  await cancelMorningReminders();
+}
 
 async function cancelMorningReminders() {
   const ids = [MORNING_ID, ...Array.from({ length: MORNING_AHEAD }, (_, i) => morningIdAt(i))];

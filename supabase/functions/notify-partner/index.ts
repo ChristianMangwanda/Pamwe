@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
 
   const { data: partner, error: partnerErr } = await supabase
     .from("users")
-    .select("expo_push_token, notification_partner")
+    .select("expo_push_token, notification_partner, notification_preview")
     .eq("id", partnerId)
     .single();
 
@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
     // the sender had already amened, that is the NEXT day, where neither
     // partner has written. The reveal then reported a connection problem.
     data: { type: "partner_entry", reveal: partnerAlsoSubmitted, day: day_number },
-  }));
+  }, partner?.notification_preview));
   return new Response(JSON.stringify(result), {
     headers: { "Content-Type": "application/json" },
   });

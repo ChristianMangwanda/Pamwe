@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
   }
 
   const { data: partner, error: partnerErr } = await admin
-    .from("users").select("expo_push_token, notification_partner").eq("id", partnerId).single();
+    .from("users").select("expo_push_token, notification_partner, notification_preview").eq("id", partnerId).single();
   if (partnerErr) {
     console.error("notify-thinking: partner lookup failed", partnerErr);
     return json({ ok: false, reason: "server" }, 500);
@@ -110,7 +110,7 @@ Deno.serve(async (req) => {
     title: `${myName} is thinking of you`,
     body: "No task, no reading. Just that.",
     data: { type: "thinking" },
-  }));
+  }, partner?.notification_preview));
   if (!ok) return json({ ok: true, delivered: false, reason: "push_failed" }, 200);
   return json({ ok: true, delivered: true }, 200);
 });

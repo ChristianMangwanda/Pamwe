@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import {
-  View, StyleSheet, ScrollView, Switch, TouchableOpacity, Linking, Alert,
+  View, StyleSheet, ScrollView, Switch, TouchableOpacity, Linking, Alert, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -13,6 +13,8 @@ import { GUTTER } from '../../../theme/tokens';
 import { useTheme } from '../../../providers/ThemeProvider';
 import { useAuth } from '../../../providers/AuthProvider';
 import { useCouple } from '../../../providers/CoupleProvider';
+import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import { Clock, EyeSlash } from 'phosphor-react-native';
 import { setPlanCadence, CADENCE_OPTIONS, type Cadence } from '../../../lib/plans';
 import { haptics } from '../../../lib/haptics';
 import {
@@ -20,20 +22,31 @@ import {
   scheduleMorningNotification, scheduleWeeklyRecap, cancelWeeklyRecap,
   schedulePrayerReview, cancelPrayerReview, NotificationPrefs,
   requestPushPermission, getPushTokenIfGranted, savePushToken,
-  scheduleMorningFromPrefs,
+  scheduleMorningFromPrefs, cancelMorningNotification,
 } from '../../../lib/notifications';
 
 const MORNING_PRESETS = ['06:00', '06:30', '07:00', '07:30', '08:00'];
 const hhmm = (time: string) => time?.slice(0, 5) ?? '06:30';
 
+// The stored 'HH:MM:SS' as a Date, which is all the picker understands. The
+// calendar day is irrelevant and never read back.
+const timeAsDate = (time?: string) => {
+  const [h, m] = hhmm(time ?? '06:30:00').split(':').map(Number);
+  const d = new Date();
+  d.setHours(h ?? 6, m ?? 30, 0, 0);
+  return d;
+};
+
 export default function SettingsScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { user, signOut } = useAuth();
-  const { couplePlan, refresh: refreshCouple } = useCouple();
+  const { couplePlan, partner, refresh: refreshCouple } = useCouple();
+  const partnerFirstName = (partner?.display_name ?? 'Your partner').trim().split(/\s+/)[0];
 
   const [prefs, setPrefs] = useState<NotificationPrefs | null>(null);
   const [permission, setPermission] = useState<string>('granted');
+  const [pickingTime, setPickingTime] = useState(false);
   const cadence = (couplePlan?.cadence_days ?? 1) as Cadence;
 
   // The shell paints immediately; prefs and permission fill in as they land.
@@ -79,6 +92,25 @@ export default function SettingsScreen() {
   const setMorningTime = async (time: string) => {
     await savePref({ notification_morning_time: `${time}:00` });
     await rescheduleMorning(time);
+  };
+
+  // Whether the saved time is one of the five chips, which decides whether the
+  // custom-time link offers a change or reports the time already chosen.
+  const isPreset = MORNING_PRESETS.includes(hhmm(prefs?.notification_morning_time ?? '06:30:00'));
+
+  const cancelMorning = async () => {
+    try { await cancelMorningNotification(); }
+    catch { /* the pref is saved either way; the next launch reconciles */ }
+  };
+
+  // iOS keeps the spinner open and reports every turn; Android closes on the
+  // first answer. Dismissing without choosing arrives as 'dismissed'.
+  const onPickTime = (event: DateTimePickerEvent, picked?: Date) => {
+    if (Platform.OS !== 'ios') setPickingTime(false);
+    if (event.type === 'dismissed' || !picked) return;
+    const hh = String(picked.getHours()).padStart(2, '0');
+    const mm = String(picked.getMinutes()).padStart(2, '0');
+    setMorningTime(`${hh}:${mm}`);
   };
 
   // The reminder follows the rhythm, so it has to be rebuilt whenever either
@@ -151,18 +183,57 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           )}
 
-          <Text variant="body" color={colors.ink2} style={styles.rowLabel}>Morning reminder</Text>
-          <View style={styles.presetRow}>
-            {MORNING_PRESETS.map((t) => {
-              const active = prefs ? hhmm(prefs.notification_morning_time) === t : false;
-              return (
-                <TouchableOpacity key={t} onPress={() => setMorningTime(t)} activeOpacity={0.8}
-                  style={[styles.preset, { borderColor: active ? colors.accent : colors.line, backgroundColor: active ? colors.accent : 'transparent' }]}>
-                  <Text variant="label" color={active ? colors.bg : colors.ink2}>{t}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          {/* Off is a real answer. Until this switch existed the only way to
+              stop the morning reminder was to turn off notifications for the
+              whole app, which also took away the partner's reflection landing,
+              the thing people actually want. */}
+          <ToggleRow
+            label="Morning reminder"
+            description="A gentle nudge that the day's reading is ready."
+            value={prefs?.notification_morning ?? true}
+            onChange={(v) => { savePref({ notification_morning: v }); if (v) rescheduleMorning(); else cancelMorning(); }}
+            colors={colors}
+          />
+
+          {(prefs?.notification_morning ?? true) && (
+            <>
+              <View style={styles.presetRow}>
+                {MORNING_PRESETS.map((t) => {
+                  const active = prefs ? hhmm(prefs.notification_morning_time) === t : false;
+                  return (
+                    <TouchableOpacity key={t} onPress={() => setMorningTime(t)} activeOpacity={0.8}
+                      accessibilityRole="button" accessibilityState={{ selected: active }}
+                      style={[styles.preset, { borderColor: active ? colors.accent : colors.line, backgroundColor: active ? colors.accent : 'transparent' }]}>
+                      <Text variant="label" color={active ? colors.bg : colors.ink2}>{t}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {/* Five presets covered five mornings. Someone who rises at 5:15,
+                  or reads at night, was simply not catered for. */}
+              <TouchableOpacity
+                onPress={() => { haptics.tap(); setPickingTime(true); }}
+                style={styles.customTime}
+                accessibilityRole="button"
+                accessibilityLabel="Choose another reminder time"
+              >
+                <Clock size={14} color={colors.accent2} />
+                <Text style={[styles.customTimeLabel, { color: colors.accent2 }]}>
+                  {isPreset ? 'Another time' : `At ${hhmm(prefs?.notification_morning_time ?? '06:30:00')}, tap to change`}
+                </Text>
+              </TouchableOpacity>
+
+              {pickingTime && (
+                <DateTimePicker
+                  value={timeAsDate(prefs?.notification_morning_time)}
+                  mode="time"
+                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                  onChange={onPickTime}
+                />
+              )}
+            </>
+          )}
 
           <View style={[styles.divider, { backgroundColor: colors.line }]} />
           <ToggleRow label="Partner reflections" description="When your partner submits, replies to you, nudges you, or is thinking of you." value={prefs?.notification_partner ?? true} onChange={(v) => savePref({ notification_partner: v })} colors={colors} />
@@ -180,6 +251,50 @@ export default function SettingsScreen() {
             onChange={(v) => { savePref({ notification_recap: v }); if (v) scheduleWeeklyRecap(); else cancelWeeklyRecap(); }}
             colors={colors}
           />
+        </Card>
+
+        {/* These banners carry the most private material the app holds: a
+            partner's reflection arriving, the words of a new prayer, a dream.
+            All of it renders on a locked phone, in front of whoever happens to
+            be looking at it. iOS can hide previews, but only for every app at
+            once, and this is the one where it matters most.
+
+            One control rather than one per category, deliberately: a setting
+            you have to reason about six times is one nobody sets, and the
+            answer is nearly always the same for all of them. */}
+        <Text variant="eyebrow" color={colors.muted} style={styles.sectionLabel}>On the lock screen</Text>
+        <Card style={styles.card}>
+          <View style={styles.previewHead}>
+            <EyeSlash size={17} color={colors.accent2} />
+            <Text variant="body" color={colors.ink2} style={styles.flex}>
+              What a notification shows before you unlock.
+            </Text>
+          </View>
+          <View style={styles.presetRow}>
+            {([
+              { key: 'full', label: 'Show it' },
+              { key: 'generic', label: 'Keep it private' },
+            ] as const).map((opt) => {
+              const active = (prefs?.notification_preview ?? 'full') === opt.key;
+              return (
+                <TouchableOpacity
+                  key={opt.key}
+                  onPress={() => { haptics.tap(); savePref({ notification_preview: opt.key }); }}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                  style={[styles.preset, { borderColor: active ? colors.accent : colors.line, backgroundColor: active ? colors.accent : 'transparent' }]}
+                >
+                  <Text variant="label" color={active ? colors.bg : colors.ink2}>{opt.label}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+          <Text color={colors.muted} style={styles.previewHint}>
+            {(prefs?.notification_preview ?? 'full') === 'full'
+              ? `"${partnerFirstName} just wrote theirs"`
+              : '"Something is waiting for you in Pamwe"'}
+          </Text>
         </Card>
 
         <Text variant="eyebrow" color={colors.muted} style={styles.sectionLabel}>Plan</Text>
@@ -260,6 +375,11 @@ const styles = StyleSheet.create({
   banner: { borderRadius: 12, padding: 14, marginBottom: 16 },
   rowLabel: { marginBottom: 10 },
   email: { marginBottom: 4 },
+  flex: { flex: 1, minWidth: 0 },
+  previewHead: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
+  previewHint: { fontSize: 13, marginTop: 12, fontStyle: 'italic' },
+  customTime: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 12, alignSelf: 'flex-start' },
+  customTimeLabel: { fontSize: 12.5 },
   presetRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   preset: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: 999, borderWidth: 1 },
   divider: { height: 1, marginVertical: 16 },

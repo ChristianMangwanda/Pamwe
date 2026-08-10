@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
   // copy, so it is worth fetching rather than saying "your partner".
   const { data: people, error: peopleErr } = await supabase
     .from("users")
-    .select("id, display_name, expo_push_token, notification_note")
+    .select("id, display_name, expo_push_token, notification_note, notification_preview")
     .in("id", [partnerId, authorId]);
 
   if (peopleErr) {
@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
     // The note itself is deliberately not in the payload: it lands on a lock
     // screen, and this is the one place the couple write only to each other.
     data: { type: "note", book, chapter, verse },
-  }));
+  }, partner?.notification_preview));
 
   return new Response(JSON.stringify(result), {
     headers: { "Content-Type": "application/json" },

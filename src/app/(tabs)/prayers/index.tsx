@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  View, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform, RefreshControl, } from 'react-native';
+  View, StyleSheet, ScrollView, TouchableOpacity, Alert, RefreshControl, } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
@@ -24,6 +24,7 @@ import { getDreams, deleteDream } from '../../../lib/dreams';
 import { todayInTimezone } from '../../../lib/catchup';
 import { clearReminder, syncReminders } from '../../../lib/prayerReminders';
 import { haptics } from '../../../lib/haptics';
+import { AnsweredSheet } from '../../../components/AnsweredSheet';
 
 // Marks over the last week, in one query. The cards read only today's from it;
 // the reminder system uses the whole window, since praying for something ends
@@ -52,6 +53,7 @@ export default function PrayersScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [detail, setDetail] = useState<Prayer | null>(null);
+  const [answering, setAnswering] = useState<Prayer | null>(null);
   const openedLinked = useRef<string | null>(null);
   // The "Nothing on your hearts yet" empty state only shows after a fetch
   // actually succeeded — a failed first load must not claim the list is empty.
@@ -167,18 +169,26 @@ export default function PrayersScreen() {
     }
   };
 
+  // The same question on both platforms. It used to be Alert.prompt on iOS and
+  // a bare confirm on Android, because Alert.prompt is iOS only, so the note
+  // about HOW a prayer was answered, which is the whole point of the timeline,
+  // could not be written on Android at all.
   const handleMarkAnswered = (prayer: Prayer) => {
     setDetail(null);
-    const submit = async (note?: string) => {
-      try { await markAnswered(prayer.id, note); clearReminder(prayer.id); load(); }
-      catch (err: any) { Alert.alert("Couldn't update the prayer", err?.message ?? 'Try again in a moment.'); }
-    };
-    if (Platform.OS === 'ios') {
-      Alert.prompt('Mark as answered', 'Add a note about how it was answered (optional).',
-        [{ text: 'Cancel', style: 'cancel' }, { text: 'Mark answered', onPress: (note?: string) => submit(note) }], 'plain-text');
-    } else {
-      Alert.alert('Mark as answered', 'It moves to your answered prayers.',
-        [{ text: 'Cancel', style: 'cancel' }, { text: 'Mark answered', onPress: () => submit() }]);
+    setAnswering(prayer);
+  };
+
+  const confirmAnswered = async (note?: string) => {
+    const prayer = answering;
+    if (!prayer) return;
+    setAnswering(null);
+    try {
+      await markAnswered(prayer.id, note);
+      clearReminder(prayer.id);
+      haptics.success();
+      load();
+    } catch (err: any) {
+      Alert.alert("Couldn't update the prayer", err?.message ?? 'Try again in a moment.');
     }
   };
 
@@ -374,6 +384,13 @@ export default function PrayersScreen() {
         onMarkAnswered={() => detail && handleMarkAnswered(detail)}
         onEdit={() => detail && handleEdit(detail)}
         onDelete={() => detail && handleDelete(detail)}
+      />
+
+      <AnsweredSheet
+        visible={!!answering}
+        prayerText={answering?.text}
+        onCancel={() => setAnswering(null)}
+        onConfirm={confirmAnswered}
       />
     </SafeAreaView>
   );

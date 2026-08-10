@@ -764,10 +764,12 @@ export type Database = {
           id: string
           last_seen_activity_at: string | null
           notification_dream: boolean
+          notification_morning: boolean
           notification_morning_time: string | null
           notification_note: boolean
           notification_partner: boolean | null
           notification_prayer: boolean | null
+          notification_preview: string
           notification_recap: boolean
         }
         Insert: {
@@ -781,10 +783,12 @@ export type Database = {
           id: string
           last_seen_activity_at?: string | null
           notification_dream?: boolean
+          notification_morning?: boolean
           notification_morning_time?: string | null
           notification_note?: boolean
           notification_partner?: boolean | null
           notification_prayer?: boolean | null
+          notification_preview?: string
           notification_recap?: boolean
         }
         Update: {
@@ -798,10 +802,12 @@ export type Database = {
           id?: string
           last_seen_activity_at?: string | null
           notification_dream?: boolean
+          notification_morning?: boolean
           notification_morning_time?: string | null
           notification_note?: boolean
           notification_partner?: boolean | null
           notification_prayer?: boolean | null
+          notification_preview?: string
           notification_recap?: boolean
         }
         Relationships: [

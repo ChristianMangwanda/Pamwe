@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
 
   const { data: partner, error: partnerErr } = await supabase
     .from("users")
-    .select("expo_push_token, notification_prayer")
+    .select("expo_push_token, notification_prayer, notification_preview")
     .eq("id", partnerId)
     .single();
 
@@ -100,7 +100,7 @@ Deno.serve(async (req) => {
     title: "Your partner added a prayer",
     body: preview,
     data: { type: "prayer" },
-  }));
+  }, partner?.notification_preview));
   return new Response(JSON.stringify(result), {
     headers: { "Content-Type": "application/json" },
   });

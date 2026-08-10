@@ -95,7 +95,7 @@ Deno.serve(async (req) => {
   const [{ data: recipient, error: recipientErr }, { data: author }] = await Promise.all([
     supabase
       .from("users")
-      .select("expo_push_token, notification_partner")
+      .select("expo_push_token, notification_partner, notification_preview")
       .eq("id", recipientId)
       .single(),
     supabase
@@ -130,7 +130,7 @@ Deno.serve(async (req) => {
     title: parent_id ? `${name} replied to you` : `${name} replied to your reflection`,
     body: preview,
     data: { type: "response" },
-  }));
+  }, recipient?.notification_preview));
   return new Response(JSON.stringify(result), {
     headers: { "Content-Type": "application/json" },
   });

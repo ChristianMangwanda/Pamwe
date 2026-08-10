@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Pressable } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Pressable, Alert } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -185,17 +185,38 @@ export default function ChapterReader() {
   };
 
   const onVerseLongPress = (verse: number) => { haptics.medium(); setSelVerse(verse); };
+  // Both of these used to swallow the error whole and buzz BEFORE the write:
+  // a highlight that never reached the server closed the sheet, confirmed in
+  // the hand, and left nothing behind, so the mark was simply missing later
+  // with no moment anyone could point to. The tap is acknowledged immediately
+  // (selection feedback, not success), and a failure now says so and puts the
+  // reader back to what the server actually holds.
   const applyHighlight = async (color: SwatchColor) => {
     if (!couple?.id || selVerse == null) return;
-    haptics.light();
-    try { await setHighlight(couple.id, book.name, chapterNum, selVerse, color); reloadMarks(); } catch {}
+    haptics.tap();
+    const verse = selVerse;
     setSelVerse(null);
+    try {
+      await setHighlight(couple.id, book.name, chapterNum, verse, color);
+      haptics.light();
+      reloadMarks();
+    } catch (err: any) {
+      reloadMarks();
+      Alert.alert("Couldn't save that highlight", err?.message ?? 'Try again in a moment.');
+    }
   };
   const removeHighlight = async () => {
     if (!couple?.id || selVerse == null) return;
     haptics.tap();
-    try { await clearHighlight(couple.id, book.name, chapterNum, selVerse); reloadMarks(); } catch {}
+    const verse = selVerse;
     setSelVerse(null);
+    try {
+      await clearHighlight(couple.id, book.name, chapterNum, verse);
+      reloadMarks();
+    } catch (err: any) {
+      reloadMarks();
+      Alert.alert("Couldn't remove that highlight", err?.message ?? 'Try again in a moment.');
+    }
   };
   const openNoteEditor = () => {
     if (selVerse == null) return;

@@ -48,12 +48,22 @@ export async function tokensFor(
   return tokens;
 }
 
-/** The same notification, addressed to each of a person's devices. */
+/** The same notification, addressed to each of a person's devices.
+ *
+ *  `preview` is the recipient's notification_preview. On 'generic' the title
+ *  and body are replaced with a line that says only that something happened:
+ *  these banners carry a partner's reflection, the words of a prayer, a dream,
+ *  and they render on a locked phone in front of whoever is looking at it.
+ *  The DATA is untouched, so tapping still lands in exactly the right place. */
 export function fanOut(
   tokens: string[],
   message: Omit<ExpoPushMessage, "to">,
+  preview?: string | null,
 ): ExpoPushMessage[] {
-  return tokens.map((to) => ({ ...message, to }));
+  const shown = preview === "generic"
+    ? { ...message, title: "Pamwe", body: "Something is waiting for you." }
+    : message;
+  return tokens.map((to) => ({ ...shown, to }));
 }
 
 export async function sendExpoPush(

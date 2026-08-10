@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react';
-import { View, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { SealCheck, Flower } from 'phosphor-react-native';
+import { SealCheck, Flower, ArrowCounterClockwise } from 'phosphor-react-native';
 import { Text } from '../../../components/ui/Text';
 import { BackLink } from '../../../components/ui/BackLink';
 import { Floral } from '../../../components/ui/Floral';
@@ -12,7 +12,8 @@ import { GUTTER } from '../../../theme/tokens';
 import { useTheme } from '../../../providers/ThemeProvider';
 import { useAuth } from '../../../providers/AuthProvider';
 import { useCouple } from '../../../providers/CoupleProvider';
-import { getAnsweredPrayers } from '../../../lib/prayers';
+import { getAnsweredPrayers, reopenPrayer } from '../../../lib/prayers';
+import { haptics } from '../../../lib/haptics';
 import { Prayer } from '../../../components/PrayerCard';
 
 function longDate(iso?: string | null) {
@@ -51,6 +52,32 @@ export default function PrayerTimelineScreen() {
   }, [couple?.id]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  // Marking answered used to be a one-way door, and it is the easiest tap in
+  // the app to make by accident: it sits on a swipe card. It is also a thing
+  // people genuinely revisit, when what looked like an answer turns out to be
+  // a pause.
+  const handleReopen = (prayer: Prayer) => {
+    Alert.alert(
+      'Still carrying this one?',
+      'It goes back among your active prayers. The note about how it was answered is cleared.',
+      [
+        { text: 'Leave it answered', style: 'cancel' },
+        {
+          text: 'Still carrying',
+          onPress: async () => {
+            haptics.light();
+            setItems((prev) => prev.filter((p) => p.id !== prayer.id));
+            try { await reopenPrayer(prayer.id); await load(); }
+            catch (err: any) {
+              await load();
+              Alert.alert("Couldn't reopen it", err?.message ?? 'Try again in a moment.');
+            }
+          },
+        },
+      ],
+    );
+  };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top']}>
@@ -103,6 +130,16 @@ export default function PrayerTimelineScreen() {
                       <Text style={[styles.meta, { color: colors.accent2 }]}>{carried(p.created_at, p.answered_at)}</Text>
                     ) : null}
                   </View>
+                  <TouchableOpacity
+                    onPress={() => handleReopen(p)}
+                    style={styles.reopen}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Move this prayer back to active: ${p.text}`}
+                  >
+                    <ArrowCounterClockwise size={13} color={colors.accent2} />
+                    <Text style={[styles.reopenLabel, { color: colors.accent2 }]}>Still carrying this</Text>
+                  </TouchableOpacity>
                 </View>
               </View>
             ))}
@@ -118,6 +155,8 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 96 },
   floral: { position: 'absolute', top: -10, right: -18, width: 96, height: 96, opacity: 0.55, transform: [{ scaleX: -1 }] },
   subtitle: { fontSize: 14, marginTop: 6 },
+  reopen: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12, alignSelf: 'flex-start' },
+  reopenLabel: { fontFamily: fonts.sansMedium, fontSize: 11.5 },
   center: { paddingTop: 60, alignItems: 'center' },
   empty: { alignItems: 'center', paddingTop: 44, paddingHorizontal: 24 },
   emptyTitle: { marginTop: 16, textAlign: 'center' },

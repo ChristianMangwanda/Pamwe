@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
 
   const { data: people, error: peopleErr } = await supabase
     .from("users")
-    .select("id, display_name, expo_push_token, notification_note")
+    .select("id, display_name, expo_push_token, notification_note, notification_preview")
     .in("id", [partnerId, authorId]);
 
   if (peopleErr) {
@@ -91,7 +91,7 @@ Deno.serve(async (req) => {
       chapter: note.chapter,
       verse: note.verse,
     },
-  }));
+  }, partner?.notification_preview));
 
   return new Response(JSON.stringify(result), {
     headers: { "Content-Type": "application/json" },
