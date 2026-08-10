@@ -1,6 +1,67 @@
 # Pamwe Build Progress Summary
 
-**Last Updated:** August 9, 2026
+**Last Updated:** August 10, 2026
+
+---
+
+## 🚀 BUILD 26 UPLOADED (2026-08-10)
+
+Four audit rounds in one binary, plus the ask-pamwe client half that had been
+sitting in the tree since the outage. 14 commits since b25, 54 files, ~4,400
+lines. Archived from `security-round` at `7a73d3d`.
+
+What the couple will notice: a reveal neither phone watched comes back and is
+remembered on the account rather than on one handset; notifications reach every
+device you sign into; a quiet bell on Today holds what your partner did while
+you were away; pairing by link or QR; Scripture search; ending a plan early
+without the app claiming you finished it; a lock-screen privacy switch; and an
+Ask Pamwe that says it is unavailable when it is, rather than resting.
+
+Verified before the archive, in the order that catches the most for the least
+time spent:
+
+- `tsc --noEmit` clean, 42 Jest suites / 377 tests
+- `restore_ios_patches.rb --check`: every hand-made patch present, all four
+  `CURRENT_PROJECT_VERSION` spots at 26
+- **`export:embed` grep before the archive, not after.** One hosted project ref
+  in the bundle, zero occurrences of the LAN URL. Two minutes to rule out the
+  failure that has burned a build number before.
+- hosted migrations match local, the single local-only file being
+  `resume_final_day_autocomplete`, held back on purpose
+- all eleven edge functions live at the expected versions, `ask-pamwe` at v17,
+  so the server half of the 503 classification was already there to meet the
+  client half shipping here
+- `get_advisors`: no new warning class. `mark_reveal_seen`, `save_push_token`
+  and `clear_push_token` joined the existing SECURITY DEFINER list exactly as
+  the roadmap predicted; `switch_plan`, `activity_feed` and `search_verses` are
+  INVOKER and do not appear.
+
+Verified inside the archive: 11MB `main.jsbundle` carrying the hosted ref once
+and no local URL, app and widget appex both `CFBundleVersion` 26, all three
+purpose strings, `PrivacyInfo.xcprivacy` present.
+
+Upload warned that eight prebuilt frameworks shipped without dSYMs (React,
+hermesvm, ExpoImage, the four SDWebImage coders, ReactNativeDependencies).
+Pre-existing and not ours: those are prebuilt XCFrameworks. It costs Apple-side
+symbolication for native frames in those libraries only; Sentry still gets the
+JavaScript, which is where our crashes live.
+
+**Still on Christian's hands, in priority order:**
+
+1. **Rotate the App Review password.** Oldest open item from the security round.
+   `grace@review.pamwe.app` still carries the password that sits in public git
+   history, and there is now a newer TestFlight build up. New value into App
+   Store Connect review notes FIRST, then the `execute_sql` block in
+   [`security-round-plan.md`](security-round-plan.md) step 6.
+2. **Apply `20260808000007_resume_final_day_autocomplete.sql`** once both phones
+   are actually running 26.
+3. **Delete `secret-match-check`** from the dashboard. Still ACTIVE at v3 as an
+   inert 410 stub; the MCP toolset has no delete verb.
+4. **Set the spend alerts** from [`store-package.md`](store-package.md) section
+   7. Two dual outages happened because nothing was watching the balance.
+
+⏳ **Still unproven, and now testable on two phones:** a real banner from a real
+trigger. The deploy verified only the refusal half (401 without the secret).
 
 ---
 
