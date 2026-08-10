@@ -4,6 +4,29 @@
 
 ---
 
+## ✅ ask-pamwe v17 DEPLOYED (2026-08-09)
+
+Every mode goes through one `askJson` chain now: OpenAI first, Anthropic behind
+it, next provider tried ONLY on an account failure (dead key, no credit,
+exhausted quota). A timeout or a bare rate limit does not fail over, because
+those clear on their own and spending a second provider's tokens turns one blip
+into two bills.
+
+**Anthropic is parked indefinitely.** With only OpenAI funded the chain simply
+lands there every time, and the by-book builder, which was Anthropic-only and
+therefore dark, works again. Either key alone runs the whole feature.
+
+Also live in v17: the 503 `unavailable: true` classification from `ff86f4b`
+(hosted was still on v16, which predates it) and the pinned supabase-js.
+
+⚠️ **The webhook secrets do NOT match.** The dashboard `NOTIFY_WEBHOOK_SECRET`
+(created 22:24:58) and the Vault `notify_webhook_secret` (22:26:21) are two
+different 64-char values, generated 83 seconds apart. Deploying the notify-*
+functions before they agree would 401 every notification. Fix is one paste:
+copy the Vault value over the dashboard one.
+
+---
+
 ## ⭐ AUDIT RESPONSE ROUND 4 (2026-08-09): stop confirming things that did not happen
 
 Committed (`30ba739`), migration applied to hosted. The places where the app
@@ -151,7 +174,7 @@ longer seeds dev users into whichever Supabase container Docker listed first.
 
 ---
 
-## 🔴 LIVE OUTAGE (2026-08-09): Ask Pamwe is dead on both providers, out of credits
+## 🟡 Ask Pamwe: OpenAI topped up, Anthropic PARKED (Christian, 2026-08-09: tokens are expensive)
 
 Christian hit "Build the plan" on "Dealing with insecurities" and got **"Pamwe is
 resting for a moment. Try again in a bit."** The screen is fine. The backend is
