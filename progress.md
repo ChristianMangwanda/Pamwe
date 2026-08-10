@@ -19,11 +19,29 @@ therefore dark, works again. Either key alone runs the whole feature.
 Also live in v17: the 503 `unavailable: true` classification from `ff86f4b`
 (hosted was still on v16, which predates it) and the pinned supabase-js.
 
-⚠️ **The webhook secrets do NOT match.** The dashboard `NOTIFY_WEBHOOK_SECRET`
-(created 22:24:58) and the Vault `notify_webhook_secret` (22:26:21) are two
-different 64-char values, generated 83 seconds apart. Deploying the notify-*
-functions before they agree would 401 every notification. Fix is one paste:
-copy the Vault value over the dashboard one.
+✅ **All eleven edge functions deployed (2026-08-09).** The webhook secrets were
+verified equal server-side first, by a throwaway function that compared them
+inside the database and returned one bit. Worth recording why: comparing the
+Vault against a dashboard SCREENSHOT said "mismatch" twice, and the screenshot
+was simply stale. A prefix from an image is not evidence.
+
+Deployed: `ask-pamwe` v17, `notify-partner` v13, `notify-new-prayer` v11,
+`notify-new-dream` v6, `notify-new-note` v6, `notify-verse-comment` v6,
+`notify-new-response` v7, `notify-nudge` v9, `notify-thinking` v6,
+`delete-account` v12.
+
+Verified after: all six webhook targets answer **401** to a caller with no
+secret (a missing env var would be 500, so this also proves the secret is
+readable by the functions), and `verify_jwt` is false on exactly those six and
+true on `ask-pamwe`, `notify-nudge`, `notify-thinking`, `delete-account`.
+
+Left to do by hand: delete the retired `secret-match-check` function from the
+dashboard. It is an inert 410 stub with `verify_jwt` back on, kept only because
+the MCP toolset has no delete verb.
+
+⏳ **Still unproven: a real banner on a real phone.** Nothing has triggered a
+live notification since the deploy, so the authorized path (trigger sends the
+header, function accepts it) is verified only by its refusal half.
 
 ---
 
