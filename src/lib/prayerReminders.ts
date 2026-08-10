@@ -139,6 +139,21 @@ export async function clearReminder(prayerId: string) {
   }
 }
 
+/** Drop every prayer reminder this phone holds.
+ *
+ *  For sign-out. These are LOCAL notifications, so they keep firing on a phone
+ *  whose account has left, naming prayers the person holding it cannot open.
+ *  Cancelled by id, one window per prayer: never a cancel-all, which would take
+ *  the morning reminder and the recap with it and is the mistake CLAUDE.md
+ *  already records. */
+export async function clearAllReminders() {
+  const map = await readMap();
+  const ids = Object.keys(map);
+  if (ids.length === 0) return;
+  await Promise.all(ids.map((prayerId) => cancelWindow(prayerId)));
+  await writeMap({});
+}
+
 function windowFor(reminderCount: number): number {
   if (reminderCount <= 0) return MAX_AHEAD_DAYS;
   const perPrayer = Math.floor(PRAYER_BUDGET / reminderCount);

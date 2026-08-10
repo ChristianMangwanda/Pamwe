@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Redirect } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../providers/AuthProvider';
 import { getUserCouple } from '../lib/couples';
 import { getActiveCouPlan } from '../lib/plans';
@@ -11,6 +12,15 @@ import { PamweLoading } from '../components/ui/PamweLoading';
 import { hideSplashOnce } from '../lib/splash';
 
 type RouteState = 'loading' | 'auth' | 'unpaired' | 'waiting' | 'plan-select' | 'tabs' | 'error';
+
+// Where this account landed last time. Only 'tabs' is ever remembered, because
+// it is the only destination that stays true for months: the four onboarding
+// states are steps someone is passing through, and guessing one of those wrong
+// puts a stranger's screen in front of them.
+//
+// Account-scoped and under the `pamwe:` prefix, so signing out clears it with
+// everything else (see lib/localData.ts).
+const rememberedKey = (uid: string) => `pamwe:lastRoute:${uid}`;
 
 export default function Index() {
   const { session, loading: authLoading } = useAuth();
@@ -27,6 +37,7 @@ export default function Index() {
       if (!plan) { setRoute('plan-select'); return; }
 
       setRoute('tabs');
+      AsyncStorage.setItem(rememberedKey(userId), 'tabs').catch(() => {});
     } catch {
       // Query failure ≠ "no couple". Routing to onboarding here let a paired
       // user create a second couple on a network blip — show a retry instead.
@@ -34,13 +45,42 @@ export default function Index() {
     }
   }, []);
 
+  // Anything that is not a reading couple stops being remembered, so a plan
+  // that ended, or a pair that ended, cannot keep opening Today.
+  useEffect(() => {
+    if (!session?.user) return;
+    if (route === 'unpaired' || route === 'waiting' || route === 'plan-select') {
+      AsyncStorage.removeItem(rememberedKey(session.user.id)).catch(() => {});
+    }
+  }, [route, session?.user?.id]);
+
   useEffect(() => {
     if (!session?.user) {
       setRoute('loading');
       return;
     }
+    const uid = session.user.id;
+    let live = true;
     setRoute('loading');
-    resolveRoute(session.user.id);
+
+    // The gate cannot route until getSession, then getUserCouple, then
+    // getActiveCouPlan have all come back, and the last two are strictly
+    // sequential because the plan is looked up by couple. On a slow radio that
+    // is several seconds spent on the splash, and the 3s floor in _layout then
+    // drops the app onto colors.bg, which in dark mode is #17120E: a screen
+    // that reads as broken rather than busy.
+    //
+    // A couple who were reading yesterday are reading today. Show them that at
+    // once and let the queries confirm it behind them; on the rare miss the
+    // answer above replaces this a moment later.
+    AsyncStorage.getItem(rememberedKey(uid))
+      .then((v) => {
+        if (live && v === 'tabs') setRoute((r) => (r === 'loading' ? 'tabs' : r));
+      })
+      .catch(() => {});
+
+    resolveRoute(uid);
+    return () => { live = false; };
   }, [session?.user?.id, resolveRoute]);
 
   // The gate has landed somewhere real: safe to drop the splash. Anything that

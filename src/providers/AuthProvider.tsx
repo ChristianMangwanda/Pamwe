@@ -12,8 +12,27 @@ import {
   schedulePrayerReviewFromPrefs,
   clearDeliveredNotifications,
   cleanupLegacyScheduled,
+  cancelMorningNotification,
+  cancelWeeklyRecap,
+  cancelPrayerReview,
 } from '../lib/notifications';
+import { clearAllReminders } from '../lib/prayerReminders';
+import { clearAccountLocalData } from '../lib/localData';
+import { shareAnniversary } from '../../modules/pamwe-widget';
 import { recordTermsAcceptance } from '../lib/account';
+
+/** Let a promise have a turn, not the whole day.
+ *
+ *  Resolves either way: callers here want the work attempted, never a rejection
+ *  and never an unbounded wait. */
+function withTimeout(work: Promise<unknown>, ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(resolve, ms);
+    work
+      .catch(() => {})
+      .finally(() => { clearTimeout(timer); resolve(); });
+  });
+}
 
 type AuthContextType = {
   session: Session | null;
@@ -103,11 +122,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [session?.user?.id]);
 
   const signOut = async () => {
-    // Best-effort: detach this device's push token from the account before the
-    // session goes away, so a later sign-in by someone else on this phone
-    // doesn't receive the old account's partner notifications.
-    try { await clearPushToken(); } catch { /* sign out regardless */ }
+    // Detach this device's token while we can still prove who we are:
+    // clear_push_token reads auth.uid(), so it has to happen before the session
+    // goes. It used to be awaited with nothing bounding it, and it is a network
+    // call: on a bad connection the tap did nothing at all, for as long as the
+    // request hung, and the app read as though it had refused to sign out. It
+    // gets 2.5 seconds now and then loses its turn. Nothing is lost by that,
+    // because save_push_token releases a handset from every other account when
+    // it is next claimed, so the row repairs itself on the following sign-in.
+    await withTimeout(clearPushToken(), 2500);
+
+    // The session goes here, and everything below is about the phone rather
+    // than the account. None of it can fail in a way worth blocking on, and
+    // none of it can leave anyone signed in.
     await supabase.auth.signOut();
+
+    await Promise.all([
+      // Caches the screens read BEFORE the network answers, which is what let a
+      // signed-out phone keep showing a couple's prayers and reflections.
+      clearAccountLocalData(),
+      // Local notifications outlive the session on their own: they are already
+      // scheduled with iOS. Cancelled by id, never a cancel-all.
+      cancelMorningNotification(),
+      cancelWeeklyRecap(),
+      cancelPrayerReview(),
+      clearAllReminders(),
+    ].map((p) => p.catch(() => {})));
+
+    // The widget counts "In love N days" from the App Group, which is the one
+    // thing that crosses out of the app. Nothing else there knows anything, so
+    // this is the whole of what a widget has to forget.
+    shareAnniversary(null);
   };
 
   return (

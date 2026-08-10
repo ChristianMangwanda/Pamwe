@@ -1,14 +1,28 @@
-import { Tabs } from 'expo-router';
+import { Tabs, Redirect } from 'expo-router';
 import { SunHorizon, BookOpen, Books, HandsPraying, Feather, UserCircle } from 'phosphor-react-native';
 import { CoupleProvider } from '../../providers/CoupleProvider';
+import { useAuth } from '../../providers/AuthProvider';
 import { usePushRouting } from '../../hooks/usePushRouting';
 import { useDockedTabOptions } from '../../components/DockedTabBar';
 
 const ICON_SIZE = 21;
 
 export default function TabLayout() {
+  const { session, loading } = useAuth();
   usePushRouting();
   const dockedTabOptions = useDockedTabOptions();
+
+  // The app's only auth check used to be src/app/index.tsx, which decides
+  // nothing unless you are standing on it. Nothing looked at the session below
+  // this point, so once it was gone the six tabs kept rendering exactly as
+  // before: prayers still listed, the Bible still readable (its chapter cache
+  // is authoritative and never revalidates, so it works with no account at
+  // all). Signing out left you inside the app.
+  //
+  // This is the fence rather than the gate. Returning a Redirect unmounts the
+  // whole tree, CoupleProvider included, so nothing goes on fetching for
+  // someone who has left.
+  if (!loading && !session) return <Redirect href="/(auth)/welcome" />;
 
   return (
     <CoupleProvider>
