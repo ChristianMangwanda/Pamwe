@@ -11,7 +11,7 @@
 //     arranger orders them by NUMBER. No model in this path ever writes a
 //     Bible reference.
 //   - 'plans' (default): 2 reading-plan recommendations, for the older builder
-//     screen. Chapter-level only. Still Anthropic.
+//     screen. Chapter-level only.
 //   - 'help': a short pointing answer. The in-app sheet that called this was
 //     removed when the floating bubble went, so nothing invokes it today.
 //
@@ -28,9 +28,12 @@
 //   4. Per-user rate limit (bump_ask_pamwe_usage): 20/day + 10s cooldown.
 //   5. 300-char query cap.
 //
-// Secrets: OPENAI_API_KEY for build (model from OPENAI_MODEL, default
-// gpt-5.6-luna, the family that tagged the catalogue); ANTHROPIC_API_KEY for
-// plans/help (ANTHROPIC_MODEL, default claude-haiku-4-5). SUPABASE_URL and
+// Secrets: OPENAI_API_KEY (model from OPENAI_MODEL, default gpt-5.6-luna, the
+// family that tagged the catalogue) and ANTHROPIC_API_KEY (ANTHROPIC_MODEL,
+// default claude-haiku-4-5). EVERY mode goes through askJson, which tries
+// OpenAI first and falls back to Anthropic only when an account is out of
+// credit or its key is dead, so one exhausted balance no longer takes half the
+// feature down. Either key alone is enough to run. SUPABASE_URL and
 // SUPABASE_SERVICE_ROLE_KEY are injected automatically by the platform.
 
 import Anthropic from "npm:@anthropic-ai/sdk@0.68.0";
@@ -157,30 +160,105 @@ const PLANS_SCHEMA = {
 const BUILD_VERSION = "2026-08-02b";
 const OPENAI_MODEL = Deno.env.get("OPENAI_MODEL") ?? "gpt-5.6-luna";
 
-async function luna(
-  key: string,
-  system: string,
-  user: string,
-  name: string,
-  schema: unknown,
-): Promise<Record<string, unknown>> {
+// A model declined to answer. Distinct from a failure: nothing is wrong, the
+// question was one it would not take, and the copy should say so rather than
+// claiming Pamwe is resting.
+class RefusalError extends Error {}
+
+type Ask = {
+  system: string;
+  user: string;
+  name: string;
+  schema: unknown;
+  maxTokens?: number;
+};
+
+async function askOpenAI(key: string, a: Ask): Promise<Record<string, unknown>> {
   const resp = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
     body: JSON.stringify({
       model: OPENAI_MODEL,
       messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
+        { role: "system", content: a.system },
+        { role: "user", content: a.user },
       ],
-      response_format: { type: "json_schema", json_schema: { name, strict: true, schema } },
+      response_format: {
+        type: "json_schema",
+        json_schema: { name: a.name, strict: true, schema: a.schema },
+      },
     }),
   });
   if (!resp.ok) throw new ModelError(resp.status, await resp.text());
   const data = await resp.json();
   const msg = data?.choices?.[0]?.message;
-  if (!msg?.content || msg.refusal) throw new Error("refusal");
+  if (msg?.refusal) throw new RefusalError("refused");
+  if (!msg?.content) throw new Error("empty answer");
   return JSON.parse(msg.content);
+}
+
+async function askAnthropic(key: string, a: Ask): Promise<Record<string, unknown>> {
+  const anthropic = new Anthropic({ apiKey: key });
+  const message = await anthropic.messages.create({
+    model: MODEL,
+    max_tokens: a.maxTokens ?? 2048,
+    thinking: { type: "disabled" },
+    system: a.system,
+    output_config: { format: { type: "json_schema", schema: a.schema } },
+    messages: [{ role: "user", content: a.user }],
+  });
+  if (message.stop_reason === "refusal") throw new RefusalError("refused");
+  const text = message.content
+    .filter((b: { type: string }) => b.type === "text")
+    .map((b: { text: string }) => b.text)
+    .join("");
+  if (!text) throw new Error("empty answer");
+  return JSON.parse(text);
+}
+
+// deno-lint-ignore no-explicit-any
+function isAccountError(err: any): boolean {
+  const status = err instanceof ModelError
+    ? err.status
+    : (typeof err?.status === "number" ? err.status : 0);
+  const body = err instanceof ModelError ? err.body : String(err?.message ?? err);
+  return isAccountFailure(status, body);
+}
+
+// ---------------------------------------------------------------------------
+// One question, answered by whichever provider still can.
+//
+// build ran on OpenAI and plans/help on Anthropic, so an empty balance on
+// either account took its own half of the feature down while the other sat
+// there with credit. Both halves come through here now: OpenAI first, Anthropic
+// behind it, and the next provider is tried ONLY when the current one fails for
+// account reasons (dead key, no credit, exhausted quota).
+//
+// A timeout, a bad gateway or an ordinary rate limit is deliberately NOT a
+// reason to fail over. Those are momentary and the same request would probably
+// succeed on a retry; spending a second provider's tokens on them turns one
+// blip into two bills. Adding a provider is one entry in this list.
+async function askJson(a: Ask): Promise<Record<string, unknown>> {
+  const chain = [
+    { name: "openai", key: Deno.env.get("OPENAI_API_KEY"), call: askOpenAI },
+    { name: "anthropic", key: Deno.env.get("ANTHROPIC_API_KEY"), call: askAnthropic },
+  ].filter((p) => !!p.key);
+
+  if (chain.length === 0) throw new ModelError(401, "no model provider is configured");
+
+  let last: unknown;
+  for (const provider of chain) {
+    try {
+      return await provider.call(provider.key!, a);
+    } catch (err) {
+      last = err;
+      if (err instanceof RefusalError || !isAccountError(err)) throw err;
+      console.warn(
+        `ask-pamwe: ${provider.name} cannot answer (no credit or a dead key), trying the next provider`,
+      );
+    }
+  }
+  throw last;
 }
 
 // The vocabulary and book list come from the catalogue tables, not a copy in
@@ -457,7 +535,8 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
-  // build runs on OpenAI; plans/help still run on Anthropic until retired.
+  // Only to answer "is anything configured". Which provider actually serves a
+  // request is askJson's business.
   const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
   const openaiKey = Deno.env.get("OPENAI_API_KEY");
 
@@ -474,7 +553,9 @@ Deno.serve(async (req) => {
 
   if (!query) return json({ error: "Tell Pamwe what you'd like to read about." }, 400);
   if (query.length > MAX_QUERY) return json({ error: `Keep it under ${MAX_QUERY} characters.` }, 400);
-  if (mode === "build" ? !openaiKey : !anthropicKey) {
+  // Any provider will do now, so the check is "is there one at all". It used to
+  // ask for the specific provider that mode was hardwired to.
+  if (!openaiKey && !anthropicKey) {
     return json({ error: "Ask Pamwe isn't configured yet." }, 503);
   }
 
@@ -508,13 +589,12 @@ Deno.serve(async (req) => {
       const cat = await loadCatalogue(admin);
       if (!cat) return json({ error: "Ask Pamwe isn't configured yet." }, 503);
 
-      const intake = await luna(
-        openaiKey!,
-        systemIntake(cat.themes, cat.cautions),
-        query,
-        "intake",
-        intakeSchema(cat.themes.map((t) => t.term), cat.cautions.map((c) => c.term)),
-      ) as {
+      const intake = await askJson({
+        system: systemIntake(cat.themes, cat.cautions),
+        user: query,
+        name: "intake",
+        schema: intakeSchema(cat.themes.map((t) => t.term), cat.cautions.map((c) => c.term)),
+      }) as {
         off_topic: boolean; kind: string; book: string; themes: string[];
         allow_cautions: string[]; stated_days: number; title: string;
       };
@@ -619,13 +699,12 @@ Deno.serve(async (req) => {
       const candidates = (pool as PassageRow[])
         .map((p, i) => `${i}. ${referenceFor(p)} (${p.tone}) ${noteFor(p.summary)}`)
         .join("\n");
-      const plan = await luna(
-        openaiKey!,
-        SYSTEM_AGENT,
-        `Themes: ${themes.join(", ")}\nDays: ${stated ? `exactly ${stated}` : "between 5 and 21"}\n\nCandidates:\n${candidates}`,
-        "arrangement",
-        agentSchema(pool.length, stated || null),
-      ) as { off_topic: boolean; title: string; days: number[] };
+      const plan = await askJson({
+        system: SYSTEM_AGENT,
+        user: `Themes: ${themes.join(", ")}\nDays: ${stated ? `exactly ${stated}` : "between 5 and 21"}\n\nCandidates:\n${candidates}`,
+        name: "arrangement",
+        schema: agentSchema(pool.length, stated || null),
+      }) as { off_topic: boolean; title: string; days: number[] };
 
       const picks = Array.isArray(plan.days) ? plan.days : [];
       const uniq = new Set(picks);
@@ -650,43 +729,29 @@ Deno.serve(async (req) => {
         themes,
       );
     } catch (err) {
+      if (err instanceof RefusalError) {
+        return json({ error: "Pamwe couldn't help with that one. Try another idea." }, 502);
+      }
       console.error("ask-pamwe build error:", err);
       return modelFailed(err);
     }
   }
 
-  const anthropic = new Anthropic({ apiKey: anthropicKey! });
   const isHelp = mode === "help";
 
   try {
-    const message = await anthropic.messages.create({
-      model: MODEL,
+    // Through the same chain as build, so this half of the feature is no longer
+    // tied to one account's balance. It was Anthropic-only, which is why the
+    // by-book builder stayed dark while OpenAI had credit the whole time.
+    const parsed = await askJson({
+      system: isHelp ? SYSTEM_HELP : SYSTEM_PLANS,
+      user: query,
+      name: isHelp ? "help" : "plans",
+      schema: isHelp ? HELP_SCHEMA : PLANS_SCHEMA,
       // Plans: 2 recs with 30-day readings worst-case ≈ 1,100 output tokens.
       // Help: 1-3 sentences + up to 3 references.
-      max_tokens: isHelp ? 600 : 2048,
-      thinking: { type: "disabled" },
-      system: isHelp ? SYSTEM_HELP : SYSTEM_PLANS,
-      output_config: {
-        format: { type: "json_schema", schema: isHelp ? HELP_SCHEMA : PLANS_SCHEMA },
-      },
-      messages: [{ role: "user", content: query }],
-    });
-
-    if (message.stop_reason === "refusal") {
-      return json({ error: "Pamwe couldn't help with that one. Try another idea." }, 502);
-    }
-
-    const text = message.content
-      .filter((b: { type: string }) => b.type === "text")
-      .map((b: { text: string }) => b.text)
-      .join("");
-
-    let parsed: { off_topic?: boolean } & Record<string, unknown>;
-    try {
-      parsed = JSON.parse(text);
-    } catch {
-      return json({ error: "Pamwe's answer came back garbled. Ask again soon." }, 502);
-    }
+      maxTokens: isHelp ? 600 : 2048,
+    }) as { off_topic?: boolean } & Record<string, unknown>;
 
     if (parsed.off_topic) {
       // Drop whatever was generated; the app shows one fixed gentle line.
@@ -695,6 +760,12 @@ Deno.serve(async (req) => {
 
     return json(parsed, 200);
   } catch (err) {
+    if (err instanceof RefusalError) {
+      return json({ error: "Pamwe couldn't help with that one. Try another idea." }, 502);
+    }
+    if (err instanceof SyntaxError) {
+      return json({ error: "Pamwe's answer came back garbled. Ask again soon." }, 502);
+    }
     console.error("ask-pamwe error:", err);
     return modelFailed(err);
   }
