@@ -4,6 +4,33 @@
 
 ---
 
+## ⭐ AUDIT RESPONSE ROUND 4 (2026-08-09): stop confirming things that did not happen
+
+Committed (`30ba739`), migration applied to hosted. The places where the app
+said one thing and did another.
+
+- **The answered-prayer note did not exist on Android.** `Alert.prompt` is iOS
+  only, so the button was there, the confirm appeared, and the note was silently
+  dropped. The answered timeline, the payoff of the whole prayer feature, could
+  not be written to. One sheet now, same question on both platforms.
+- **Answered was a one-way door**, on a control that sits on a swipe card. Every
+  answered prayer offers "Still carrying this", which reopens it and clears the
+  note rather than leaving it on an open prayer.
+- **Highlighting buzzed BEFORE the write and swallowed the error.** A highlight
+  that never reached the server closed the sheet, confirmed in the hand, and
+  left nothing behind. The confirming buzz waits for the commit now, and a
+  failure says so and reverts the reader.
+- **The morning reminder had no off switch**, so the only way to stop it was to
+  turn off notifications for the whole app. It has a switch, and any time rather
+  than five presets.
+- **A lock screen control.** These banners carry a partner's reflection, the
+  words of a prayer, a dream, in front of whoever is looking at the phone. On
+  "Keep it private" the title and body become "Something is waiting for you";
+  the routing data is untouched so the tap still lands right. One control, not
+  one per category: a setting you reason about six times is one nobody sets.
+
+---
+
 ## 🔒 TRUNCATE was never guarded by RLS (2026-08-09, fixed on hosted)
 
 Found while writing a probe for the new verse search. Asserting "Scripture is
