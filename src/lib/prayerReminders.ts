@@ -139,6 +139,20 @@ export async function clearReminder(prayerId: string) {
   }
 }
 
+/** Silence every prayer reminder, but remember them.
+ *
+ *  For a pause, which is not a cancellation: the times somebody chose for their
+ *  prayers are theirs, and taking them away because the couple stopped reading
+ *  for a month would mean setting them all again afterwards. The scheduled
+ *  notifications go; the map stays, and syncReminders re-arms from it on the
+ *  way back. */
+export async function silenceAllReminders() {
+  const map = await readMap();
+  const ids = Object.keys(map);
+  if (ids.length === 0) return;
+  await Promise.all(ids.map((prayerId) => cancelWindow(prayerId)));
+}
+
 /** Drop every prayer reminder this phone holds.
  *
  *  For sign-out. These are LOCAL notifications, so they keep firing on a phone

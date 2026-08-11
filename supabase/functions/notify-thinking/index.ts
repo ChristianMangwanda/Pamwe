@@ -52,12 +52,15 @@ Deno.serve(async (req) => {
   if (!me?.couple_id) return json({ ok: false, reason: "no_couple" }, 200);
 
   const { data: couple, error: coupleErr } = await admin
-    .from("couples").select("partner_a_id, partner_b_id").eq("id", me.couple_id).single();
+    .from("couples").select("partner_a_id, partner_b_id, paused_at").eq("id", me.couple_id).single();
   if (coupleErr) {
     console.error("notify-thinking: couples lookup failed", coupleErr);
     return json({ ok: false, reason: "server" }, 500);
   }
   if (!couple) return json({ ok: false, reason: "no_couple" }, 200);
+
+  // Paused couples go quiet, including for a nudge somebody taps by hand.
+  if (couple.paused_at) return json({ ok: false, reason: "paused" }, 200);
 
   const partnerId = couple.partner_a_id === meId ? couple.partner_b_id : couple.partner_a_id;
   if (!partnerId) return json({ ok: false, reason: "no_partner" }, 200);

@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
 
   const { data: couple, error: coupleErr } = await supabase
     .from("couples")
-    .select("partner_a_id, partner_b_id")
+    .select("partner_a_id, partner_b_id, paused_at")
     .eq("id", couplePlan.couple_id)
     .single();
 
@@ -52,6 +52,13 @@ Deno.serve(async (req) => {
   if (!couple) {
     return new Response("No couple found", { status: 200 });
   }
+
+  // Paused couples go quiet. Reaching here while paused should be impossible
+  // (Today is replaced by the paused screen, so there is nothing to submit),
+  // which is exactly why it is worth refusing: the one path that can still get
+  // here is a stale client, and a stale client is the one that would break the
+  // promise.
+  if (couple.paused_at) return new Response("Couple is paused", { status: 200 });
 
   const partnerId =
     couple.partner_a_id === user_id

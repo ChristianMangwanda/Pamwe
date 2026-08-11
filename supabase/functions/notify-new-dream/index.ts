@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
   // swallowed error becomes an invisible 200.
   const { data: couple, error: coupleErr } = await supabase
     .from("couples")
-    .select("partner_a_id, partner_b_id")
+    .select("partner_a_id, partner_b_id, paused_at")
     .eq("id", couple_id)
     .single();
 
@@ -40,6 +40,11 @@ Deno.serve(async (req) => {
   if (!couple) {
     return new Response("No couple found", { status: 200 });
   }
+
+  // Paused couples go quiet. The paused screen promises "no pages and no
+  // reminders", and a promise the phone breaks the next time a partner writes
+  // is worse than never making it.
+  if (couple.paused_at) return new Response("Couple is paused", { status: 200 });
 
   const partnerId =
     couple.partner_a_id === author_id

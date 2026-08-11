@@ -6,6 +6,15 @@ import { shareAnniversary } from '../../modules/pamwe-widget';
 import { getActiveCouPlan } from '../lib/plans';
 import { getMyProfile } from '../lib/account';
 import { supabase } from '../lib/supabase';
+import {
+  cancelMorningNotification,
+  cancelWeeklyRecap,
+  cancelPrayerReview,
+  scheduleMorningFromPrefs,
+  scheduleRecapFromPrefs,
+  schedulePrayerReviewFromPrefs,
+} from '../lib/notifications';
+import { silenceAllReminders } from '../lib/prayerReminders';
 
 type CoupleContextType = {
   couple: any | null;
@@ -117,6 +126,37 @@ export function CoupleProvider({ children }: { children: React.ReactNode }) {
     if (loading) return;
     shareAnniversary(sinceISO);
   }, [loading, sinceISO]);
+
+  // A pause has to actually stop the phone talking, on BOTH phones.
+  //
+  // The screen says "no pages and no reminders", and until this existed that
+  // was simply untrue: the morning reminder, the Sunday recap and every prayer
+  // reminder are LOCAL notifications, already handed to iOS, so they keep
+  // firing no matter what the database says. The one who tapped Agree and the
+  // one who asked both have to go quiet, and only one of them ran the RPC, so
+  // this watches the couple's state rather than the action. Realtime carries
+  // paused_at to the other phone, which is what makes that work.
+  //
+  // Coming back re-derives from the saved preferences rather than restoring a
+  // snapshot: prefs are the source of truth for these, and someone who changed
+  // their reminder time mid-pause should get the time they chose.
+  const paused = !!couple?.paused_at;
+  const hadCouple = !!couple;
+  useEffect(() => {
+    if (loading || !hadCouple) return;
+    if (paused) {
+      cancelMorningNotification().catch(() => {});
+      cancelWeeklyRecap().catch(() => {});
+      cancelPrayerReview().catch(() => {});
+      // Silenced, not forgotten: the times somebody chose for their prayers are
+      // theirs, and a pause should not cost them setting every one again.
+      silenceAllReminders().catch(() => {});
+    } else {
+      scheduleMorningFromPrefs().catch(() => {});
+      scheduleRecapFromPrefs().catch(() => {});
+      schedulePrayerReviewFromPrefs().catch(() => {});
+    }
+  }, [loading, hadCouple, paused]);
 
   return (
     <CoupleContext.Provider value={{ couple, partner, me, couplePlan, loading, refresh }}>
