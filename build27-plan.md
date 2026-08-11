@@ -213,6 +213,39 @@ it. `delete_account()` itself does not change.
 
 ---
 
+## Status (2026-08-10)
+
+**Parts 0 to 4 are done in the working tree**, on branch `build27` (`49bed7a`,
+`b0194be`). Verified, not just written:
+
+- both migrations replay clean from scratch via `supabase db reset`
+- `rls_probe.sql` grew to **22 sections** and is green against that database,
+  including the two that matter most: the person who asked cannot answer
+  themselves, and leaving does not unlock a reflection the partner never earned
+- 44 Jest suites / 403 tests, `tsc --noEmit` clean
+- generated database types and expo router types both regenerated
+
+Two things found while building that the plan had wrong:
+
+1. **The Bloom needs no dark variant.** Composited against both grounds rather
+   than guessed at: the maroon holds and the roses carry the contrast.
+2. **The waiting screen could not be called `waiting`.** `(today)` already has
+   one, and both would flatten to `/waiting`. It is `code-sent` on disk, which
+   also says what actually happened.
+
+**Not done, and deliberately:** nothing is on hosted. Neither migration is
+applied there and `notify-couple-request` is written but not deployed. That is
+one ops pass, and it wants the same care the last one did: the function checks
+the shared webhook secret, so it must not be deployed before the trigger can
+send it.
+
+**Still open before this ships as a build:** the archive is reachable only from
+the left-the-pair screen, so a couple who are still together cannot browse it
+(correct, there is nothing to browse); on-device two-phone testing of pause,
+withdraw, leave and the once-only farewell note; and the b26 checklist re-run.
+
+---
+
 ## Verification
 
 - `supabase db reset` replays every migration clean, then `rls_probe.sql` green.
