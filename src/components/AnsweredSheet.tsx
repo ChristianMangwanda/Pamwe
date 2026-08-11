@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, StyleSheet, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { StyleSheet, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { Text } from './ui/Text';
 import { Button } from './ui/Button';
 import { BottomSheet } from './ui/BottomSheet';

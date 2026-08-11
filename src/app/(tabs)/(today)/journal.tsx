@@ -62,7 +62,7 @@ export default function JournalScreen() {
 
   const [mode, setMode] = useState<Mode>(myEntry?.entry_type === 'voice' ? 'voice' : 'text');
   const [text, setText] = useState(myEntry?.text_content ?? '');
-  const [saving, setSaving] = useState(false);
+  const [, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [uploadingVoice, setUploadingVoice] = useState(false);
   // A recording that was made but never landed. Read back on mount, so leaving

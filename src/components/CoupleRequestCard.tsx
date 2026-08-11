@@ -28,7 +28,8 @@ export function CoupleRequestCard({ request, partnerName, onAnswered }: CoupleRe
   const answer = async (accept: boolean) => {
     setBusy(true);
     try {
-      accept ? haptics.success() : haptics.tap();
+      if (accept) haptics.success();
+      else haptics.tap();
       await respondToRequest(request.id, accept);
       onAnswered();
     } catch (e: any) {

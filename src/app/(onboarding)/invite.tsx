@@ -3,7 +3,7 @@ import { View, StyleSheet, TouchableOpacity, Share, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
-import { Copy, ShareNetwork, Check, QrCode } from 'phosphor-react-native';
+import { Copy, Check, QrCode } from 'phosphor-react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { Text } from '../../components/ui/Text';
 import { BackLink } from '../../components/ui/BackLink';

@@ -46,15 +46,12 @@ jobs:
         run: npx jest --ci
 
   lint:
-    name: Lint (not a gate yet)
+    name: Lint
     runs-on: ubuntu-latest
-    # eslint was bootstrapped on 2026-08-08 over a codebase that had never had
-    # static analysis, and it reports ~188 pre-existing errors, mostly
-    # unescaped quotes in copy. The toolchain is also mismatched:
-    # eslint-config-expo 57 against Expo 56. Both are backlog items; until they
-    # are done a red lint job must not block a release, so this reports and
-    # moves on.
-    continue-on-error: true
+    # Gating since 2026-08-11: the bootstrap backlog (179 errors) was burned to
+    # zero that day, so a red lint job means a NEW problem. Errors fail the
+    # build; warnings (the 18 exhaustive-deps, kept advisory on purpose) do
+    # not. The rule decisions and their reasons live in eslint.config.js.
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

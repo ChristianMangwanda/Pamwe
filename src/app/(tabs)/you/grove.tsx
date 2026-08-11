@@ -15,10 +15,10 @@ import { GUTTER } from '../../../theme/tokens';
 import { useTheme } from '../../../providers/ThemeProvider';
 import { useCouple } from '../../../providers/CoupleProvider';
 import { finishedPlans, type FinishedPlan } from '../../../lib/planHistory';
-import { TREE_AWARDS, type TreeAward } from '../../../lib/treeAwards';
+import { type TreeAward } from '../../../lib/treeAwards';
 import {
   SCENE_W, SCENE_H, sceneTrees, footprints, walkFor,
-  groveSubtitle, streakFoot, word,
+  groveSubtitle, streakFoot,
 } from '../../../lib/grove';
 import { TREE_SOURCES, STEP_SOURCES } from '../../../lib/groveArt';
 import { haptics } from '../../../lib/haptics';

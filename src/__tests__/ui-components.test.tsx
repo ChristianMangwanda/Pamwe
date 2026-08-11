@@ -52,7 +52,7 @@ describe('Button', () => {
   });
 
   it('shows ActivityIndicator when loading', () => {
-    const { queryByText, UNSAFE_getByType } = render(
+    const { queryByText } = render(
       <Button title="Submit" loading onPress={() => {}} />
     );
     // Title should not be visible when loading

@@ -11,7 +11,6 @@ import { GUTTER } from '../../../theme/tokens';
 import { useTheme } from '../../../providers/ThemeProvider';
 import { useCouple } from '../../../providers/CoupleProvider';
 import { searchSharedLayer, searchScripture, SearchResults, VerseHit } from '../../../lib/search';
-import { parseReference } from '../../../lib/bible';
 import { haptics } from '../../../lib/haptics';
 
 // One search box over everything the couple has made together (notes,

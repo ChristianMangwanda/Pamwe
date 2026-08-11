@@ -11,7 +11,6 @@ import { GUTTER } from '../../../theme/tokens';
 import { useTheme } from '../../../providers/ThemeProvider';
 import { useAuth } from '../../../providers/AuthProvider';
 import { useCouple } from '../../../providers/CoupleProvider';
-import { profileInitial } from '../../../lib/couples';
 import { countMyTotalSubmitted, countCoupleReflections } from '../../../lib/entries';
 import { countPrayers } from '../../../lib/prayers';
 import { GroveCard } from '../../../components/GroveCard';

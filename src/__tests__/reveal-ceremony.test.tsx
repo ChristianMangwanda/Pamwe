@@ -27,7 +27,7 @@ jest.mock('react-native-reanimated', () => {
   };
 });
 
-const mockFired: Array<[number, string]> = [];
+const mockFired: [number, string][] = [];
 jest.mock('../lib/haptics', () => ({
   haptics: {
     tap: () => mockFired.push([Date.now(), 'tap']),
