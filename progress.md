@@ -4,6 +4,31 @@
 
 ---
 
+## 🚀 BUILD 28 (2026-08-11): the channel that never survives its own remount
+
+One app change since b27, shipped the same evening it was found: every realtime
+`.channel()` topic carries a per-mount `Date.now()` suffix (commit `3432d39`).
+`removeChannel` tears down asynchronously, so a screen remounting faster than
+its old channel died got the SAME still-subscribed instance back and threw
+"cannot add postgres_changes callbacks after subscribe()". Sentry caught it
+twice in two days, at two different sites (PAMWE-IOS-5 in CoupleProvider on
+b25, PAMWE-IOS-6 on Today's couple-requests channel on b27, the second landing
+on Christian's phone within an hour of the fix being written), which is why all
+nine call sites got the suffix rather than one. The quiet cost when it fired
+was a subscription that never re-armed until relaunch. Harmless to data, and
+the b26 error boundary caught it as designed. PAMWE-IOS-5 resolved;
+**PAMWE-IOS-6 stays open until b28 is on both phones**, then resolve it.
+
+Also closed 2026-08-11, between b27 and this build: the whole backlog (legacy
+push-token column dropped, ESLint gating at zero errors, iOS-only decision),
+plus two infrastructure finds: CI had been dead at `npm ci` since the ESLint
+bootstrap (npm's cross-platform optional-deps bug; lock entries generated in a
+Linux container) and the Supabase keepalive had NEVER run (its
+`SUPABASE_ANON_KEY` repo secret was never set; set now, green, and it matters
+more now that a paused couple generates no traffic). All three workflows green.
+
+---
+
 ## 🚀 BUILD 27 UPLOADED (2026-08-11)
 
 The August onboarding and offboarding handoff, plus the five findings from
