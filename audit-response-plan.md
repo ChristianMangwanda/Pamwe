@@ -195,16 +195,30 @@ away now.
 
 ---
 
-## Backlog (deferred, rough priority)
+## Backlog — closed out 2026-08-11 (Christian's dispositions)
 
-- Unpair / leave-partnership (decision 3; build when generalizing beyond one couple)
-- Drop `users.expo_push_token` + grant + function fallback once both phones ≥ b27
-- ESLint: resolve eslint-config-expo 57 vs Expo 56, burn the ~188-error backlog, flip CI lint to gating
-- Universal links (needs a domain + apple-app-site-association)
-- Generic offline outbox (Round 3 voice retention is deliberately not this)
-- Invite name-preview RPC (declined for now, decision 7)
-- Private export; biometric lock; editable generated plans; shared-decision model for plan/cadence changes; prayer Answered undo/reopen; notification preview controls; push receipt polling (getReceipts); e2e harness (Maestro); analytics
-- 7th Grove rung; Android end-to-end validation; caution-only catalogue sweep (pre-existing)
+- ~~Unpair / leave-partnership~~ SHIPPED in b27.
+- ~~Drop `users.expo_push_token` + grant + function fallback~~ DONE 2026-08-11:
+  both phones on b27, all nine notify functions redeployed to read push_tokens
+  alone FIRST, then `20260815000001_drop_legacy_push_token` applied local +
+  hosted (RPCs lose their sync calls, `sync_legacy_push_token` dropped, column
+  dropped). Probe section 15 now asserts the column and sync are GONE.
+- ~~ESLint backlog~~ DONE 2026-08-11: 179 errors to zero (real fixes for unused
+  vars and expressions; rule decisions with reasons in eslint.config.js, the
+  react-hooks v6 compiler preset off because the app does not run the React
+  Compiler), and the CI lint job is GATING (continue-on-error removed).
+- **Android: not happening.** iOS-only by decision (2026-08-11); revisit only
+  if real user numbers ask for it.
+- **7th Grove rung: parked deliberately.** The redwood is a four-year walk;
+  build the rung when a couple approaches it, not before.
+- **Universal links: parked on its precondition** (a domain +
+  apple-app-site-association). Nothing to do until a domain exists.
+- Still open, unprioritized: generic offline outbox; invite name-preview RPC
+  (declined, decision 7); private export; biometric lock; editable generated
+  plans; shared-decision model for plan/cadence changes; prayer Answered
+  undo/reopen; notification preview controls; push receipt polling
+  (getReceipts); e2e harness (Maestro); analytics; caution-only catalogue
+  sweep.
 
 ## Verification (whole roadmap)
 

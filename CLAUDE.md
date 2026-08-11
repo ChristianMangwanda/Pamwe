@@ -12,7 +12,7 @@ Mobile app for couples to read the Bible together using the M'Cheyne Reading Pla
 - Expo SDK 56, React Native 0.85, React 19, expo-router
 - Supabase (Postgres + Auth + Realtime + Storage + Edge Functions)
 - TypeScript, Jest + @testing-library/react-native
-- iOS-first; Android works but unvalidated end-to-end
+- **iOS-only** (Christian's call, 2026-08-11): Android compiles but is not a target; no Android validation work until real user demand says otherwise
 
 **Tracking docs:**
 - [`progress.md`](progress.md) — phase-by-phase status, where we are and what's next
@@ -29,8 +29,9 @@ Mobile app for couples to read the Bible together using the M'Cheyne Reading Pla
 npx expo start --dev-client            # Metro for the dev client
 npx jest                               # full test suite (mocks Supabase: proves nothing about RLS)
 npx tsc --noEmit                       # typecheck
-npm run lint                           # eslint (bootstrapped 2026-08-08; ~188 pre-existing errors, mostly
-                                       # unescaped quotes in copy — treat as a backlog, not a gate yet)
+npm run lint                           # eslint — 0 errors and GATING in CI since 2026-08-11 (backlog burned;
+                                       # rule decisions + reasons live in eslint.config.js; the 18
+                                       # exhaustive-deps warnings are advisory on purpose)
 
 # Does the DATABASE actually refuse what we think it refuses? Needs `supabase
 # start` + ./scripts/local_dev_seed.sh. Asks as a real signed-in outsider.
@@ -193,7 +194,7 @@ Auth gate in [src/app/index.tsx](src/app/index.tsx) sequences:
 
 | Table | Purpose |
 |---|---|
-| `users` | Profile mirror of `auth.users`. Created by `handle_new_user` trigger. Holds `couple_id`, push token, notification prefs, `accepted_terms_at`. **UPDATE is a column-level grant, not a policy** (2026-08-08): the client may write display_name, avatar_initial, expo_push_token, the six notification_* prefs and accepted_terms_at, and nothing else. `couple_id` was self-assignable, and `users_select_partner` / `share_plan()` / `plan_days_update_custom` all trusted it. A new client-written column needs adding to that grant. |
+| `users` | Profile mirror of `auth.users`. Created by `handle_new_user` trigger. Holds `couple_id`, push token, notification prefs, `accepted_terms_at`. **UPDATE is a column-level grant, not a policy** (2026-08-08): the client may write display_name, avatar_initial, the six notification_* prefs and accepted_terms_at, and nothing else (`expo_push_token` dropped 2026-08-11 with the legacy column; device tokens live in `push_tokens` via the `save_push_token`/`clear_push_token` RPCs). `couple_id` was self-assignable, and `users_select_partner` / `share_plan()` / `plan_days_update_custom` all trusted it. A new client-written column needs adding to that grant. |
 | `couples` | Invite code + partner_a/b + paired_at + streak state + timezone + `anniversary` (nullable DATE, written via the `set_couple_anniversary` RPC). **No INSERT or UPDATE reaches this table from the client at all** (2026-08-08): pairing goes through `create_couple` / `join_couple` / `regenerate_invite_code`, and `couples_select_own` is the only policy left. |
 | `plans` | Reading plans. Curated (M'Cheyne 365, John 21, Psalms 30, Cord 21) + couple-built custom plans (`is_curated=false`, `couple_id`, `created_by`). Browse metadata cols: `tagline/about/explore/gain/minutes_label/rhythm_label/book_label`. |
 | `plan_days` | Rows per plan-day: passage ref, text (**nullable** — custom plans store NULL and live-fetch), pull quote, reflection prompt. |
@@ -514,7 +515,7 @@ its corners, painted out on import.
 
 ### Auth: getSession(), not getUser(); every sign-in success must route through the gate
 
-All of src/lib reads identity via `supabase.auth.getSession()` (local) — `getUser()` is a network call that hangs after fresh sign-ins. Any new sign-in path must end with `router.replace('/')` (see `sign-in.test.tsx`). CoupleProvider stays live via realtime + explicit `refresh()` at onboarding transitions — screens must clear their loading state when `couple` is null. **App Review path:** emails ending `@review.pamwe.app` get a password field on the sign-in screen (production, for Apple reviewers; demo couple seeded by `scripts/seed_review_accounts.sql`) — don't remove it thinking it's dev-only.
+All of src/lib reads identity via `supabase.auth.getSession()` (local) — `getUser()` is a network call that hangs after fresh sign-ins. Any new sign-in path must end with `router.replace('/')` (see `sign-in.test.tsx`). CoupleProvider stays live via realtime + explicit `refresh()` at onboarding transitions — screens must clear their loading state when `couple` is null. **The App Review password path is GONE** (Christian's call, 2026-08-11): the `@review.pamwe.app` password field, `scripts/seed_review_accounts.sql` and the hosted Grace/Daniel accounts were all removed; review access is his own account. Don't reintroduce a password path for production; the only `signInWithPassword` left is the `__DEV__`-gated dev sign-in.
 
 ### Beta feedback loop
 

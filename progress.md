@@ -43,9 +43,12 @@ widget both at 27.
 
 **On hosted:** both migrations applied by name via MCP; five of eight notify
 functions deployed and each verified answering 401 without the secret;
-`get_advisors` shows no new warning class. `notify-partner`, `notify-nudge` and
-`notify-thinking` are pending, deliberately: they are reachable only from Today,
-which the paused screen replaces.
+`get_advisors` shows no new warning class. **2026-08-11: the last three are up
+too.** `notify-partner` v14, `notify-nudge` v10, `notify-thinking` v7, deployed
+after confirming `couples.paused_at` exists on hosted (migrations before
+functions), each verified answering 401 to an unauthorized caller.
+`notify-partner`'s 401 comes from the function itself (verify_jwt stays false),
+which also proves the secret env var is readable: a missing one is a 500.
 
 ⏳ **Nothing is tested on a real phone.** Pause and leaving are the first
 features here where the database changes state because TWO people agreed, and
@@ -53,10 +56,47 @@ no test suite can prove that. The two-phone pass is the whole remaining risk:
 ask on one, accept on the other, withdraw, leave, and check the farewell note
 appears exactly once.
 
-**Still open from b26:** the App Review password (deferred to launch by
-Christian, 2026-08-11), the spend alerts, and
-`20260808000007_resume_final_day_autocomplete` once both phones run b26+.
-`secret-match-check` is deleted.
+**Closed 2026-08-11:** the App Review path is REMOVED ENTIRELY, not rotated
+(Christian's call: he reviews with his own account). The `@review.pamwe.app`
+password branch in sign-in, `scripts/seed_review_accounts.sql` and the hosted
+Grace/Daniel couple (auth rows, couple, entries, prayers, verse marks) are all
+gone; the leaked password now points at nothing. The only `signInWithPassword`
+left is the `__DEV__`-gated dev door. Also today: App Store screenshots
+captured and **de-identified** (upload set `Screenshots/appstore/`, a fictional
+Caleb & Abby patched in with the app's own fonts by
+`scripts/deidentify_screenshots.py`; originals gitignored, real journal text
+never leaves the machine), OpenAI auto-recharge set (the spend-alert story for
+the default provider; Anthropic stays parked), `secret-match-check` deleted
+from the dashboard, and `20260808000007_resume_final_day_autocomplete` applied
+to hosted now that both phones run b26+ (67 migrations, hosted equals local;
+the backfill completed the plans that finished while the trigger was paused).
+
+**Still open from b26:** nothing. The two-phone pass moves to the final
+pre-launch checks, per Christian.
+
+**Backlog closed out (2026-08-11, later the same day):**
+
+- **The legacy push-token column is gone**, local and hosted. Order was
+  functions first: all nine notify functions redeployed reading `push_tokens`
+  alone (partner v15, nudge v11, thinking v8, new-prayer v13, new-dream v8,
+  new-note v8, verse-comment v8, new-response v8, couple-request v2), every one
+  verified answering 401 unauthorized after the deploy, THEN
+  `20260815000001_drop_legacy_push_token` (RPCs lose their sync calls,
+  `sync_legacy_push_token` dropped, `users.expo_push_token` dropped). Hosted
+  verified: column 0, function 0, migration recorded. `rls_probe.sql` section
+  15 rewritten to assert the legacy machinery is GONE; all 22 sections green
+  locally with the column dropped.
+- **ESLint backlog burned: 179 errors to 0, and lint now GATES CI.** Real
+  fixes for the unused vars, the ternary-as-statement, `Array<T>` types. The
+  react-hooks v6 compiler-preset rules are off with reasons written in
+  eslint.config.js (no React Compiler here; reanimated shared-value writes and
+  load-then-set effects are deliberate patterns). `react/no-unescaped-entities`
+  keeps only its typo-catching half. Tests keep the jest.mock hoisting idiom.
+  The 18 exhaustive-deps warnings stay advisory on purpose. tsc clean, 402
+  tests green.
+- **Android is out of scope by decision, not neglect**: iOS-only until real
+  user demand says otherwise. **The 7th Grove rung** waits for a couple to
+  near the redwood. **Universal links** wait for a domain to exist.
 
 ---
 
