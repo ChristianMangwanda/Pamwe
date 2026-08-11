@@ -233,11 +233,34 @@ Two things found while building that the plan had wrong:
    one, and both would flatten to `/waiting`. It is `code-sent` on disk, which
    also says what actually happened.
 
-**Not done, and deliberately:** nothing is on hosted. Neither migration is
-applied there and `notify-couple-request` is written but not deployed. That is
-one ops pass, and it wants the same care the last one did: the function checks
-the shared webhook secret, so it must not be deployed before the trigger can
-send it.
+### On hosted (2026-08-10)
+
+Both migrations are applied to `jcyhhxgomhopkoqesbkb` via MCP `apply_migration`,
+by name, after `get_project_url` confirmed the ref. Verified after: 6 new
+`couples` columns, 2 tables, 9 functions, 2 triggers, 6 policies, and **no
+couple's state changed** (0 paused, 0 sealed). `get_advisors` shows no new
+warning CLASS: the seven new SECURITY DEFINER functions joined the existing
+list, and `paused_days_between` / `refresh_streak` correctly do not appear,
+which is the revoke working.
+
+`notify-couple-request` is deployed at v1 with `verify_jwt = false`, and
+answers **401** to a caller with no secret and to one with the wrong secret. A
+missing env var would be a 500, so that also proves the dashboard secret is
+readable and that the `../_shared/` files resolved.
+
+**The seven modified notifiers are NOT redeployed, on purpose.** `notify-partner`,
+`notify-new-prayer`, `notify-new-dream`, `notify-new-note`,
+`notify-verse-comment`, `notify-nudge` and `notify-thinking` each gained
+`paused_at` in a select and an early return. Every one of them is **inert until
+build 27 is on a phone**, because nothing can create a pause before then, and
+the versions running now are unaffected by the new columns (adding a column
+does not break a select that does not name it).
+
+They belong in build 27's own deploy pass, which has to happen anyway. Doing
+them now would mean hand-transcribing seven live notification functions for no
+present benefit, and the ordering rule still holds when that pass comes:
+**migrations first, functions second**, or a function that selects `paused_at`
+against a database without it 500s every notification.
 
 **Still open before this ships as a build:** the archive is reachable only from
 the left-the-pair screen, so a couple who are still together cannot browse it
