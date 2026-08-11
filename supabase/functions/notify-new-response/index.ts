@@ -95,7 +95,7 @@ Deno.serve(async (req) => {
   const [{ data: recipient, error: recipientErr }, { data: author }] = await Promise.all([
     supabase
       .from("users")
-      .select("expo_push_token, notification_partner, notification_preview")
+      .select("notification_partner, notification_preview")
       .eq("id", recipientId)
       .single(),
     supabase
@@ -120,7 +120,7 @@ Deno.serve(async (req) => {
     : (body ?? "");
 
   // Every phone they are signed in on, not just the last one to register.
-  const deviceTokens = await tokensFor(supabase, recipientId, recipient?.expo_push_token);
+  const deviceTokens = await tokensFor(supabase, recipientId);
   if (deviceTokens.length === 0) {
     return new Response("No devices to notify", { status: 200 });
   }

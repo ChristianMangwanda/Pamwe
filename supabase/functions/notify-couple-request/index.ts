@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
 
   const { data: person, error: personErr } = await supabase
     .from("users")
-    .select("display_name, expo_push_token, notification_partner, notification_preview")
+    .select("display_name, notification_partner, notification_preview")
     .eq("id", recipient)
     .single();
 
@@ -111,7 +111,7 @@ Deno.serve(async (req) => {
     body = "Nothing has changed.";
   }
 
-  const deviceTokens = await tokensFor(supabase, recipient, person?.expo_push_token);
+  const deviceTokens = await tokensFor(supabase, recipient);
   if (deviceTokens.length === 0) {
     return new Response("No devices to notify", { status: 200 });
   }

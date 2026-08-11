@@ -645,11 +645,12 @@ end $$;
 rollback;
 
 -- ==================================================================
--- 15. push_tokens: a device each, and nobody else's (20260811000001)
+-- 15. push_tokens: a device each, and nobody else's (20260811000001;
+-- the legacy users.expo_push_token column dropped by 20260815000001)
 -- ==================================================================
 begin;
 do $$
-declare v_a uuid; v_b uuid; v_seen int; v_legacy text;
+declare v_a uuid; v_b uuid; v_seen int; v_owner uuid;
 begin
   select alice, bob into v_a, v_b from probe_ids;
 
@@ -664,13 +665,6 @@ begin
     raise exception 'FAIL: a second device replaced the first (% rows)', v_seen;
   end if;
 
-  -- The legacy column still names a live device, which is what the currently
-  -- deployed edge functions read.
-  select expo_push_token into v_legacy from public.users where id = v_a;
-  if v_legacy is null then
-    raise exception 'FAIL: the legacy push column was left empty';
-  end if;
-
   -- Signing out on one phone leaves the other registered. The old code nulled
   -- the account's single column, silencing every device at once.
   perform pg_temp.be(v_a);
@@ -680,22 +674,19 @@ begin
   if v_seen <> 1 then
     raise exception 'FAIL: signing out on one device left % rows', v_seen;
   end if;
-  select expo_push_token into v_legacy from public.users where id = v_a;
-  if v_legacy is distinct from 'ExponentPushToken[alice-ipad]' then
-    raise exception 'FAIL: the legacy column did not fall back to the remaining device (%)', v_legacy;
-  end if;
 
   -- Claiming a handset releases it from whoever held it before. Hosted had two
   -- real accounts pointing at one token, from a sign-out that never let go, so
   -- one person's partner notifications were reaching a phone someone else uses.
-  perform pg_temp.asowner();
-  update public.users set expo_push_token = 'ExponentPushToken[shared-phone]' where id = v_b;
+  perform pg_temp.be(v_b);
+  perform public.save_push_token('ExponentPushToken[shared-phone]', 'ios');
   perform pg_temp.be(v_a);
   perform public.save_push_token('ExponentPushToken[shared-phone]', 'ios');
   perform pg_temp.asowner();
-  select expo_push_token into v_legacy from public.users where id = v_b;
-  if v_legacy is not null then
-    raise exception 'FAIL: a handset stayed registered to its previous account (%)', v_legacy;
+  select user_id into v_owner from public.push_tokens
+   where token = 'ExponentPushToken[shared-phone]';
+  if v_owner is distinct from v_a then
+    raise exception 'FAIL: a handset stayed registered to its previous account';
   end if;
   perform pg_temp.be(v_a);
   perform public.clear_push_token('ExponentPushToken[shared-phone]');
@@ -720,14 +711,21 @@ begin
     raise exception 'FAIL: one partner removed the other''s device';
   end if;
 
-  -- The legacy sync is internal: a signed-in user must not be able to point
-  -- somebody else's push column wherever they like.
-  perform pg_temp.be(v_b);
-  begin
-    perform public.sync_legacy_push_token(v_a);
-    raise exception 'FAIL: sync_legacy_push_token is callable by a signed-in user';
-  exception when insufficient_privilege then null;
-  end;
+  -- The registry has ONE home now. The legacy column and its sync function are
+  -- really gone, so nothing is left for a client to write around push_tokens.
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'users'
+      and column_name = 'expo_push_token'
+  ) then
+    raise exception 'FAIL: users.expo_push_token still exists';
+  end if;
+  if exists (
+    select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.proname = 'sync_legacy_push_token'
+  ) then
+    raise exception 'FAIL: sync_legacy_push_token still exists';
+  end if;
 end $$;
 rollback;
 

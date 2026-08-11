@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
 
   const { data: people, error: peopleErr } = await supabase
     .from("users")
-    .select("id, display_name, expo_push_token, notification_note, notification_preview")
+    .select("id, display_name, notification_note, notification_preview")
     .in("id", [partnerId, authorId]);
 
   if (peopleErr) {
@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
   const ref = `${note.book} ${note.chapter}:${note.verse}`;
 
   // Every phone they are signed in on, not just the last one to register.
-  const deviceTokens = await tokensFor(supabase, partnerId, partner?.expo_push_token);
+  const deviceTokens = await tokensFor(supabase, partnerId);
   if (deviceTokens.length === 0) {
     return new Response("No devices to notify", { status: 200 });
   }

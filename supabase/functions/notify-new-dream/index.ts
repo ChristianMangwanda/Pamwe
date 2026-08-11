@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
 
   const { data: partner, error: partnerErr } = await supabase
     .from("users")
-    .select("expo_push_token, notification_dream, notification_preview")
+    .select("notification_dream, notification_preview")
     .eq("id", partnerId)
     .single();
 
@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
 
   // sendExpoPush logs rejected tickets and clears DeviceNotRegistered tokens.
   // Every phone they are signed in on, not just the last one to register.
-  const deviceTokens = await tokensFor(supabase, partnerId, partner?.expo_push_token);
+  const deviceTokens = await tokensFor(supabase, partnerId);
   if (deviceTokens.length === 0) {
     return new Response("No devices to notify", { status: 200 });
   }

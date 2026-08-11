@@ -90,7 +90,7 @@ Deno.serve(async (req) => {
   }
 
   const { data: partner, error: partnerErr } = await admin
-    .from("users").select("expo_push_token, notification_partner, notification_preview").eq("id", partnerId).single();
+    .from("users").select("notification_partner, notification_preview").eq("id", partnerId).single();
   if (partnerErr) {
     console.error("notify-thinking: partner lookup failed", partnerErr);
     return json({ ok: false, reason: "server" }, 500);
@@ -103,7 +103,7 @@ Deno.serve(async (req) => {
 
   const myName = (me.display_name ?? "Your partner").trim() || "Your partner";
   // Every phone they are signed in on, not just the last one to register.
-  const deviceTokens = await tokensFor(admin, partnerId, partner?.expo_push_token);
+  const deviceTokens = await tokensFor(admin, partnerId);
   if (deviceTokens.length === 0) {
     return json({ ok: true, delivered: false, reason: "no_token" }, 200);
   }

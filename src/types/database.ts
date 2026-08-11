@@ -897,7 +897,6 @@ export type Database = {
           created_at: string | null
           display_name: string
           email: string
-          expo_push_token: string | null
           id: string
           last_seen_activity_at: string | null
           notification_dream: boolean
@@ -916,7 +915,6 @@ export type Database = {
           created_at?: string | null
           display_name: string
           email: string
-          expo_push_token?: string | null
           id: string
           last_seen_activity_at?: string | null
           notification_dream?: boolean
@@ -935,7 +933,6 @@ export type Database = {
           created_at?: string | null
           display_name?: string
           email?: string
-          expo_push_token?: string | null
           id?: string
           last_seen_activity_at?: string | null
           notification_dream?: boolean
@@ -1410,7 +1407,6 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      sync_legacy_push_token: { Args: { p_user: string }; Returns: undefined }
       unread_activity_count: { Args: never; Returns: number }
       withdraw_couple_request: {
         Args: { p_id: string }
