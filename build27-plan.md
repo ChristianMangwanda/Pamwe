@@ -248,7 +248,24 @@ answers **401** to a caller with no secret and to one with the wrong secret. A
 missing env var would be a 500, so that also proves the dashboard secret is
 readable and that the `../_shared/` files resolved.
 
-**The seven modified notifiers are NOT redeployed, on purpose.** `notify-partner`,
+**Update, same day: five of the eight notifiers are deployed.** Ordered by
+whether they can actually break the pause promise, which is a sharper question
+than "did the file change":
+
+- Deployed: `notify-couple-request` (v1), `notify-new-dream` (v7),
+  `notify-new-prayer` (v12), `notify-new-note` (v7), `notify-verse-comment` (v7).
+  Every one verified answering 401 to a caller with no secret. These are the
+  ones that CAN fire while paused, because the Prayers and Bible tabs keep
+  working when Today does not.
+- Still pending: `notify-partner`, `notify-nudge`, `notify-thinking`. All three
+  are reachable only from Today, which the paused screen replaces, so their
+  guard is defensive rather than load-bearing. They ship with the next deploy.
+
+Note for anyone diffing hosted against the repo: the `_shared` copies bundled
+into these deploys have their comments stripped. The code is identical; only
+the prose is missing, because it went through MCP by hand.
+
+**The remaining three are NOT redeployed, on purpose.** `notify-partner`,
 `notify-new-prayer`, `notify-new-dream`, `notify-new-note`,
 `notify-verse-comment`, `notify-nudge` and `notify-thinking` each gained
 `paused_at` in a select and an early return. Every one of them is **inert until
