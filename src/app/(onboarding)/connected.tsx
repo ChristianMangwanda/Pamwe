@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import Animated from 'react-native-reanimated';
 import { Text } from '../../components/ui/Text';
 import { Button } from '../../components/ui/Button';
+import { Avatar } from '../../components/ui/Avatar';
 import { Floral } from '../../components/ui/Floral';
 import { popIn } from '../../lib/motion';
 import { haptics } from '../../lib/haptics';
@@ -66,21 +67,24 @@ export default function ConnectedScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
       <View style={styles.body}>
-        <Floral variant="corner" style={styles.floral} />
+        {/* Side by side and both named, rather than overlapped. The handoff
+            asks for two people standing together, not one badge partly hiding
+            another, and a name under each is what makes it a pair rather than
+            a decoration. */}
         <View style={styles.avatars}>
-          <Animated.View entering={popIn} style={[styles.avatar, { backgroundColor: colors.accent, zIndex: 1 }]}>
-            <Text style={[styles.avatarInitial, { color: colors.bg }]}>{myInitial}</Text>
+          <Animated.View entering={popIn}>
+            <Avatar initial={myInitial} name={me} dashed={false} />
           </Animated.View>
-          <Animated.View
-            entering={popIn.delay(140)}
-            style={[styles.avatar, styles.avatarBack, { backgroundColor: colors.accent2, borderColor: colors.bg }]}
-          >
-            <Text style={[styles.avatarInitial, { color: colors.bg }]}>{partnerInitial}</Text>
+          <Animated.View entering={popIn.delay(140)}>
+            <Avatar initial={partnerInitial} name={partner} />
           </Animated.View>
         </View>
 
-        <Text style={[styles.title, { color: colors.ink }]}>You're linked.</Text>
-        <Text italic color={colors.ink2} style={styles.line}>{me} & {partner}, walking together from today.</Text>
+        <Floral variant="divider" style={styles.divider} />
+
+        {/* Naming who arrived, not the state of the record. "You're linked" is
+            a fact about the database; "Ammy joined" is what happened. */}
+        <Text style={[styles.title, { color: colors.ink }]}>{partner} joined</Text>
 
         {askPush && (
           <View style={[styles.prime, { backgroundColor: colors.surface, borderColor: colors.lineAccent }]}>
@@ -104,7 +108,7 @@ export default function ConnectedScreen() {
             />
           </>
         ) : (
-          <Button title="Enter Pamwe" onPress={() => router.replace('/')} />
+          <Button title="Begin today's reading" onPress={() => router.replace('/')} />
         )}
       </SafeAreaView>
     </View>
@@ -114,19 +118,9 @@ export default function ConnectedScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   body: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 42 },
-  floral: { position: 'absolute', top: 90, right: -30, width: 130, height: 130, opacity: 0.6, transform: [{ scaleX: -1 }] },
-  avatars: { flexDirection: 'row', alignItems: 'center' },
-  avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarBack: { marginLeft: -16, borderWidth: 3 },
-  avatarInitial: { fontFamily: fonts.serif, fontSize: 26 },
-  title: { fontFamily: fonts.serifLight, fontSize: 34, lineHeight: 36, marginTop: 26, textAlign: 'center' },
-  line: { fontSize: 16, marginTop: 12, textAlign: 'center' },
+  avatars: { flexDirection: 'row', alignItems: 'flex-start', gap: 20 },
+  divider: { width: 140, height: 26, marginTop: 24, opacity: 0.8 },
+  title: { fontFamily: fonts.serifLight, fontSize: 34, lineHeight: 36, marginTop: 22, textAlign: 'center' },
   prime: { marginTop: 30, borderWidth: 1, borderRadius: 16, paddingHorizontal: 18, paddingVertical: 15 },
   primeText: { fontFamily: fonts.serif, fontSize: 14, lineHeight: 21.5, textAlign: 'center' },
   footer: { paddingHorizontal: GUTTER, paddingBottom: 12 },
