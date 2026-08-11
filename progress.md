@@ -1,6 +1,62 @@
 # Pamwe Build Progress Summary
 
-**Last Updated:** August 10, 2026
+**Last Updated:** August 11, 2026
+
+---
+
+## 🚀 BUILD 27 UPLOADED (2026-08-11)
+
+The August onboarding and offboarding handoff, plus the five findings from
+Notion, plus the ways out of a partnership that the app never had. Branch
+`build27`. Full plan and decisions: [`build27-plan.md`](build27-plan.md).
+
+**Signing out means it now.** The app's only auth check was `src/app/index.tsx`,
+which decides nothing unless you are standing on it, so once the session went
+the six tabs kept rendering: prayers listed, the Bible readable from a chapter
+cache that is authoritative by design. `(tabs)` and `(onboarding)` are fenced,
+and the phone forgets the account's caches, its scheduled reminders and the
+widget's day counter. The rule is default-delete: a cache invented next year
+leaves unless somebody deliberately keeps it.
+
+**Pausing takes two**, as the handoff drew it. Nothing stops until the other
+person agrees, and the database refuses to let the asker answer themselves. The
+streak had to learn about it: it is derived rather than stored, so "your streak
+stays where it is" could not be a saved number, and a pause is a stretch of
+calendar `compute_streak` subtracts.
+
+**Leaving keeps the words.** Every policy reaches rows through
+`current_user_couple_id()`, which is null the moment you leave, so a hundred and
+fifty days would have vanished exactly when they matter most. Membership in a
+sealed couple is a second read path, and **the locked reveal does not relax
+inside it**: a day only one of you wrote stays shut. Leaving is not a way to
+collect a reflection you never earned.
+
+**A bug of mine, caught before it shipped:** the paused screen promised "no
+pages and no reminders" and nothing cancelled anything. That is the exact fault
+Round 4 existed to close. Both halves fixed, and the notifiers that could break
+the promise are deployed.
+
+Verified: two migrations replay clean from scratch, `rls_probe.sql` now **22
+sections** green, 44 Jest suites / 403 tests, `tsc` clean, and inside the
+archive an 11MB bundle carrying the hosted ref once with no local URL, app and
+widget both at 27.
+
+**On hosted:** both migrations applied by name via MCP; five of eight notify
+functions deployed and each verified answering 401 without the secret;
+`get_advisors` shows no new warning class. `notify-partner`, `notify-nudge` and
+`notify-thinking` are pending, deliberately: they are reachable only from Today,
+which the paused screen replaces.
+
+⏳ **Nothing is tested on a real phone.** Pause and leaving are the first
+features here where the database changes state because TWO people agreed, and
+no test suite can prove that. The two-phone pass is the whole remaining risk:
+ask on one, accept on the other, withdraw, leave, and check the farewell note
+appears exactly once.
+
+**Still open from b26:** the App Review password (deferred to launch by
+Christian, 2026-08-11), the spend alerts, and
+`20260808000007_resume_final_day_autocomplete` once both phones run b26+.
+`secret-match-check` is deleted.
 
 ---
 
