@@ -111,7 +111,7 @@ export default function RevealScreen() {
     };
     load();
     const channel = supabase
-      .channel(`responses-${couplePlan.id}-${dayNumber}`)
+      .channel(`responses-${couplePlan.id}-${dayNumber}-${Date.now()}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'entry_responses', filter: `couple_plan_id=eq.${couplePlan.id}` }, load)
       .subscribe();
     return () => { supabase.removeChannel(channel); };

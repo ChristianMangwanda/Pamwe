@@ -91,10 +91,18 @@ export function CoupleProvider({ children }: { children: React.ReactNode }) {
 
   // Keep couple state live. Without this, pairing or enrolling in a plan
   // mid-session left every tab reading a stale null couple until relaunch.
+  //
+  // The Date.now() in the topic is load-bearing (PAMWE-IOS-5): removeChannel
+  // tears down asynchronously, and supabase.channel() with the topic of a
+  // channel that is still dying hands back that SAME already-subscribed
+  // instance, so attaching handlers to it throws and the subscription never
+  // re-arms. A per-mount suffix means a remount can never collide with its own
+  // teardown. Every .channel() call site in the app carries one for the same
+  // reason.
   useEffect(() => {
     if (!couple?.id) return;
     const channel = supabase
-      .channel(`couple-state-${couple.id}`)
+      .channel(`couple-state-${couple.id}-${Date.now()}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'couples', filter: `id=eq.${couple.id}` }, () => refresh())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'couple_plans', filter: `couple_id=eq.${couple.id}` }, () => refresh())
       .subscribe();

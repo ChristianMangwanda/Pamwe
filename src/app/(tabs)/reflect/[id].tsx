@@ -62,7 +62,7 @@ export default function ReflectionDetailScreen() {
     };
     loadResponses();
     const channel = supabase
-      .channel(`responses-${couplePlanId}-${dayNumber}`)
+      .channel(`responses-${couplePlanId}-${dayNumber}-${Date.now()}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'entry_responses', filter: `couple_plan_id=eq.${couplePlanId}` }, loadResponses)
       .subscribe();
     return () => { alive = false; supabase.removeChannel(channel); };

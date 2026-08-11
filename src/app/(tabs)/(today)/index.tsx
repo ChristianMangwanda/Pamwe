@@ -57,7 +57,7 @@ export default function HomeScreen() {
     if (!couple?.id) return;
     reloadRequests();
     const channel = supabase
-      .channel(`couple-requests:${couple.id}`)
+      .channel(`couple-requests:${couple.id}-${Date.now()}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'couple_requests', filter: `couple_id=eq.${couple.id}` },

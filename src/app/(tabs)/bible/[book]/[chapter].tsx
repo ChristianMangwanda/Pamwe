@@ -126,7 +126,7 @@ export default function ChapterReader() {
   useEffect(() => {
     if (!couple?.id) return;
     const channel = supabase
-      .channel(`verse-marks-${couple.id}`)
+      .channel(`verse-marks-${couple.id}-${Date.now()}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'verse_highlights', filter: `couple_id=eq.${couple.id}` }, () => reloadMarks())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'verse_notes', filter: `couple_id=eq.${couple.id}` }, () => reloadMarks())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'verse_note_responses', filter: `couple_id=eq.${couple.id}` }, () => reloadMarks())

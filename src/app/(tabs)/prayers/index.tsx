@@ -131,7 +131,7 @@ export default function PrayersScreen() {
       load();
       if (!couple?.id) return;
       const channel = supabase
-        .channel('prayers-list')
+        .channel(`prayers-list-${Date.now()}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'prayers', filter: `couple_id=eq.${couple.id}` }, () => load())
         .on('postgres_changes', { event: '*', schema: 'public', table: 'prayer_marks' }, () => load())
         .on('postgres_changes', { event: '*', schema: 'public', table: 'dreams', filter: `couple_id=eq.${couple.id}` }, () => load())

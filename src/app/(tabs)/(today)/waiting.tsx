@@ -35,7 +35,7 @@ export default function WaitingScreen() {
   useEffect(() => {
     if (!couplePlan) return;
     const channel = supabase
-      .channel('partner-entry')
+      .channel(`partner-entry-${Date.now()}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'entries', filter: `couple_plan_id=eq.${couplePlan.id}` }, () => { refresh(); })
       .subscribe();
     const fallback = setInterval(refresh, FALLBACK_POLL_MS);

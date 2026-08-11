@@ -21,7 +21,7 @@ export function useAwaitPairing(coupleId: string | null) {
       if (couple?.paired_at) router.replace('/(onboarding)/connected');
     };
     const channel = supabase
-      .channel(`pairing:${coupleId}`)
+      .channel(`pairing:${coupleId}-${Date.now()}`)
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'couples', filter: `id=eq.${coupleId}` },

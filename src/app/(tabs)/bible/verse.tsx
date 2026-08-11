@@ -67,7 +67,7 @@ export default function VerseDiscussion() {
   useEffect(() => {
     if (!couple?.id) return;
     const channel = supabase
-      .channel(`verse-discussion-${couple.id}-${book}-${chapter}-${verse}`)
+      .channel(`verse-discussion-${couple.id}-${book}-${chapter}-${verse}-${Date.now()}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'verse_note_responses', filter: `couple_id=eq.${couple.id}` }, () => load())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'verse_notes', filter: `couple_id=eq.${couple.id}` }, () => load())
       .subscribe();
