@@ -14,25 +14,15 @@ import { GUTTER } from '../../theme/tokens';
 import { useTheme } from '../../providers/ThemeProvider';
 import { supabase } from '../../lib/supabase';
 
-// App Review accounts (guideline 2.1: reviewers need full access without a
-// partner of their own). Emails on this domain sign in with a password instead
-// of a magic link; the accounts are pre-paired on the hosted project by
-// scripts/seed_review_accounts.sql. Invisible unless you type one.
-const REVIEWER_DOMAIN = '@review.pamwe.app';
-
 export default function SignInScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { mode } = useLocalSearchParams<{ mode?: string }>();
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  // Email is a door, not the front door (see the render). Reviewers reach the
-  // password field through it, so it must stay one tap away and never be
-  // conditional on anything but this.
+  // Email is a door, not the front door (see the render).
   const [showEmail, setShowEmail] = useState(false);
 
-  const isReviewer = email.trim().toLowerCase().endsWith(REVIEWER_DOMAIN);
   // Which door on welcome was used. The screen is the same either way, since
   // "Continue with Apple" creates an account or signs into one without being
   // told which, but telling a returning partner they are signing UP is wrong.
@@ -40,18 +30,6 @@ export default function SignInScreen() {
 
   const handleEmailSignIn = async () => {
     if (!email.trim()) return;
-    if (isReviewer) {
-      if (!password) return;
-      setLoading(true);
-      const { error } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password,
-      });
-      setLoading(false);
-      if (error) Alert.alert("Couldn't sign you in", error.message);
-      else router.replace('/');
-      return;
-    }
     setLoading(true);
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
@@ -158,19 +136,7 @@ export default function SignInScreen() {
                 autoCorrect={false}
                 autoFocus
               />
-              {isReviewer && (
-                <TextInput
-                  style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.line, color: colors.ink }]}
-                  placeholder="Password"
-                  placeholderTextColor={colors.muted}
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              )}
-              <Button title={isReviewer ? 'Sign in with password' : 'Continue with email'} onPress={handleEmailSignIn} loading={loading} />
+              <Button title="Continue with email" onPress={handleEmailSignIn} loading={loading} />
             </View>
           )}
 

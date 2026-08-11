@@ -150,40 +150,19 @@ describe('Email magic link', () => {
   });
 });
 
-describe('App Review password sign-in', () => {
+describe('App Review password path (removed 2026-08-11)', () => {
   const mockSignInWithPassword = supabase.auth.signInWithPassword as jest.Mock;
 
-  it('shows a password field for review-domain emails and routes through the gate', async () => {
-    mockSignInWithPassword.mockResolvedValue({ error: null });
+  it('treats a review-domain email like any other: magic link, no password field', async () => {
+    mockSignInWithOtp.mockResolvedValue({ error: null });
 
     const { getByText, getByPlaceholderText, queryByPlaceholderText } = render(<SignInScreen />);
-    // The reviewer path now runs through the email door. If this tap ever stops
-    // working, Apple cannot sign in at all, so the route is asserted from the
-    // first screen rather than from the form.
-    expect(queryByPlaceholderText('you@example.com')).toBeNull();
     fireEvent.press(getByText('Use an email address'));
+    fireEvent.changeText(getByPlaceholderText('you@example.com'), 'grace@review.pamwe.app');
     expect(queryByPlaceholderText('Password')).toBeNull();
+    fireEvent.press(getByText('Continue with email'));
 
-    fireEvent.changeText(getByPlaceholderText('you@example.com'), 'grace@review.pamwe.app');
-    fireEvent.changeText(getByPlaceholderText('Password'), 'review-password');
-    fireEvent.press(getByText('Sign in with password'));
-
-    await waitFor(() => expect(mockRouter.replace).toHaveBeenCalledWith('/'));
-    expect(mockSignInWithPassword).toHaveBeenCalledWith({
-      email: 'grace@review.pamwe.app',
-      password: 'review-password',
-    });
-    expect(mockSignInWithOtp).not.toHaveBeenCalled();
-  });
-
-  it('never sends a magic link for review-domain emails', async () => {
-    const { getByText, getByPlaceholderText } = render(<SignInScreen />);
-    fireEvent.press(getByText('Use an email address'));
-    fireEvent.changeText(getByPlaceholderText('you@example.com'), 'grace@review.pamwe.app');
-    fireEvent.press(getByText('Sign in with password'));
-
-    await waitFor(() => expect(getByText('Sign in with password')).toBeTruthy());
-    expect(mockSignInWithOtp).not.toHaveBeenCalled();
-    expect(mockRouter.push).not.toHaveBeenCalled();
+    await waitFor(() => expect(mockRouter.push).toHaveBeenCalledWith('/(auth)/magic-link'));
+    expect(mockSignInWithPassword).not.toHaveBeenCalled();
   });
 });
