@@ -1,6 +1,393 @@
 # Pamwe Build Progress Summary
 
-**Last Updated:** August 8, 2026
+**Last Updated:** August 11, 2026
+
+---
+
+## 🚀 BUILD 27 UPLOADED (2026-08-11)
+
+The August onboarding and offboarding handoff, plus the five findings from
+Notion, plus the ways out of a partnership that the app never had. Branch
+`build27`. Full plan and decisions: [`build27-plan.md`](build27-plan.md).
+
+**Signing out means it now.** The app's only auth check was `src/app/index.tsx`,
+which decides nothing unless you are standing on it, so once the session went
+the six tabs kept rendering: prayers listed, the Bible readable from a chapter
+cache that is authoritative by design. `(tabs)` and `(onboarding)` are fenced,
+and the phone forgets the account's caches, its scheduled reminders and the
+widget's day counter. The rule is default-delete: a cache invented next year
+leaves unless somebody deliberately keeps it.
+
+**Pausing takes two**, as the handoff drew it. Nothing stops until the other
+person agrees, and the database refuses to let the asker answer themselves. The
+streak had to learn about it: it is derived rather than stored, so "your streak
+stays where it is" could not be a saved number, and a pause is a stretch of
+calendar `compute_streak` subtracts.
+
+**Leaving keeps the words.** Every policy reaches rows through
+`current_user_couple_id()`, which is null the moment you leave, so a hundred and
+fifty days would have vanished exactly when they matter most. Membership in a
+sealed couple is a second read path, and **the locked reveal does not relax
+inside it**: a day only one of you wrote stays shut. Leaving is not a way to
+collect a reflection you never earned.
+
+**A bug of mine, caught before it shipped:** the paused screen promised "no
+pages and no reminders" and nothing cancelled anything. That is the exact fault
+Round 4 existed to close. Both halves fixed, and the notifiers that could break
+the promise are deployed.
+
+Verified: two migrations replay clean from scratch, `rls_probe.sql` now **22
+sections** green, 44 Jest suites / 403 tests, `tsc` clean, and inside the
+archive an 11MB bundle carrying the hosted ref once with no local URL, app and
+widget both at 27.
+
+**On hosted:** both migrations applied by name via MCP; five of eight notify
+functions deployed and each verified answering 401 without the secret;
+`get_advisors` shows no new warning class. `notify-partner`, `notify-nudge` and
+`notify-thinking` are pending, deliberately: they are reachable only from Today,
+which the paused screen replaces.
+
+⏳ **Nothing is tested on a real phone.** Pause and leaving are the first
+features here where the database changes state because TWO people agreed, and
+no test suite can prove that. The two-phone pass is the whole remaining risk:
+ask on one, accept on the other, withdraw, leave, and check the farewell note
+appears exactly once.
+
+**Still open from b26:** the App Review password (deferred to launch by
+Christian, 2026-08-11), the spend alerts, and
+`20260808000007_resume_final_day_autocomplete` once both phones run b26+.
+`secret-match-check` is deleted.
+
+---
+
+## 🚀 BUILD 26 UPLOADED (2026-08-10)
+
+Four audit rounds in one binary, plus the ask-pamwe client half that had been
+sitting in the tree since the outage. 14 commits since b25, 54 files, ~4,400
+lines. Archived from `security-round` at `7a73d3d`.
+
+What the couple will notice: a reveal neither phone watched comes back and is
+remembered on the account rather than on one handset; notifications reach every
+device you sign into; a quiet bell on Today holds what your partner did while
+you were away; pairing by link or QR; Scripture search; ending a plan early
+without the app claiming you finished it; a lock-screen privacy switch; and an
+Ask Pamwe that says it is unavailable when it is, rather than resting.
+
+Verified before the archive, in the order that catches the most for the least
+time spent:
+
+- `tsc --noEmit` clean, 42 Jest suites / 377 tests
+- `restore_ios_patches.rb --check`: every hand-made patch present, all four
+  `CURRENT_PROJECT_VERSION` spots at 26
+- **`export:embed` grep before the archive, not after.** One hosted project ref
+  in the bundle, zero occurrences of the LAN URL. Two minutes to rule out the
+  failure that has burned a build number before.
+- hosted migrations match local, the single local-only file being
+  `resume_final_day_autocomplete`, held back on purpose
+- all eleven edge functions live at the expected versions, `ask-pamwe` at v17,
+  so the server half of the 503 classification was already there to meet the
+  client half shipping here
+- `get_advisors`: no new warning class. `mark_reveal_seen`, `save_push_token`
+  and `clear_push_token` joined the existing SECURITY DEFINER list exactly as
+  the roadmap predicted; `switch_plan`, `activity_feed` and `search_verses` are
+  INVOKER and do not appear.
+
+Verified inside the archive: 11MB `main.jsbundle` carrying the hosted ref once
+and no local URL, app and widget appex both `CFBundleVersion` 26, all three
+purpose strings, `PrivacyInfo.xcprivacy` present.
+
+Upload warned that eight prebuilt frameworks shipped without dSYMs (React,
+hermesvm, ExpoImage, the four SDWebImage coders, ReactNativeDependencies).
+Pre-existing and not ours: those are prebuilt XCFrameworks. It costs Apple-side
+symbolication for native frames in those libraries only; Sentry still gets the
+JavaScript, which is where our crashes live.
+
+**Still on Christian's hands, in priority order:**
+
+1. **Rotate the App Review password.** Oldest open item from the security round.
+   `grace@review.pamwe.app` still carries the password that sits in public git
+   history, and there is now a newer TestFlight build up. New value into App
+   Store Connect review notes FIRST, then the `execute_sql` block in
+   [`security-round-plan.md`](security-round-plan.md) step 6.
+2. **Apply `20260808000007_resume_final_day_autocomplete.sql`** once both phones
+   are actually running 26.
+3. **Delete `secret-match-check`** from the dashboard. Still ACTIVE at v3 as an
+   inert 410 stub; the MCP toolset has no delete verb.
+4. **Set the spend alerts** from [`store-package.md`](store-package.md) section
+   7. Two dual outages happened because nothing was watching the balance.
+
+⏳ **Still unproven, and now testable on two phones:** a real banner from a real
+trigger. The deploy verified only the refusal half (401 without the secret).
+
+---
+
+## ✅ ask-pamwe v17 DEPLOYED (2026-08-09)
+
+Every mode goes through one `askJson` chain now: OpenAI first, Anthropic behind
+it, next provider tried ONLY on an account failure (dead key, no credit,
+exhausted quota). A timeout or a bare rate limit does not fail over, because
+those clear on their own and spending a second provider's tokens turns one blip
+into two bills.
+
+**Anthropic is parked indefinitely.** With only OpenAI funded the chain simply
+lands there every time, and the by-book builder, which was Anthropic-only and
+therefore dark, works again. Either key alone runs the whole feature.
+
+Also live in v17: the 503 `unavailable: true` classification from `ff86f4b`
+(hosted was still on v16, which predates it) and the pinned supabase-js.
+
+✅ **All eleven edge functions deployed (2026-08-09).** The webhook secrets were
+verified equal server-side first, by a throwaway function that compared them
+inside the database and returned one bit. Worth recording why: comparing the
+Vault against a dashboard SCREENSHOT said "mismatch" twice, and the screenshot
+was simply stale. A prefix from an image is not evidence.
+
+Deployed: `ask-pamwe` v17, `notify-partner` v13, `notify-new-prayer` v11,
+`notify-new-dream` v6, `notify-new-note` v6, `notify-verse-comment` v6,
+`notify-new-response` v7, `notify-nudge` v9, `notify-thinking` v6,
+`delete-account` v12.
+
+Verified after: all six webhook targets answer **401** to a caller with no
+secret (a missing env var would be 500, so this also proves the secret is
+readable by the functions), and `verify_jwt` is false on exactly those six and
+true on `ask-pamwe`, `notify-nudge`, `notify-thinking`, `delete-account`.
+
+Left to do by hand: delete the retired `secret-match-check` function from the
+dashboard. It is an inert 410 stub with `verify_jwt` back on, kept only because
+the MCP toolset has no delete verb.
+
+⏳ **Still unproven: a real banner on a real phone.** Nothing has triggered a
+live notification since the deploy, so the authorized path (trigger sends the
+header, function accepts it) is verified only by its refusal half.
+
+---
+
+## ⭐ AUDIT RESPONSE ROUND 4 (2026-08-09): stop confirming things that did not happen
+
+Committed (`30ba739`), migration applied to hosted. The places where the app
+said one thing and did another.
+
+- **The answered-prayer note did not exist on Android.** `Alert.prompt` is iOS
+  only, so the button was there, the confirm appeared, and the note was silently
+  dropped. The answered timeline, the payoff of the whole prayer feature, could
+  not be written to. One sheet now, same question on both platforms.
+- **Answered was a one-way door**, on a control that sits on a swipe card. Every
+  answered prayer offers "Still carrying this", which reopens it and clears the
+  note rather than leaving it on an open prayer.
+- **Highlighting buzzed BEFORE the write and swallowed the error.** A highlight
+  that never reached the server closed the sheet, confirmed in the hand, and
+  left nothing behind. The confirming buzz waits for the commit now, and a
+  failure says so and reverts the reader.
+- **The morning reminder had no off switch**, so the only way to stop it was to
+  turn off notifications for the whole app. It has a switch, and any time rather
+  than five presets.
+- **A lock screen control.** These banners carry a partner's reflection, the
+  words of a prayer, a dream, in front of whoever is looking at the phone. On
+  "Keep it private" the title and body become "Something is waiting for you";
+  the routing data is untouched so the tap still lands right. One control, not
+  one per category: a setting you reason about six times is one nobody sets.
+
+---
+
+## 🔒 TRUNCATE was never guarded by RLS (2026-08-09, fixed on hosted)
+
+Found while writing a probe for the new verse search. Asserting "Scripture is
+read-only" means trying to write it, and the UPDATE was correctly refused, but
+the grant list read `DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE,
+UPDATE` for `anon` and `authenticated`, on **all 22 tables**, locally and on
+hosted.
+
+DELETE and UPDATE are row operations, so RLS governs them. **TRUNCATE is not.**
+Postgres checks the table privilege and stops, so `truncate public.entries` as
+`authenticated` empties every reflection every couple has written, policies and
+all. Verified locally: 31,103 verses to zero in one transaction, rolled back.
+
+Reach today is low and worth stating plainly: PostgREST has no TRUNCATE verb, so
+the API cannot ask for it. What it closes is the gap between what the policies
+say and what the database enforces. These three privileges come from Supabase's
+own bootstrap `grant all`, not from `20260708000004`, so they land on any new
+project and on every new table unless the defaults change too. Both are done.
+
+Worth recording: the first draft of the fix ended with a tidying
+`grant select, insert, update, delete on all tables`, and the probe caught it on
+the very next run. A blanket grant undoes every narrowing before it, and that
+line had handed back whole-table UPDATE on `users` and `entries` and the writes
+on `couples` and `push_tokens`. The migration only takes away now.
+
+---
+
+## ⭐ AUDIT RESPONSE ROUND 3 (2026-08-09): follow the phone, find the verse, keep the recording
+
+Committed (`6a62fbf`, `ef7b35a`), both migrations applied to hosted.
+
+- **Auto appearance.** The system scheme was a seed read once at mount, so a
+  phone going dark at sunset stayed light until relaunch, and there was no way
+  to ask for that. The provider now follows the OS while Auto is chosen, and
+  hands the scheme back rather than pinning one.
+- **Scripture search.** A stored tsvector and GIN index over all 31,103 verses,
+  with a `search_verses` function that ranks them (PostgREST cannot order by a
+  computed rank). Every word must appear, so the top hit is the verse being
+  reached for; a phrase remembered from another translation can be genuinely
+  absent, and the empty state says so rather than reading as broken.
+- **Pairing by link and QR.** `pamwe://join?invite=` plus a code the join screen
+  fills in, surviving the case where the tap arrives before there is an account.
+  The code stays spelled out in the message, because a custom-scheme link does
+  nothing on a phone without the app. **No name preview**, deliberately: that
+  lookup is the enumeration oracle the security round closed.
+- **A failed voice send keeps the recording.** "Your recording is still here"
+  was only true while the journal screen stayed mounted.
+- **Accessibility.** Button announces busy and disabled; BottomSheet is a modal
+  to VoiceOver as well as to the eye, with an escape gesture.
+
+---
+
+## ⭐ AUDIT RESPONSE ROUND 2 (2026-08-09): every device, the right moment, and a record
+
+Committed (`b6bb3a8`, `a6dd6fb`) and both migrations applied to hosted. Ships
+with the next build alongside Round 1.
+
+- **A push token was a column on the account, so a person had one phone.** A
+  second device overwrote the first and the first went quiet; signing out on
+  either silenced both. Tokens are rows now (`push_tokens`), written only
+  through `save_push_token` / `clear_push_token`. `users.expo_push_token` stays
+  and is kept in step by the database, because it is what the currently
+  deployed edge functions read, and it is what makes the sign-out fix work
+  before they are redeployed.
+- **The permission prompt fired at sign-in**, before a couple had paired or
+  seen a reflection. iOS asks once, so a no there is permanent. Launch now
+  registers only a device that already said yes; the ask lives on the connected
+  screen, with a second door in Settings.
+- **An Activity list**, reached from a quiet bell on Today that carries a dot
+  and never a number. Derived at read time by one function over the five tables
+  that already hold the truth, so it cannot drift. Own actions filtered out.
+- The eight notify-* functions fan out over every device **in the tree**, ready
+  for the deploy still waiting on the webhook-secret check.
+- `@supabase/supabase-js` was floating on `@2` in ten of eleven edge imports.
+  Pinned.
+
+**Found on hosted while applying this: two real accounts held the same push
+token.** One phone had been signed into both and the sign-out never released
+it, so one person's partner notifications were arriving on a device someone
+else now uses. `save_push_token` now releases a handset from every other
+account when it is claimed, so the next launch on that phone repairs it with no
+one doing anything.
+
+---
+
+## ⭐ AUDIT RESPONSE ROUND 1 (2026-08-09): the ritual stops losing moments
+
+A second external audit (codex) reviewed the whole app. Every claim was checked
+against the code: the correctness findings are real, several suggestions
+contradict decisions already made on purpose and were rejected with reasons, and
+the operational blockers it named were the ones already in this file. Roadmap and
+the full triage: [`audit-response-plan.md`](audit-response-plan.md).
+
+**Round 1 is committed (`a1ad996`, pushed) and its two migrations are applied to
+hosted. It ships as build 26.** Six fixes:
+
+1. **A reveal one partner never watched was quietly lost.** The day advances on
+   either partner's Amen, which stays, but "seen" was a flag in one phone's
+   AsyncStorage. `entries.reveal_seen_at` now, written only by
+   `mark_reveal_seen()`, with Today offering the oldest unwatched reveal back.
+   Existing days backfilled except the one a couple is standing on.
+2. **Plan switching is one transaction** (`switch_plan`). It was an UPDATE then a
+   separate INSERT, and a failure between them left a couple with no active plan
+   and no way back, with the half-read plan vanishing from every list.
+3. **Today stops dressing failures as empty states.** A failed fetch rendered the
+   brand-new-couple copy; the hook now distinguishes network from missing-day and
+   keeps the last good content.
+4. **"End this plan"** replaces an early "Mark plan complete" that played the full
+   ceremony and reported the plan's whole length as days read. Quiet now, no tree,
+   and the plan stays in history reading "Read 3 of 21 days".
+5. **Amen has an in-flight guard and a visible failure.** It was Sentry-only.
+6. **One source for your own name**, plus a way to change it, which never existed.
+
+Also: CI runs jest and tsc on every push (lint reports, does not gate yet),
+generated database types are wired in, `rls_probe.sql` grew to 14 sections
+covering the new objects and the gaps it already had, and `local_dev_seed.sh` no
+longer seeds dev users into whichever Supabase container Docker listed first.
+
+---
+
+## 🟡 Ask Pamwe: OpenAI topped up, Anthropic PARKED (Christian, 2026-08-09: tokens are expensive)
+
+Christian hit "Build the plan" on "Dealing with insecurities" and got **"Pamwe is
+resting for a moment. Try again in a bit."** The screen is fine. The backend is
+not: **both API accounts have a zero credit balance**, so every mode of Ask Pamwe
+fails.
+
+- **OpenAI** (`build`, the Plans search): `429 insufficient_quota`,
+  `credit_balance_exhausted`. The key authenticates and `gpt-5.6-luna` is still
+  listed on the account, so this is billing, not a key or a model change.
+- **Anthropic** (`plans`, the by-book builder): `400 invalid_request_error`,
+  "Your credit balance is too low to access the Anthropic API."
+
+Confirmed in the hosted edge logs: `POST | 502 | ask-pamwe`, 2,938ms, version 14.
+`luna()` throws on the non-2xx intake call, the build handler catches it, and
+returns 502. Everything else in that handler returns 200 with a specific line, so
+**a 502 from ask-pamwe means an exception, and an exception here means the model
+call.**
+
+**Half of it is fixed in the working tree** (not deployed, not built). The server
+now classifies the thrown model error and answers **503 + `unavailable: true`**
+when the provider refused the ACCOUNT rather than the request, keeping the 502
+"resting" for genuine weather. The client reads the server's sentence back off
+`FunctionsHttpError.context`, which it never did before: `functions.invoke()`
+reports every non-2xx as an error with `data` null, so the function's own words
+were always thrown away. Four tests in `build-plan-errors.test.ts`; 30 suites /
+284 Jest green, tsc clean. **Ships when ask-pamwe is redeployed and build 26 goes
+up.** Until then the phone still says "resting".
+
+Deliberately unchanged: `askPamwe()` (the by-book builder) still falls back to
+stock recommendations on any failure. That is a documented product decision, the
+builder always offers something, and reversing it is Christian's call rather than
+a side effect of this fix.
+
+**The rest of the defect is that this is invisible.** "Resting for a moment. Try again in
+a bit." describes something transient and self-healing. This is neither: it stays
+broken until someone adds credits. **This is the second time it has happened** (b21:
+"Hosted ask-pamwe ran v8 against an Anthropic account with no credits, so every
+plan-generation request died", found only because the round happened to touch it).
+Same failure, other provider, same friendly copy hiding it. Two things worth doing
+beyond topping up:
+
+1. Distinguish "the model is unreachable" from "try again", so a dead account
+   reads as broken rather than busy.
+2. The spend alerts in [store-package.md](store-package.md) section 7 were never
+   set. An alert at 50% would have caught both of these before a couple did.
+
+Nothing else in the app depends on either provider. The catalogue is data, plans
+already built still open, and every other tab is unaffected.
+
+---
+
+## ⭐ B25 / SECURITY ROUND (2026-08-08): database done, binary up, two things left
+
+An external review raised 13 findings; all 13 verified real, two worse than
+reported. **Seven of the eight migrations are applied to hosted and build 25 is
+uploaded to TestFlight.**
+
+Done on hosted: the pairing RPCs, the users column grants, the entries scope and
+partner-filtered streak, the response foreign keys, the webhook-secret plumbing,
+the delete_account RPC, and `users.accepted_terms_at`. Verified after applying:
+`notify_config()` still locked away from the API roles, the three pairing RPCs
+callable by `authenticated`, and every recent webhook delivery still 200.
+
+**Still outstanding, in priority order:**
+
+1. **Rotate the App Review password.** Not done. `grace@review.pamwe.app` still
+   carries the password that sits in the public repo, and had 8 live sessions as
+   of tonight. Put the new one in App Store Connect review notes first, since a
+   TestFlight build is up.
+2. **Deploy the seven edge functions.** The Vault now has
+   `notify_webhook_secret`, so the triggers are already sending the header and
+   the currently deployed (old) functions ignore it. Before deploying the new
+   ones, **confirm the dashboard secret `NOTIFY_WEBHOOK_SECRET` matches the Vault
+   value** or every notification starts returning 401.
+3. **`20260808000007_resume_final_day_autocomplete.sql`**, once both phones are
+   on build 24 or later.
+
+Runbook: [`security-round-plan.md`](security-round-plan.md).
 
 ---
 

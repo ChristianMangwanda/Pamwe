@@ -31,6 +31,11 @@ export function Button({ variant = 'primary', title, loading, style, disabled, .
       activeOpacity={0.85}
       accessibilityRole="button"
       accessibilityLabel={title}
+      // While loading, the label still reads the idle title and the content is
+      // a spinner, so without this VoiceOver announced a tappable button that
+      // was neither tappable nor idle. Spread stays below so a caller can still
+      // override, as the recorder's send button does.
+      accessibilityState={{ disabled: !!(disabled || loading), busy: !!loading }}
       {...props}
     >
       {loading ? (

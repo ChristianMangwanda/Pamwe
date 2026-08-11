@@ -14,6 +14,7 @@ import { Text } from './ui/Text';
 import { Button } from './ui/Button';
 import { useTheme } from '../providers/ThemeProvider';
 import { hasEnded, setPlaybackAudioMode, setRecordingAudioMode } from '../lib/audioSession';
+import { deleteLocalRecording } from '../lib/entries';
 
 const DEFAULT_MAX_SECONDS = 300;
 
@@ -159,6 +160,15 @@ export function VoiceRecorder({
   };
 
   const handleDiscard = () => {
+    // Clearing the state only forgot where the file was. A discarded take and
+    // every re-record left the audio in the cache directory, which is the one
+    // place a reflection can sit on the phone after you decided not to share it.
+    //
+    // Only this path deletes. On Send the file is handed to the caller, which
+    // uploads it and then transcribes it on device, so deleting on unmount would
+    // race work that deliberately outlives this screen: journal.tsx removes it
+    // when the recognizer is done with it.
+    deleteLocalRecording(recordedUri);
     setRecordedUri(null);
     setRecordedDuration(0);
     meterHistoryRef.current = Array(WAVEFORM_BARS).fill(0.05);

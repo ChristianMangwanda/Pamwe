@@ -3,6 +3,13 @@
 
 export type ThemeMode = 'light' | 'dark';
 
+/** What the user CHOSE, which is not the same as what is on screen.
+ *
+ *  'system' resolves to whichever mode the phone is in, and keeps following it.
+ *  Everything that paints reads ThemeMode; only the You tab's toggle and the
+ *  stored preference deal in this. */
+export type ThemePreference = ThemeMode | 'system';
+
 export interface ThemeColors {
   bg: string;
   surface: string;

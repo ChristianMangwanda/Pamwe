@@ -1,16 +1,27 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.112.2";
+import { sendExpoPush } from "../_shared/push.ts";
 
-// Generate a fresh invite code (same alphabet as src/lib/couples.ts — no ambiguous
-// O/0/I/1) so a surviving partner lands on a usable waiting screen they can reshare.
-function generateInviteCode(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let code = "";
-  for (let i = 0; i < 6; i++) {
-    code += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return code;
-}
-
+// Demote, don't delete: the survivor keeps everything. See
+// 20260808000006_delete_account_rpc.sql for the routine itself.
+//
+// This used to run as eighteen separate statements from here, each committing on
+// its own, so a failure halfway left content permanently gone AND the account
+// alive, behind a 500 that claimed nothing had happened. The database work is now
+// one transaction in delete_account(); what is left here is the two things that
+// cannot be inside it, in the order that makes each failure survivable:
+//
+//   1. storage objects, which are not transactional, so they go FIRST and the
+//      result is CHECKED. remove() resolves { data, error } and does not throw,
+//      so the old try/catch never saw a storage RLS refusal or a partial delete:
+//      the recordings stayed while the entries rows that locate them were
+//      deleted, leaving audio nobody could ever find or remove again. Failing
+//      here costs nothing, because the account is still whole and retryable.
+//   2. the auth.users row, which belongs to GoTrue and is deleted through the
+//      Admin API afterwards, when nothing references it.
+//
+// The partner push now goes LAST, after the account is actually gone. It used to
+// fire before the auth delete, so a failure at the final step told someone their
+// partner had left when they had not.
 Deno.serve(async (req) => {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) {
@@ -33,145 +44,67 @@ Deno.serve(async (req) => {
   const admin = createClient(url, serviceKey);
   const userId = user.id;
 
-  // 1. Resolve couple + partner BEFORE removing anything.
-  const { data: profile } = await admin
-    .from("users").select("couple_id").eq("id", userId).single();
-  const coupleId = profile?.couple_id ?? null;
-
-  let couple: any = null;
-  let partnerId: string | null = null;
-  if (coupleId) {
-    const { data: c } = await admin.from("couples").select("*").eq("id", coupleId).single();
-    couple = c;
-    if (c) partnerId = c.partner_a_id === userId ? c.partner_b_id : c.partner_a_id;
-  }
-
-  // 2. Delete the departing user's voice recordings from storage BEFORE the
-  //    rows that locate them are removed (privacy promise: deletion removes
-  //    recordings; debug tour finding #10).
-  const { data: voiceEntries } = await admin
+  // 1. Voice recordings, before the rows that locate them are removed.
+  const { data: voiceEntries, error: voiceErr } = await admin
     .from("entries")
     .select("couple_plan_id, day_number")
     .eq("user_id", userId)
     .eq("entry_type", "voice");
+
+  if (voiceErr) {
+    console.error("delete-account: voice entry lookup failed", voiceErr);
+    return new Response(JSON.stringify({ error: voiceErr.message }), { status: 500 });
+  }
+
   const audioPaths = (voiceEntries ?? []).map(
     (e) => `${e.couple_plan_id}/${e.day_number}/${userId}.m4a`
   );
   if (audioPaths.length) {
-    try {
-      await admin.storage.from("voice-entries").remove(audioPaths);
-    } catch {
-      // best-effort; row deletion proceeds regardless
+    const { error: rmErr } = await admin.storage.from("voice-entries").remove(audioPaths);
+    if (rmErr) {
+      // Stop while the entries rows still point at these objects, so a retry can
+      // find them. Deleting the rows first would strand the audio for good, which
+      // is the opposite of what deleting an account promises.
+      console.error("delete-account: voice recording removal failed", rmErr);
+      return new Response(
+        JSON.stringify({ error: `voice recordings: ${rmErr.message}` }),
+        { status: 500, headers: { "Content-Type": "application/json" } },
+      );
     }
   }
 
-  // 3. Delete the departing user's OWN content. None of these cascade from
-  //    auth.users, so they must be removed by hand before the auth-row delete.
-  //    The verse marks were missing until 2026-08-02, and because their FKs
-  //    were NO ACTION, one highlighted verse was enough to make the auth-row
-  //    delete below fail and the whole request 500. Migration
-  //    20260802000006 made those two keys CASCADE as a backstop; they are
-  //    deleted here too so the privacy promise reads off this routine.
-  //
-  //    Every write in steps 3 and 4 is load-bearing: a row left behind a
-  //    NO ACTION key makes the final auth-row delete fail with an opaque FK
-  //    error. Discarding these results is what hid the never-paired 500, so
-  //    the first failure stops the routine and names its step, while the
-  //    account is still intact and the user can retry.
-  const must = async (
-    step: string,
-    op: PromiseLike<{ error: { message: string } | null }>,
-  ) => {
-    const { error } = await op;
-    if (error) throw new Error(`${step}: ${error.message}`);
-  };
-
-  try {
-    await must("prayer_marks", admin.from("prayer_marks").delete().eq("user_id", userId));
-    await must("entries", admin.from("entries").delete().eq("user_id", userId));
-    await must("prayers", admin.from("prayers").delete().eq("author_id", userId));
-    await must("dreams", admin.from("dreams").delete().eq("author_id", userId));
-    await must("verse_highlights", admin.from("verse_highlights").delete().eq("user_id", userId));
-    await must("verse_notes", admin.from("verse_notes").delete().eq("user_id", userId));
-    // ask_pamwe_usage carries no FK at all, so nothing cascades it: without
-    // this line its per-user rows outlive the account.
-    await must("ask_pamwe_usage", admin.from("ask_pamwe_usage").delete().eq("user_id", userId));
-
-    // A plan the couple BUILT is not the departing user's alone: the survivor may
-    // be reading it right now, and deleting it would take their enrollment with
-    // it. Authorship leaves, the plan stays. (plans_created_by_fkey is now ON
-    // DELETE SET NULL, so this is belt and braces.)
-    await must("plans", admin.from("plans").update({ created_by: null }).eq("created_by", userId));
-
-    // 4. Demote the couple — never DELETE the couples row, because
-    //    couples -> couple_plans -> entries and couples -> prayers cascade would
-    //    destroy the surviving partner's data.
-    if (couple) {
-      if (!partnerId) {
-        // Solo / never-paired couple: nothing of the partner's to protect, so
-        // the row (and its cascade of the departing user's own plans) can go.
-        // The departing user's own users.couple_id still points at the row
-        // (NO ACTION), so detach it first: deleting the couple with that
-        // reference in place is the FK failure that 500'd every never-paired
-        // deletion.
-        await must("users detach", admin.from("users").update({ couple_id: null }).eq("couple_id", couple.id));
-        await must("couples", admin.from("couples").delete().eq("id", couple.id));
-      } else {
-        const resetFields = {
-          partner_b_id: null,
-          paired_at: null,
-          streak_count: 0,
-          streak_last_date: null,
-          freeze_days_used: 0,
-          freeze_period_start: null,
-          invite_code: generateInviteCode(),
-          invite_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        };
-        if (couple.partner_a_id === userId) {
-          // Departing user holds the NOT NULL partner_a slot — promote the survivor.
-          await must("couples", admin.from("couples")
-            .update({ ...resetFields, partner_a_id: partnerId })
-            .eq("id", couple.id));
-        } else {
-          await must("couples", admin.from("couples").update(resetFields).eq("id", couple.id));
-        }
-      }
-    }
-  } catch (e) {
-    return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Deletion failed" }),
-      { status: 500, headers: { "Content-Type": "application/json" } },
-    );
+  // 2. Everything in the public schema, atomically.
+  const { data: outcome, error: rpcErr } = await admin.rpc("delete_account", { p_user: userId });
+  if (rpcErr) {
+    console.error("delete-account: delete_account rpc failed", rpcErr);
+    return new Response(JSON.stringify({ error: rpcErr.message }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
-  // 5. Notify the surviving partner (best-effort) and route them to unpaired.
-  if (partnerId) {
-    const { data: partner } = await admin
-      .from("users").select("expo_push_token").eq("id", partnerId).single();
-    if (partner?.expo_push_token) {
-      try {
-        await fetch("https://exp.host/--/api/v2/push/send", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            to: partner.expo_push_token,
-            sound: "default",
-            title: "Your partner has left Pamwe",
-            body: "Your own reflections are saved. You can pair again whenever you're ready.",
-            data: { type: "partner_left" },
-          }),
-        });
-      } catch {
-        // best-effort; deletion proceeds regardless
-      }
-    }
-  }
-
-  // 6. Delete the auth user — public.users cascades, and nothing else now
-  //    references this auth.users row.
+  // 3. The auth row. public.users cascades from it, and nothing else references
+  //    it now. If this fails the user simply retries: delete_account() is keyed
+  //    on the caller and safe to re-enter.
   const { error: delErr } = await admin.auth.admin.deleteUser(userId);
   if (delErr) {
     return new Response(JSON.stringify({ error: delErr.message }), { status: 500 });
+  }
+
+  // 4. Tell the surviving partner, best effort, now that it is true.
+  const partnerToken = outcome?.partner_push_token;
+  if (partnerToken) {
+    try {
+      await sendExpoPush(admin, "delete-account", [{
+        to: partnerToken,
+        sound: "default",
+        title: "Your partner has left Pamwe",
+        body: "Your own reflections are saved. You can pair again whenever you're ready.",
+        data: { type: "partner_left" },
+      }]);
+    } catch (e) {
+      console.error("delete-account: partner push failed", e);
+    }
   }
 
   return new Response(JSON.stringify({ ok: true }), {

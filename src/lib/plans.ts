@@ -170,39 +170,30 @@ export const CADENCE_OPTIONS: { value: Cadence; label: string; blurb: string }[]
   { value: 7, label: 'Once a week', blurb: 'One reading a week, for a slower season.' },
 ];
 
+// One transaction in the database (switch_plan, 20260810000002). This used to
+// be an UPDATE completing the old enrolment followed by a separate INSERT, and
+// a failure between the two left the couple with no active plan at all and no
+// way in the app to get one back. The concurrent-enrolment adoption that used
+// to live here (23505 on couple_plans_one_active, both partners enrolling in
+// the same moment after pairing) moved inside the function with it.
+//
+// start_date and the cadence check are the function's now too: the device used
+// to send a UTC date, which anchored the cadence gate a day early for couples
+// far enough east.
 export async function enrollInPlan(coupleId: string, planId: string, cadenceDays: Cadence = 1) {
-  const { error: completeError } = await supabase
-    .from('couple_plans')
-    .update({ status: 'completed' })
-    .eq('couple_id', coupleId)
-    .eq('status', 'active');
+  const { error } = await supabase.rpc('switch_plan', {
+    p_couple: coupleId,
+    p_plan: planId,
+    p_cadence: cadenceDays,
+  });
 
-  if (completeError) throw completeError;
+  if (error) throw error;
 
-  const { data, error } = await supabase
-    .from('couple_plans')
-    .insert({
-      couple_id: coupleId,
-      plan_id: planId,
-      start_date: new Date().toISOString().split('T')[0],
-      current_day: 1,
-      cadence_days: cadenceDays,
-      status: 'active',
-    })
-    .select('*, plan:plans(*)')
-    .single();
-
-  if (error) {
-    // 23505 on couple_plans_one_active: the partner enrolled at the same
-    // moment (both land on plan-select right after pairing). Their enrollment
-    // IS the couple's plan — adopt it instead of surfacing an error.
-    if ((error as { code?: string }).code === '23505') {
-      const existing = await getActiveCouPlan(coupleId);
-      if (existing) return existing;
-    }
-    throw error;
-  }
-  return data;
+  // The function returns the bare couple_plans row; callers want it with the
+  // plan joined on, which is the shape getActiveCouPlan already produces.
+  const enrolled = await getActiveCouPlan(coupleId);
+  if (!enrolled) throw new Error("Couldn't start that plan. Try again in a moment.");
+  return enrolled;
 }
 
 // The current plan day, with a persistent cache so Today's anchor verse renders

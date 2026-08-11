@@ -5,8 +5,8 @@
 // It shares the partner_nudges cooldown table with the read-nudge but under
 // kind = 'thinking', so the two never silence each other.
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { sendExpoPush } from "../_shared/push.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.112.2";
+import { sendExpoPush, tokensFor, fanOut } from "../_shared/push.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -52,12 +52,15 @@ Deno.serve(async (req) => {
   if (!me?.couple_id) return json({ ok: false, reason: "no_couple" }, 200);
 
   const { data: couple, error: coupleErr } = await admin
-    .from("couples").select("partner_a_id, partner_b_id").eq("id", me.couple_id).single();
+    .from("couples").select("partner_a_id, partner_b_id, paused_at").eq("id", me.couple_id).single();
   if (coupleErr) {
     console.error("notify-thinking: couples lookup failed", coupleErr);
     return json({ ok: false, reason: "server" }, 500);
   }
   if (!couple) return json({ ok: false, reason: "no_couple" }, 200);
+
+  // Paused couples go quiet, including for a nudge somebody taps by hand.
+  if (couple.paused_at) return json({ ok: false, reason: "paused" }, 200);
 
   const partnerId = couple.partner_a_id === meId ? couple.partner_b_id : couple.partner_a_id;
   if (!partnerId) return json({ ok: false, reason: "no_partner" }, 200);
@@ -87,25 +90,30 @@ Deno.serve(async (req) => {
   }
 
   const { data: partner, error: partnerErr } = await admin
-    .from("users").select("expo_push_token, notification_partner").eq("id", partnerId).single();
+    .from("users").select("expo_push_token, notification_partner, notification_preview").eq("id", partnerId).single();
   if (partnerErr) {
     console.error("notify-thinking: partner lookup failed", partnerErr);
     return json({ ok: false, reason: "server" }, 500);
   }
 
-  if (!partner?.expo_push_token) return json({ ok: true, delivered: false, reason: "no_token" }, 200);
+
   if (partner.notification_partner === false) {
     return json({ ok: true, delivered: false, reason: "notifications_off" }, 200);
   }
 
   const myName = (me.display_name ?? "Your partner").trim() || "Your partner";
-  const { ok } = await sendExpoPush(admin, "notify-thinking", [{
-    to: partner.expo_push_token,
+  // Every phone they are signed in on, not just the last one to register.
+  const deviceTokens = await tokensFor(admin, partnerId, partner?.expo_push_token);
+  if (deviceTokens.length === 0) {
+    return json({ ok: true, delivered: false, reason: "no_token" }, 200);
+  }
+
+  const { ok } = await sendExpoPush(admin, "notify-thinking", fanOut(deviceTokens, {
     sound: "default",
     title: `${myName} is thinking of you`,
     body: "No task, no reading. Just that.",
     data: { type: "thinking" },
-  }]);
+  }, partner?.notification_preview));
   if (!ok) return json({ ok: true, delivered: false, reason: "push_failed" }, 200);
   return json({ ok: true, delivered: true }, 200);
 });

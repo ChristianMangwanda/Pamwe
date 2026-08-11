@@ -11,8 +11,14 @@ import { supabase } from '../lib/supabase';
 // server-side but the user stayed on the sign-in screen forever.
 
 const mockRouter = { back: jest.fn(), push: jest.fn(), replace: jest.fn() };
+// The mark animates, so it pulls in reanimated. This suite is about where a
+// successful sign-in routes to, which the artwork has no part in.
+jest.mock('../components/PamweBloom', () => ({ PamweBloom: () => null }));
+
 jest.mock('expo-router', () => ({
   useRouter: () => mockRouter,
+  // Which door on welcome was used, which only decides the heading.
+  useLocalSearchParams: () => ({}),
 }));
 
 jest.mock('@react-native-google-signin/google-signin', () => ({
@@ -131,6 +137,8 @@ describe('Email magic link', () => {
     mockSignInWithOtp.mockResolvedValue({ error: null });
 
     const { getByText, getByPlaceholderText } = render(<SignInScreen />);
+    // Providers are the front door now; email is one tap behind it.
+    fireEvent.press(getByText('Use an email address'));
     fireEvent.changeText(getByPlaceholderText('you@example.com'), 'us@example.com');
     fireEvent.press(getByText('Continue with email'));
 
@@ -149,6 +157,11 @@ describe('App Review password sign-in', () => {
     mockSignInWithPassword.mockResolvedValue({ error: null });
 
     const { getByText, getByPlaceholderText, queryByPlaceholderText } = render(<SignInScreen />);
+    // The reviewer path now runs through the email door. If this tap ever stops
+    // working, Apple cannot sign in at all, so the route is asserted from the
+    // first screen rather than from the form.
+    expect(queryByPlaceholderText('you@example.com')).toBeNull();
+    fireEvent.press(getByText('Use an email address'));
     expect(queryByPlaceholderText('Password')).toBeNull();
 
     fireEvent.changeText(getByPlaceholderText('you@example.com'), 'grace@review.pamwe.app');
@@ -165,6 +178,7 @@ describe('App Review password sign-in', () => {
 
   it('never sends a magic link for review-domain emails', async () => {
     const { getByText, getByPlaceholderText } = render(<SignInScreen />);
+    fireEvent.press(getByText('Use an email address'));
     fireEvent.changeText(getByPlaceholderText('you@example.com'), 'grace@review.pamwe.app');
     fireEvent.press(getByText('Sign in with password'));
 

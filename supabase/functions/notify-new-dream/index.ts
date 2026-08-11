@@ -1,5 +1,6 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { sendExpoPush } from "../_shared/push.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.112.2";
+import { sendExpoPush, tokensFor, fanOut } from "../_shared/push.ts";
+import { requireWebhookSecret } from "../_shared/webhook.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -11,6 +12,9 @@ const supabase = createClient(
 // the dream: unlike a prayer point, a dream can be private in a way you don't
 // want sitting on a lock screen. It says one arrived, not what it said.
 Deno.serve(async (req) => {
+  const denied = requireWebhookSecret(req, "notify-new-dream");
+  if (denied) return denied;
+
   const { record } = await req.json();
 
   if (!record) {
@@ -24,7 +28,7 @@ Deno.serve(async (req) => {
   // swallowed error becomes an invisible 200.
   const { data: couple, error: coupleErr } = await supabase
     .from("couples")
-    .select("partner_a_id, partner_b_id")
+    .select("partner_a_id, partner_b_id, paused_at")
     .eq("id", couple_id)
     .single();
 
@@ -37,6 +41,11 @@ Deno.serve(async (req) => {
     return new Response("No couple found", { status: 200 });
   }
 
+  // Paused couples go quiet. The paused screen promises "no pages and no
+  // reminders", and a promise the phone breaks the next time a partner writes
+  // is worse than never making it.
+  if (couple.paused_at) return new Response("Couple is paused", { status: 200 });
+
   const partnerId =
     couple.partner_a_id === author_id
       ? couple.partner_b_id
@@ -48,7 +57,7 @@ Deno.serve(async (req) => {
 
   const { data: partner, error: partnerErr } = await supabase
     .from("users")
-    .select("expo_push_token, notification_dream")
+    .select("expo_push_token, notification_dream, notification_preview")
     .eq("id", partnerId)
     .single();
 
@@ -57,18 +66,23 @@ Deno.serve(async (req) => {
     return new Response("partner lookup failed", { status: 500 });
   }
 
-  if (!partner?.expo_push_token || partner.notification_dream === false) {
+  if (partner?.notification_dream === false) {
     return new Response("Partner has no token or opted out", { status: 200 });
   }
 
   // sendExpoPush logs rejected tickets and clears DeviceNotRegistered tokens.
-  const { result } = await sendExpoPush(supabase, "notify-new-dream", [{
-    to: partner.expo_push_token,
+  // Every phone they are signed in on, not just the last one to register.
+  const deviceTokens = await tokensFor(supabase, partnerId, partner?.expo_push_token);
+  if (deviceTokens.length === 0) {
+    return new Response("No devices to notify", { status: 200 });
+  }
+
+  const { result } = await sendExpoPush(supabase, "notify-new-dream", fanOut(deviceTokens, {
     sound: "default",
     title: "Your partner wrote down a dream",
     body: "Open Pamwe to read it together.",
     data: { type: "dream" },
-  }]);
+  }, partner?.notification_preview));
   return new Response(JSON.stringify(result), {
     headers: { "Content-Type": "application/json" },
   });

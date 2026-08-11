@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { View, StyleSheet, TextInput, Alert, Platform, ScrollView, KeyboardAvoidingView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { Text } from '../../components/ui/Text';
 import { Button } from '../../components/ui/Button';
 import { SectionEyebrow } from '../../components/ui/SectionEyebrow';
 import { BackLink } from '../../components/ui/BackLink';
+import { PamweBloom } from '../../components/PamweBloom';
 import { fonts } from '../../constants/typography';
 import { GUTTER } from '../../theme/tokens';
 import { useTheme } from '../../providers/ThemeProvider';
@@ -22,11 +23,20 @@ const REVIEWER_DOMAIN = '@review.pamwe.app';
 export default function SignInScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { mode } = useLocalSearchParams<{ mode?: string }>();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  // Email is a door, not the front door (see the render). Reviewers reach the
+  // password field through it, so it must stay one tap away and never be
+  // conditional on anything but this.
+  const [showEmail, setShowEmail] = useState(false);
 
   const isReviewer = email.trim().toLowerCase().endsWith(REVIEWER_DOMAIN);
+  // Which door on welcome was used. The screen is the same either way, since
+  // "Continue with Apple" creates an account or signs into one without being
+  // told which, but telling a returning partner they are signing UP is wrong.
+  const title = mode === 'login' ? 'Log in' : 'Sign up';
 
   const handleEmailSignIn = async () => {
     if (!email.trim()) return;
@@ -110,51 +120,59 @@ export default function SignInScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <BackLink onPress={() => router.back()} />
-          <SectionEyebrow style={styles.eyebrow}>Welcome</SectionEyebrow>
-          <Text variant="h1" style={styles.title}>Sign in</Text>
-          <Text italic color={colors.ink2} style={styles.subtitle}>
-            You each sign in on your own. You'll link with your partner in the next step.
-          </Text>
 
-          <View style={styles.form}>
-            <SectionEyebrow>Email address</SectionEyebrow>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.line, color: colors.ink }]}
-              placeholder="you@example.com"
-              placeholderTextColor={colors.muted}
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            {isReviewer && (
-              <TextInput
-                style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.line, color: colors.ink }]}
-                placeholder="Password"
-                placeholderTextColor={colors.muted}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-            )}
-            <Button title={isReviewer ? 'Sign in with password' : 'Continue with email'} onPress={handleEmailSignIn} loading={loading} />
-          </View>
-
-          <View style={styles.divider}>
-            <View style={[styles.dividerLine, { backgroundColor: colors.line }]} />
-            <Text variant="eyebrow" color={colors.muted}>or</Text>
-            <View style={[styles.dividerLine, { backgroundColor: colors.line }]} />
+          {/* Providers first, email behind a door. The handoff's reason for that
+              order is worth keeping in mind: whichever account you choose here
+              is what your reflections are tied to, and an Apple or Google
+              account is one you will still have when this phone is replaced.
+              An email you stop reading takes your journal with it. */}
+          <View style={styles.hero}>
+            <PamweBloom motion="still" style={styles.bloom} />
+            <Text variant="h1" style={styles.title}>{title}</Text>
+            <Text italic color={colors.ink2} style={styles.subtitle}>
+              Whichever you choose is how your reflections find you again on a new phone.
+            </Text>
           </View>
 
           <View style={styles.oauth}>
-            <Button title="Continue with Google" variant="secondary" onPress={handleGoogleSignIn} disabled={loading} />
             {Platform.OS === 'ios' && (
-              <Button title="Continue with Apple" variant="secondary" onPress={handleAppleSignIn} disabled={loading} />
+              <Button title="Continue with Apple" onPress={handleAppleSignIn} disabled={loading} />
+            )}
+            <Button title="Continue with Google" variant="secondary" onPress={handleGoogleSignIn} disabled={loading} />
+            {!showEmail && (
+              <Button title="Use an email address" variant="ghost" onPress={() => setShowEmail(true)} />
             )}
           </View>
+
+          {showEmail && (
+            <View style={styles.form}>
+              <SectionEyebrow>Email address</SectionEyebrow>
+              <TextInput
+                style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.line, color: colors.ink }]}
+                placeholder="you@example.com"
+                placeholderTextColor={colors.muted}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoFocus
+              />
+              {isReviewer && (
+                <TextInput
+                  style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.line, color: colors.ink }]}
+                  placeholder="Password"
+                  placeholderTextColor={colors.muted}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              )}
+              <Button title={isReviewer ? 'Sign in with password' : 'Continue with email'} onPress={handleEmailSignIn} loading={loading} />
+            </View>
+          )}
 
           {__DEV__ && (
             <View style={styles.dev}>
@@ -173,10 +191,11 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   flex: { flex: 1 },
   scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 32 },
-  eyebrow: { marginTop: 22 },
-  title: { marginTop: 8 },
-  subtitle: { fontSize: 15, marginTop: 10, marginBottom: 28 },
-  form: { gap: 12 },
+  hero: { alignItems: 'center', gap: 12, marginTop: 26, marginBottom: 30 },
+  bloom: { width: 104, height: 128 },
+  title: { textAlign: 'center' },
+  subtitle: { fontSize: 15, textAlign: 'center', paddingHorizontal: 8 },
+  form: { gap: 12, marginTop: 26 },
   input: {
     borderWidth: 1,
     borderRadius: 16,

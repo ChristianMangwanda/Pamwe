@@ -4,11 +4,24 @@ import { useAuth } from './AuthProvider';
 import { getUserCouple, getPartnerProfile, togetherSince, toISODate } from '../lib/couples';
 import { shareAnniversary } from '../../modules/pamwe-widget';
 import { getActiveCouPlan } from '../lib/plans';
+import { getMyProfile } from '../lib/account';
 import { supabase } from '../lib/supabase';
+import {
+  cancelMorningNotification,
+  cancelWeeklyRecap,
+  cancelPrayerReview,
+  scheduleMorningFromPrefs,
+  scheduleRecapFromPrefs,
+  schedulePrayerReviewFromPrefs,
+} from '../lib/notifications';
+import { silenceAllReminders } from '../lib/prayerReminders';
 
 type CoupleContextType = {
   couple: any | null;
   partner: any | null;
+  /** My own users row. Screens read their own name from here, the same place
+   *  the partner's comes from, so the two can never disagree. */
+  me: any | null;
   couplePlan: any | null;
   loading: boolean;
   refresh: () => Promise<void>;
@@ -17,6 +30,7 @@ type CoupleContextType = {
 const CoupleContext = createContext<CoupleContextType>({
   couple: null,
   partner: null,
+  me: null,
   couplePlan: null,
   loading: true,
   refresh: async () => {},
@@ -26,6 +40,7 @@ export function CoupleProvider({ children }: { children: React.ReactNode }) {
   const { session } = useAuth();
   const [couple, setCouple] = useState<any | null>(null);
   const [partner, setPartner] = useState<any | null>(null);
+  const [me, setMe] = useState<any | null>(null);
   const [couplePlan, setCouplePlan] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -38,12 +53,18 @@ export function CoupleProvider({ children }: { children: React.ReactNode }) {
     if (!userId) {
       setCouple(null);
       setPartner(null);
+      setMe(null);
       setCouplePlan(null);
       setLoading(false);
       return;
     }
 
     try {
+      // Best effort, and deliberately not inside the try/catch below's scope
+      // for the couple: a profile read that blips should not cost the couple
+      // state that the whole app routes on.
+      getMyProfile().then(setMe).catch(() => {});
+
       const c = await getUserCouple(userId);
       setCouple(c);
       setPartner(c ? await getPartnerProfile(c, userId) : null);
@@ -106,8 +127,39 @@ export function CoupleProvider({ children }: { children: React.ReactNode }) {
     shareAnniversary(sinceISO);
   }, [loading, sinceISO]);
 
+  // A pause has to actually stop the phone talking, on BOTH phones.
+  //
+  // The screen says "no pages and no reminders", and until this existed that
+  // was simply untrue: the morning reminder, the Sunday recap and every prayer
+  // reminder are LOCAL notifications, already handed to iOS, so they keep
+  // firing no matter what the database says. The one who tapped Agree and the
+  // one who asked both have to go quiet, and only one of them ran the RPC, so
+  // this watches the couple's state rather than the action. Realtime carries
+  // paused_at to the other phone, which is what makes that work.
+  //
+  // Coming back re-derives from the saved preferences rather than restoring a
+  // snapshot: prefs are the source of truth for these, and someone who changed
+  // their reminder time mid-pause should get the time they chose.
+  const paused = !!couple?.paused_at;
+  const hadCouple = !!couple;
+  useEffect(() => {
+    if (loading || !hadCouple) return;
+    if (paused) {
+      cancelMorningNotification().catch(() => {});
+      cancelWeeklyRecap().catch(() => {});
+      cancelPrayerReview().catch(() => {});
+      // Silenced, not forgotten: the times somebody chose for their prayers are
+      // theirs, and a pause should not cost them setting every one again.
+      silenceAllReminders().catch(() => {});
+    } else {
+      scheduleMorningFromPrefs().catch(() => {});
+      scheduleRecapFromPrefs().catch(() => {});
+      schedulePrayerReviewFromPrefs().catch(() => {});
+    }
+  }, [loading, hadCouple, paused]);
+
   return (
-    <CoupleContext.Provider value={{ couple, partner, couplePlan, loading, refresh }}>
+    <CoupleContext.Provider value={{ couple, partner, me, couplePlan, loading, refresh }}>
       {children}
     </CoupleContext.Provider>
   );

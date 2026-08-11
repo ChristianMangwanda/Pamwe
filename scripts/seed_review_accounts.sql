@@ -6,13 +6,26 @@
 --
 --   grace@review.pamwe.app   (partner A, the account reviewers sign in with)
 --   daniel@review.pamwe.app  (partner B, pre-filled)
---   password for both: Pamwe-Review-2026
+--
+-- THE PASSWORD IS NOT IN THIS FILE, and must never be written into it again.
+-- It was, until 2026-08-08, in a public repository, which meant anyone could
+-- sign into the hosted project as the demo couple. It now comes in as a psql
+-- variable and lives in exactly two places: the App Store Connect review notes,
+-- and the hashed column in auth.users.
+--
+--   docker exec -i supabase_db_Pamwe psql "$DBURL" -v ON_ERROR_STOP=1 \
+--     -v review_password="$(read -rsp 'password: ' p; echo "$p")" \
+--     -f scripts/seed_review_accounts.sql
 --
 -- The sign-in screen shows a password field for @review.pamwe.app emails
--- (no magic link needed). Run on the HOSTED project via MCP execute_sql,
--- AFTER the b14 migrations. Idempotent: guarded on the auth.users emails.
--- Uses fixed UUIDs in the dev-seed style; the couple's invite code is spent
--- (paired), so these accounts can't pair with anyone real.
+-- (no magic link needed). Run on the HOSTED project. Idempotent: guarded on the
+-- auth.users emails. Uses fixed UUIDs in the dev-seed style; the couple's invite
+-- code is spent (paired), so these accounts can't pair with anyone real.
+
+-- psql substitutes :'review_password' here, where it is a plain SQL literal.
+-- It cannot reach inside the dollar-quoted body below, so the value is handed
+-- over as a setting and read back out with current_setting().
+select set_config('app.review_password', :'review_password', false);
 
 DO $$
 DECLARE
@@ -21,8 +34,12 @@ DECLARE
   v_couple UUID := 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee1';
   v_cp     UUID := 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee2';
   v_john   UUID := 'b1b2c3d4-e5f6-7890-abcd-ef1234567891'; -- Gospel of John, 21 days
-  v_pw     TEXT := 'Pamwe-Review-2026';
+  v_pw     TEXT := current_setting('app.review_password', true);
 BEGIN
+  IF v_pw IS NULL OR v_pw = '' THEN
+    RAISE EXCEPTION 'Pass the review password: psql -v review_password=...';
+  END IF;
+
   IF EXISTS (SELECT 1 FROM auth.users WHERE email = 'grace@review.pamwe.app') THEN
     RAISE NOTICE 'Review accounts already seeded; nothing to do.';
     RETURN;

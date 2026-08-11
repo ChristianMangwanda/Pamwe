@@ -74,6 +74,12 @@ export function usePushRouting() {
       case 'thinking':
         router.push('/(tabs)/(today)' as any);
         break;
+      // A pause or restart, asked or answered. Today is where the ask is
+      // answered and where the paused screen lives, so both land there. Tab
+      // root, so no anchor is needed.
+      case 'couple-request':
+        router.push('/(tabs)/(today)' as any);
+        break;
       case 'partner_left':
         // couple state changed — let the auth gate re-route
         router.replace('/');

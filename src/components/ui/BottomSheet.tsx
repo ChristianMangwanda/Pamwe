@@ -21,13 +21,31 @@ export function BottomSheet({
 
   return (
     <Modal transparent visible={visible} animationType="none" onRequestClose={onClose} statusBarTranslucent>
-      <View style={styles.root}>
-        <AnimatedPressable style={styles.scrim} entering={FadeIn.duration(220)} onPress={onClose} accessibilityLabel="Close" />
+      {/* This was a modal to the eye only. Without accessibilityViewIsModal
+          VoiceOver keeps walking the screen underneath, so a sheet asking a
+          question could be read straight past into the content it covers, and
+          there was no escape gesture out of it. */}
+      <View style={styles.root} accessibilityViewIsModal importantForAccessibility="yes">
+        <AnimatedPressable
+          style={styles.scrim}
+          entering={FadeIn.duration(220)}
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Close"
+        />
         <Animated.View
           entering={sheetUp}
           style={[styles.sheet, { backgroundColor: colors.bg, paddingBottom: insets.bottom + 24 }]}
+          // The two-finger scrub, which is what a screen reader user reaches
+          // for instead of tapping a scrim they cannot see.
+          onAccessibilityEscape={onClose}
         >
-          <View style={[styles.grabber, { backgroundColor: colors.line }]} />
+          {/* Decorative: the affordance is the scrim and the escape gesture. */}
+          <View
+            style={[styles.grabber, { backgroundColor: colors.line }]}
+            importantForAccessibility="no"
+            accessibilityElementsHidden
+          />
           {children}
         </Animated.View>
       </View>

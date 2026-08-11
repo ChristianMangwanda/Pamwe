@@ -12,9 +12,14 @@ cd "$(dirname "$0")/.."
 eval "$(supabase status -o env | sed 's/^/export /')"
 : "${API_URL:?supabase not running}" "${SERVICE_ROLE_KEY:?}"
 
-# psql isn't on PATH; run SQL inside the db container.
-DB_CONTAINER="$(docker ps --format '{{.Names}}' | grep supabase_db | head -1)"
-: "${DB_CONTAINER:?db container not found}"
+# psql isn't on PATH; run SQL inside the db container. Named from config.toml's
+# project_id rather than the first container that matches: with a second local
+# Supabase stack running for another project, `grep supabase_db | head -1` picked
+# whichever Docker listed first and seeded Pamwe's dev users into it.
+PROJECT_ID="$(grep -m1 '^project_id' supabase/config.toml | cut -d'"' -f2)"
+DB_CONTAINER="supabase_db_${PROJECT_ID:?project_id missing from supabase/config.toml}"
+docker ps --format '{{.Names}}' | grep -qx "$DB_CONTAINER" \
+  || { echo "db container $DB_CONTAINER not running; run 'supabase start'" >&2; exit 1; }
 db() { docker exec -i "$DB_CONTAINER" psql -U postgres -d postgres -v ON_ERROR_STOP=1 "$@"; }
 
 create_user() {

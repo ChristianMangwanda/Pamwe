@@ -96,6 +96,14 @@ export default function PlansScreen() {
     return true;
   });
 
+  // The door to plan history opens for anything retired that was actually
+  // read, ended plans included, so a couple who stopped part way can still find
+  // the days they did read. The count keeps naming only the plans finished to
+  // the end, because that is what it says.
+  const historyCount = completed.filter(
+    (cp) => cp.plan && (isFinished(cp) || (cp.current_day ?? 1) > 1),
+  ).length;
+
   // Started at least once vs built and set aside.
   const startedPlans = myPlans.filter((p) => enrolledIds.has(p.id));
   const savedPlans = myPlans.filter((p) => !enrolledIds.has(p.id));
@@ -253,12 +261,14 @@ export default function PlansScreen() {
             </>
           )}
 
-          {completedPlans.length > 0 && (
+          {historyCount > 0 && (
             <TouchableOpacity activeOpacity={0.85} onPress={() => { haptics.tap(); router.push('/(tabs)/plans/finished'); }}
               style={[styles.finished, { borderColor: colors.line }]}>
               <CheckCircle size={17} color={colors.accent2} weight="regular" />
               <Text style={[styles.finishedText, { color: colors.ink2 }]}>
-                {completedPlans.length} plan{completedPlans.length === 1 ? '' : 's'} finished together
+                {completedPlans.length > 0
+                  ? `${completedPlans.length} plan${completedPlans.length === 1 ? '' : 's'} finished together`
+                  : "Plans you've read together"}
               </Text>
               <CaretRight size={15} color={colors.accent2} weight="regular" />
             </TouchableOpacity>

@@ -1,5 +1,6 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { sendExpoPush } from "../_shared/push.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.112.2";
+import { sendExpoPush, tokensFor, fanOut } from "../_shared/push.ts";
+import { requireWebhookSecret } from "../_shared/webhook.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -14,13 +15,39 @@ const supabase = createClient(
 // for every tap would turn the warmest part of the ritual into noise. The
 // trigger filters on kind too, so a heart never even reaches this function.
 Deno.serve(async (req) => {
+  const denied = requireWebhookSecret(req, "notify-new-response");
+  if (denied) return denied;
+
   const { record } = await req.json();
 
-  if (!record || record.kind !== "reply") {
+  if (!record?.id) {
+    return new Response("No response id", { status: 200 });
+  }
+
+  // Read the reply from the table rather than from the request. The body used to
+  // be trusted verbatim AND author_id was taken on trust, so whoever could reach
+  // this function chose both the words on the banner and the name above them,
+  // which is to say they could impersonate a partner.
+  const { data: response, error: responseErr } = await supabase
+    .from("entry_responses")
+    .select("kind, entry_id, author_id, body, parent_id")
+    .eq("id", record.id)
+    .maybeSingle();
+
+  if (responseErr) {
+    console.error("notify-new-response: response lookup failed", responseErr);
+    return new Response("response lookup failed", { status: 500 });
+  }
+
+  if (!response) {
+    return new Response("Response gone", { status: 200 });
+  }
+
+  if (response.kind !== "reply") {
     return new Response("Not a reply", { status: 200 });
   }
 
-  const { entry_id, author_id, body, parent_id } = record;
+  const { entry_id, author_id, body, parent_id } = response;
 
   // Tell whoever is being answered. Without a parent that is the entry's author,
   // the way it has always been. With one it is the author of the reply above,
@@ -68,7 +95,7 @@ Deno.serve(async (req) => {
   const [{ data: recipient, error: recipientErr }, { data: author }] = await Promise.all([
     supabase
       .from("users")
-      .select("expo_push_token, notification_partner")
+      .select("expo_push_token, notification_partner, notification_preview")
       .eq("id", recipientId)
       .single(),
     supabase
@@ -83,7 +110,7 @@ Deno.serve(async (req) => {
     return new Response("recipient lookup failed", { status: 500 });
   }
 
-  if (!recipient?.expo_push_token || recipient.notification_partner === false) {
+  if (recipient?.notification_partner === false) {
     return new Response("Recipient has no token or opted out", { status: 200 });
   }
 
@@ -92,13 +119,18 @@ Deno.serve(async (req) => {
     ? `${body.slice(0, 77)}…`
     : (body ?? "");
 
-  const { result } = await sendExpoPush(supabase, "notify-new-response", [{
-    to: recipient.expo_push_token,
+  // Every phone they are signed in on, not just the last one to register.
+  const deviceTokens = await tokensFor(supabase, recipientId, recipient?.expo_push_token);
+  if (deviceTokens.length === 0) {
+    return new Response("No devices to notify", { status: 200 });
+  }
+
+  const { result } = await sendExpoPush(supabase, "notify-new-response", fanOut(deviceTokens, {
     sound: "default",
     title: parent_id ? `${name} replied to you` : `${name} replied to your reflection`,
     body: preview,
     data: { type: "response" },
-  }]);
+  }, recipient?.notification_preview));
   return new Response(JSON.stringify(result), {
     headers: { "Content-Type": "application/json" },
   });

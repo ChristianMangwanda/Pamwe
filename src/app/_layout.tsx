@@ -22,10 +22,12 @@ import {
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import * as Sentry from '@sentry/react-native';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthProvider } from '../providers/AuthProvider';
 import { ThemeProvider, useTheme } from '../providers/ThemeProvider';
 import { supabase } from '../lib/supabase';
 import { hideSplashOnce } from '../lib/splash';
+import { PENDING_INVITE_KEY } from '../lib/invite';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -109,6 +111,24 @@ function RootLayout() {
     const refresh_token =
       (queryParams?.refresh_token as string | undefined) ?? fragParams.get('refresh_token') ?? undefined;
     const code = queryParams?.code as string | undefined;
+
+    // A pairing link (pamwe://join?code=ABC123). Stashed rather than followed,
+    // because the tap usually arrives before there is an account: the invited
+    // partner is by definition someone who has not signed in yet. join.tsx
+    // picks it up when the gate finally lands them there.
+    //
+    // Deliberately checked before the auth branches below and returned from:
+    // an invite code is not a magic-link code, and `?code=` means both.
+    const invite = queryParams?.invite as string | undefined;
+    if (invite) {
+      await AsyncStorage.setItem(PENDING_INVITE_KEY, String(invite).toUpperCase()).catch(() => {});
+      const { data: { session } } = await supabase.auth.getSession();
+      // Already signed in and unpaired: take them straight there. Otherwise the
+      // gate routes through welcome and join.tsx reads the stash on arrival.
+      if (session) router.replace('/(onboarding)/join');
+      return;
+    }
+
     try {
       if (access_token && refresh_token) {
         const { error } = await supabase.auth.setSession({ access_token, refresh_token });

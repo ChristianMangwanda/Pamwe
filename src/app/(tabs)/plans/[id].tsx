@@ -14,6 +14,7 @@ import { overlayIn } from '../../../lib/motion';
 import { useTheme } from '../../../providers/ThemeProvider';
 import { useCouple } from '../../../providers/CoupleProvider';
 import { getPlan, getPlanCached, getPlanDayList, enrollInPlan, switchPlan, completePlan, sharePlan, deletePlan, getEnrolledPlanIds } from '../../../lib/plans';
+import { isFinished } from '../../../lib/planHistory';
 import { bannerTintForPlan } from '../../../lib/planArtwork';
 import { parseReference } from '../../../lib/bible';
 import { canOpenDay, todayInTimezone } from '../../../lib/catchup';
@@ -184,25 +185,43 @@ export default function PlanDetailScreen() {
     }
   };
 
+  // Reached the last day, so this button is finishing a plan that is genuinely
+  // finished (the autocomplete trigger was paused for a while, and this is the
+  // hand path that covered it). Anything earlier is ending, not finishing.
+  const reachedTheEnd = !!couplePlan && isFinished(couplePlan);
+
   const onMarkComplete = () => {
     if (!couplePlan) return;
     Alert.alert(
-      'Mark this plan complete?',
-      'It moves to your finished plans and you can choose what to read next.',
+      reachedTheEnd ? 'Mark this plan complete?' : 'End this plan?',
+      reachedTheEnd
+        ? 'It moves to your finished plans and you can choose what to read next.'
+        : 'The days you read together stay in your reflections. You can start it again any time.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Mark complete',
+          text: reachedTheEnd ? 'Mark complete' : 'End this plan',
           onPress: async () => {
             try {
               setBusy(true);
               const cpId = couplePlan.id;
               await completePlan(cpId);
               await refreshCouple();
+
+              // Ending early gets no ceremony and no tree. It used to route
+              // into the completion screen, which sounded the success haptic
+              // and reported the plan's whole length as "days read", for a
+              // plan the couple had stopped on day three of. The Grove already
+              // refused to count it, so the celebration was telling them
+              // something the rest of the app disagreed with.
+              if (!reachedTheEnd) {
+                router.replace('/(tabs)/plans');
+                return;
+              }
+
               haptics.success();
-              // Manual completion earns the same celebration as finishing the
-              // final day; the params carry the just-completed plan since it
-              // is no longer the active one.
+              // The params carry the just-completed plan, since it is no
+              // longer the active one.
               router.replace({
                 pathname: '/(tabs)/(today)/complete',
                 params: {
@@ -372,7 +391,9 @@ export default function PlanDetailScreen() {
           <Button title={isActive ? 'Continue reading' : 'Begin together'} onPress={onPrimary} loading={busy} />
           {isActive && (
             <TouchableOpacity onPress={onMarkComplete} disabled={busy} style={styles.markComplete} hitSlop={8}>
-              <Text variant="chip" color={colors.accent2} style={styles.markCompleteText}>Mark plan complete</Text>
+              <Text variant="chip" color={colors.accent2} style={styles.markCompleteText}>
+                {reachedTheEnd ? 'Mark plan complete' : 'End this plan'}
+              </Text>
             </TouchableOpacity>
           )}
           {/* Only a plan this couple built can be shared. Curated plans are

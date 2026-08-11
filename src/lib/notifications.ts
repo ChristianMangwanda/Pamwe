@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from './supabase';
 import { getUserCouple } from './couples';
 import { getActiveCouPlan } from './plans';
@@ -17,6 +18,34 @@ Notifications.setNotificationHandler({
     shouldShowList: true,
   }),
 });
+
+/** Ask iOS for permission, having already explained why.
+ *
+ *  Split out from registration deliberately. The prompt used to fire from
+ *  AuthProvider on the first render after sign-in, before a couple had paired
+ *  or seen a single reflection, so it arrived with nothing to point at and the
+ *  answer to "Pamwe would like to send you notifications" was often no. iOS
+ *  only ever asks once, so that no is permanent short of a trip to Settings.
+ *  The onboarding "connected" screen asks instead, where there is a partner to
+ *  name. */
+export async function requestPushPermission(): Promise<boolean> {
+  if (!Device.isDevice) return false;
+  const { status: existing } = await Notifications.getPermissionsAsync();
+  if (existing === 'granted') return true;
+  const { status } = await Notifications.requestPermissionsAsync();
+  return status === 'granted';
+}
+
+/** The token, but only if permission has already been given.
+ *
+ *  This is what runs on launch: it registers a device that is already allowed
+ *  and never puts a prompt in front of anyone. */
+export async function getPushTokenIfGranted(): Promise<string | null> {
+  if (!Device.isDevice) return null;
+  const { status } = await Notifications.getPermissionsAsync();
+  if (status !== 'granted') return null;
+  return registerForPushNotifications();
+}
 
 export async function registerForPushNotifications(): Promise<string | null> {
   if (!Device.isDevice) {
@@ -57,11 +86,16 @@ export async function registerForPushNotifications(): Promise<string | null> {
   }
 }
 
-// Skip the PATCH when this device already saved the same token for the same
+// Skip the write when this device already saved the same token for the same
 // user. getExpoPushTokenAsync re-registers with APNs, which re-fires the
 // rotation listener with an unchanged token; without this guard every launch
 // spiraled into an infinite PATCH /users loop (build 7 slowness + crash).
 let lastSavedTokenKey: string | null = null;
+
+// This device's own token, remembered so sign-out can remove THIS row and
+// leave the account's other phones alone. In storage rather than memory
+// because sign-out can happen on a launch where registration never ran.
+const DEVICE_TOKEN_KEY = 'pamwe:pushToken';
 
 export async function savePushToken(token: string) {
   const { data: { session } } = await supabase.auth.getSession();
@@ -71,25 +105,35 @@ export async function savePushToken(token: string) {
   const key = `${user.id}:${token}`;
   if (key === lastSavedTokenKey) return;
 
-  const { error } = await supabase
-    .from('users')
-    .update({ expo_push_token: token })
-    .eq('id', user.id);
-  if (!error) lastSavedTokenKey = key;
+  // A row per device (push_tokens), not a column per account. The single
+  // column meant a second phone overwrote the first and the first went quiet.
+  const { error } = await supabase.rpc('save_push_token', {
+    p_token: token,
+    p_platform: Platform.OS,
+  });
+  if (!error) {
+    lastSavedTokenKey = key;
+    AsyncStorage.setItem(DEVICE_TOKEN_KEY, token).catch(() => {});
+  }
 }
 
 // On sign-out: this device no longer speaks for that user. Without this, an
 // account switch leaves the OLD user's row holding this device's token and
 // their partner's pushes land on the wrong person's phone.
+//
+// Only THIS device is detached. It used to null the account's single column,
+// which silenced every other phone the person was signed in on until that
+// phone happened to relaunch.
 export async function clearPushToken() {
   const { data: { session } } = await supabase.auth.getSession();
   const user = session?.user;
   if (!user) return;
 
-  await supabase
-    .from('users')
-    .update({ expo_push_token: null })
-    .eq('id', user.id);
+  const token = await AsyncStorage.getItem(DEVICE_TOKEN_KEY).catch(() => null);
+  // Undefined, not null: the function's own default covers a device that never
+  // learned its token, and leaves the account's other phones registered.
+  await supabase.rpc('clear_push_token', { p_token: token ?? undefined });
+  AsyncStorage.removeItem(DEVICE_TOKEN_KEY).catch(() => {});
   lastSavedTokenKey = null;
 }
 
@@ -145,6 +189,15 @@ export async function scheduleMorningFromPrefs() {
     const status = await getNotificationPermissionStatus();
     if (status !== 'granted') return;
     const prefs = await getNotificationPrefs();
+
+    // Off is a real answer. Until this existed the only way to stop the morning
+    // reminder was to turn off notifications for the whole app, which also took
+    // away the partner's reflection landing, the thing people actually want.
+    if (prefs?.notification_morning === false) {
+      await cancelMorningReminders();
+      return;
+    }
+
     const [hour, minute] = (prefs?.notification_morning_time ?? '06:30:00')
       .split(':')
       .map(Number);
@@ -293,11 +346,16 @@ export async function schedulePrayerReviewFromPrefs() {
 
 export type NotificationPrefs = {
   notification_morning_time: string; // 'HH:MM:SS'
+  notification_morning: boolean;
   notification_partner: boolean;
   notification_prayer: boolean;
   notification_dream: boolean;
   notification_note: boolean;
   notification_recap: boolean;
+  // 'full' says what happened; 'generic' says only that something did. These
+  // banners carry the most private material the app holds, and they render on
+  // a locked phone in front of whoever is looking at it.
+  notification_preview: 'full' | 'generic';
 };
 
 export async function getNotificationPrefs(): Promise<NotificationPrefs | null> {
@@ -307,7 +365,7 @@ export async function getNotificationPrefs(): Promise<NotificationPrefs | null> 
 
   const { data, error } = await supabase
     .from('users')
-    .select('notification_morning_time, notification_partner, notification_prayer, notification_dream, notification_note, notification_recap')
+    .select('notification_morning_time, notification_morning, notification_partner, notification_prayer, notification_dream, notification_note, notification_recap, notification_preview')
     .eq('id', user.id)
     .single();
 
@@ -389,6 +447,13 @@ const MORNING_ID = 'pamwe-morning';
 // time, so those get individually dated reminders, topped up on each launch.
 const MORNING_AHEAD = 12;
 const morningIdAt = (i: number) => `${MORNING_ID}-${i}`;
+
+/** Stop the morning reminder entirely, for someone who does not want one.
+ *  Exported so Settings can act the moment the switch moves, rather than
+ *  waiting for the next sign-in to reconcile. */
+export async function cancelMorningNotification() {
+  await cancelMorningReminders();
+}
 
 async function cancelMorningReminders() {
   const ids = [MORNING_ID, ...Array.from({ length: MORNING_AHEAD }, (_, i) => morningIdAt(i))];

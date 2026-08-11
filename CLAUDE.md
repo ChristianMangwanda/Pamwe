@@ -27,8 +27,15 @@ Mobile app for couples to read the Bible together using the M'Cheyne Reading Pla
 ```bash
 # JS / app
 npx expo start --dev-client            # Metro for the dev client
-npx jest                               # full test suite
+npx jest                               # full test suite (mocks Supabase: proves nothing about RLS)
 npx tsc --noEmit                       # typecheck
+npm run lint                           # eslint (bootstrapped 2026-08-08; ~188 pre-existing errors, mostly
+                                       # unescaped quotes in copy — treat as a backlog, not a gate yet)
+
+# Does the DATABASE actually refuse what we think it refuses? Needs `supabase
+# start` + ./scripts/local_dev_seed.sh. Asks as a real signed-in outsider.
+docker exec -i supabase_db_Pamwe psql -U postgres -d postgres \
+  -v ON_ERROR_STOP=1 -f - < scripts/rls_probe.sql
 
 # iOS dev build to physical device
 cd ios && xcodebuild -workspace Pamwe.xcworkspace -scheme Pamwe \
@@ -186,8 +193,8 @@ Auth gate in [src/app/index.tsx](src/app/index.tsx) sequences:
 
 | Table | Purpose |
 |---|---|
-| `users` | Profile mirror of `auth.users`. Created by `handle_new_user` trigger. Holds `couple_id`, push token, notification prefs. |
-| `couples` | Invite code + partner_a/b + paired_at + streak state + timezone + `anniversary` (nullable DATE, the day the couple counts from; written only via the `set_couple_anniversary` RPC because no UPDATE policy on `couples` reaches a paired member's own row). |
+| `users` | Profile mirror of `auth.users`. Created by `handle_new_user` trigger. Holds `couple_id`, push token, notification prefs, `accepted_terms_at`. **UPDATE is a column-level grant, not a policy** (2026-08-08): the client may write display_name, avatar_initial, expo_push_token, the six notification_* prefs and accepted_terms_at, and nothing else. `couple_id` was self-assignable, and `users_select_partner` / `share_plan()` / `plan_days_update_custom` all trusted it. A new client-written column needs adding to that grant. |
+| `couples` | Invite code + partner_a/b + paired_at + streak state + timezone + `anniversary` (nullable DATE, written via the `set_couple_anniversary` RPC). **No INSERT or UPDATE reaches this table from the client at all** (2026-08-08): pairing goes through `create_couple` / `join_couple` / `regenerate_invite_code`, and `couples_select_own` is the only policy left. |
 | `plans` | Reading plans. Curated (M'Cheyne 365, John 21, Psalms 30, Cord 21) + couple-built custom plans (`is_curated=false`, `couple_id`, `created_by`). Browse metadata cols: `tagline/about/explore/gain/minutes_label/rhythm_label/book_label`. |
 | `plan_days` | Rows per plan-day: passage ref, text (**nullable** — custom plans store NULL and live-fetch), pull quote, reflection prompt. |
 | `couple_plans` | A couple's enrollment in a plan (current_day, start_date, status, `cadence_days`). |
@@ -254,14 +261,17 @@ The core mechanic. Partner entries are invisible until both partners have submit
 - `notify-partner` deployed (verify_jwt=false because it's a DB webhook target)
 - Trigger `notify_partner_on_submit_trigger` on `entries` AFTER INSERT OR UPDATE OF submitted_at, calls the function via `net.http_post`. Only fires when submitted_at transitions NULL → set.
 - `entries` is in the `supabase_realtime` publication so the waiting screen subscription fires.
+- **Every webhook target checks a shared secret** (2026-08-08). `verify_jwt=false` means the gateway lets anyone POST to these, and until this round nothing else checked: two of them put request-body text straight onto a partner's lock screen. The triggers now send `x-webhook-secret`, resolved by `notify_config()` from the same GUC-then-Vault path as the URL and key (`app.settings.notify_webhook_secret` / Vault `notify_webhook_secret`), and every function refuses without it (`_shared/webhook.ts`). **A missing `NOTIFY_WEBHOOK_SECRET` env var is a 500, not an open door.** The secret must exist on BOTH sides or no notification is delivered: set the dashboard secret and the Vault row before deploying a function that checks it. `notify-new-prayer`, `notify-new-response` and `notify-new-note` also re-fetch their row by id and ignore the request's copy, so the push can only ever say what a real row says.
 - Other webhook targets (verify_jwt=false): `notify-new-prayer`, `notify-new-dream`, `notify-new-response`, `notify-new-note`, `notify-verse-comment`. `notify-new-response` tells whoever is being ANSWERED: the parent reply's author when there is one, the entry's author otherwise, which is what makes a chain reach the right phone. **Push banners actually deliver since b10/b11** (APNs key on Expo).
-- `delete-account` — user-invoked (verify_jwt=true): demote-don't-delete routine; the survivor keeps everything, a never-paired couple row is detached (`users.couple_id` nulled first) and deleted.
+- `delete-account` — user-invoked (verify_jwt=true): demote-don't-delete routine; the survivor keeps everything, a never-paired couple row is detached (`users.couple_id` nulled first) and deleted. **The database half is one transaction** (`delete_account(p_user)`, service-role only) since 2026-08-08: it used to be eighteen statements committing one at a time, so a failure halfway left content permanently gone behind a 500 that claimed nothing had happened. The function now does storage FIRST with a **checked** error (`.remove()` returns `{data,error}` and does not throw, so the old try/catch never saw an RLS refusal and left recordings orphaned once the entries rows were deleted), then the RPC, then `admin.deleteUser`, then the partner push LAST. The auth-row delete stays outside the RPC on purpose: that schema is GoTrue's.
 - **`notify-nudge`** / **`notify-thinking`** — user-invoked (verify_jwt=true): "nudge my partner" and "thinking of you" from Today; each pushes to the partner, one per sender per hour **per kind** (cooldowns logged in `partner_nudges.kind`, so one never silences the other).
 - **`ask-pamwe`** (build v9, 2026-08-02) — **"Pamwe points, never preaches"** (Christian's product line: no Scripture interpretation, ever; interpretation questions deflect gently). Three schema-constrained modes: **`build`** (ONE plan, the Plans search), `plans` (2 recs, the by-book builder) and `help` (unreachable since the sheet was removed). Every schema carries a required `off_topic` flag; the server swaps flagged output for one fixed gentle line. Per-user rate limit 20/day + 10s cooldown, fail-open. **verify_jwt=true.**
 
   **`build` never asks a model for a Bible reference.** It reads the [Bible catalogue](#the-bible-catalogue) instead, in three steps: **intake** maps what a couple typed onto the closed theme vocabulary (so "we lost our dog" becomes `grief` without anyone having predicted dogs) and decides which `caution` flags to unlock; **`retrieve_passages()`** picks the candidate pool in plain SQL; then the **arranger** answers with candidate **indices into that pool**, schema-constrained to `0..poolSize-1`, and the server maps them back to references itself. An invented reference has nowhere to enter the pipeline, structurally rather than by instruction. Day notes are catalogue summaries and `meta`/`rhythm` are computed. (The "You will be asked" preview was **removed 2026-08-02**: it cost up to three extra `passage_prompts` round trips before the couple saw anything, to show questions the plan screen shows anyway. `build` now returns `prompts: []`; `createCustomPlan` still resolves the real prompts from `passage_prompts` at creation.) A named book skips the models entirely and walks its chapters. `validateReadings` still runs on the assembled result as a backstop, since a plan day that cannot load is the one failure the app cannot recover from.
 
   v8's two-pass `PLAN_SPEC` brief is **deleted**: it asked a model to write references and needed an ever-growing rulebook to keep them loadable. Build runs on **OpenAI** (`OPENAI_API_KEY`, model `OPENAI_MODEL`, default `gpt-5.6-luna`, the family that tagged the catalogue); `plans`/`help` still run on the Anthropic SDK (`ANTHROPIC_MODEL`, default `claude-haiku-4-5`). Both keys live locally in gitignored `supabase/functions/.env`; hosted they are dashboard secrets (the CLI cannot reach the project, see the identity block above). Clients: `src/lib/askPamwe.ts` (`buildPlan` returns a typed plan/off_topic/error and deliberately does NOT fall back to stock recs, since a build answers something the couple typed; `askPamwe` still falls back to hardcoded recs for the by-book builder).
+
+  **An account failure must not read as weather** (2026-08-09). A dead key or an empty credit balance is not "try again in a bit": it stays broken until someone tops the account up, and both times it has happened (b21 Anthropic, 2026-08-09 both providers at once) the friendly copy is why nobody noticed for days. The server classifies the thrown model error (`isAccountFailure`: 401/402, or `insufficient_quota` / `credit_balance_exhausted` / `credit balance` in the body, since Anthropic reports exhaustion as a **400**) and answers **503 with `unavailable: true`** instead of the generic 502. A bare 429 stays transient on purpose, that is an ordinary rate limit. On the client, `serverSaid()` reads the body back off `FunctionsHttpError.context`: **`functions.invoke()` reports every non-2xx as an error with `data` null**, so before this the server's sentence was always discarded and replaced with the generic line. "Resting for a moment" now appears only for a real timeout, a dead network, or an unreadable body, which is the only time it is true. Tested in `build-plan-errors.test.ts`.
 
 ---
 
@@ -369,6 +379,36 @@ clock time), topped up on each sign-in by `scheduleMorningFromPrefs`. It cancels
 **by id** (`pamwe-morning*`): it used to call `cancelAllScheduledNotificationsAsync()`,
 which silently killed every prayer reminder on launch while their stored ids
 still claimed they were set. Never reintroduce a cancel-all here.
+
+### The invite code is a credential, so pairing lives in the database
+
+Christian's round, 2026-08-08, after a security review. The three pairing calls
+in [src/lib/couples.ts](src/lib/couples.ts) are `supabase.rpc()` wrappers over
+`create_couple` / `join_couple` / `regenerate_invite_code`
+([20260808000001](supabase/migrations/20260808000001_pairing_rpcs.sql)). **Never
+put pairing back on table writes**, and never add a SELECT or UPDATE policy to
+`couples` that reaches a row the caller is not already in.
+
+The code used to be a client-side `.eq()` filter and nothing more. The database
+never saw it, so `couples_select_by_invite` (no `auth.uid()`, no code term) let
+any signed-in user list every pending invite, and `couples_update_join` let them
+claim one without it. Three round trips with no transaction meant a drop between
+the second and third left a couple paired with the joiner's profile unlinked.
+
+- Codes come from `gen_random_bytes`, not `Math.random()`, over the same
+  ambiguity-free 32-symbol alphabet. Expiry is `now() + interval '7 days'`
+  decided server-side; the client used to send it, so a modified client could
+  mint an invite that never expired.
+- `join_couple` takes the row `FOR UPDATE`, so two devices racing one code cannot
+  both pass the unpaired check, and it writes `couples` and `users.couple_id`
+  together.
+- **Unknown, spent and expired all raise the same sentence.** Not tidiness: a
+  distinguishable error is an oracle telling a stranger which codes are real.
+  Those strings are user-facing copy (join.tsx alerts `e.message`).
+- No throttle, deliberately. Enumeration is gone, so guessing is blind over 32^6
+  against rows that expire in a week. Revisit only if the logs show it happening.
+- The rules are tested in [scripts/rls_probe.sql](scripts/rls_probe.sql), not in
+  Jest, because Jest mocks the client and would pass whatever the database does.
 
 ### Timezone is captured once at couple creation, immutable in v1
 

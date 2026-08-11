@@ -47,3 +47,26 @@ export async function searchSharedLayer(coupleId: string, rawQuery: string): Pro
     reflections: matchedReflections,
   };
 }
+
+export type VerseHit = { book: string; chapter: number; verse: number; text: string };
+
+/** Search the Bible itself.
+ *
+ *  Separate from searchSharedLayer on purpose: that one is about what the two
+ *  of you have written, this one is about what Scripture says, and the two want
+ *  different words on the screen and different empty states.
+ *
+ *  Every word has to appear (the query is ANDed), which is what keeps the top
+ *  result the verse someone is reaching for. It also means a half-remembered
+ *  phrase from another translation can find nothing at all: the WEB says
+ *  "a threefold cord", so "cord of three strands" is genuinely absent. Fewer
+ *  words is the fix, and the screen says so rather than pretending. */
+export async function searchScripture(rawQuery: string, limit = 30): Promise<VerseHit[]> {
+  const q = rawQuery.trim();
+  if (q.length < 2) return [];
+  const { data, error } = await supabase.rpc('search_verses', { p_query: q, p_limit: limit });
+  if (error) throw error;
+  return ((data ?? []) as any[]).map((r) => ({
+    book: r.book, chapter: r.chapter, verse: r.verse, text: r.text,
+  }));
+}
