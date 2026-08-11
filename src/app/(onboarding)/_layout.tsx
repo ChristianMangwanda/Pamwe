@@ -16,8 +16,10 @@ export default function OnboardingLayout() {
       <Stack.Screen name="name" />
       <Stack.Screen name="pair-choice" />
       <Stack.Screen name="invite" />
+      <Stack.Screen name="code-sent" />
       <Stack.Screen name="join" />
       <Stack.Screen name="connected" />
+      <Stack.Screen name="left" />
       <Stack.Screen name="plan-select" />
     </Stack>
   );

@@ -29,6 +29,27 @@ export function inviteMessage(code: string): string {
   ].join('\n');
 }
 
+/** What the invite card says under the code.
+ *
+ *  The onboarding handoff drew "EXPIRES AT MIDNIGHT", which the database has
+ *  never agreed with: `create_couple` mints `now() + interval '7 days'`, decided
+ *  server-side precisely so a modified client cannot ask for an invite that
+ *  never dies. Christian's call (2026-08-10) was to keep the seven days and fix
+ *  the words, because an invite sent at eleven at night should still work in the
+ *  morning, and the failure it would otherwise hit is the deliberately vague
+ *  "that code did not work" sentence that cannot tell you it merely aged out.
+ *
+ *  Counted in whole days remaining, so it reads the way a person would say it. */
+export function inviteExpiryLabel(expiresAt: string | null | undefined, now = new Date()): string {
+  if (!expiresAt) return '';
+  const ms = new Date(expiresAt).getTime() - now.getTime();
+  if (Number.isNaN(ms) || ms <= 0) return 'Expired';
+  const days = Math.ceil(ms / 86_400_000);
+  if (days <= 1) return 'Expires today';
+  if (days === 2) return 'Expires tomorrow';
+  return `Expires in ${days} days`;
+}
+
 export async function takePendingInvite(): Promise<string | null> {
   try {
     const code = await AsyncStorage.getItem(PENDING_INVITE_KEY);

@@ -217,6 +217,55 @@ export type Database = {
         }
         Relationships: []
       }
+      couple_pauses: {
+        Row: {
+          couple_id: string
+          ended_at: string | null
+          ended_by: string | null
+          id: string
+          started_at: string
+          started_by: string | null
+        }
+        Insert: {
+          couple_id: string
+          ended_at?: string | null
+          ended_by?: string | null
+          id?: string
+          started_at?: string
+          started_by?: string | null
+        }
+        Update: {
+          couple_id?: string
+          ended_at?: string | null
+          ended_by?: string | null
+          id?: string
+          started_at?: string
+          started_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "couple_pauses_couple_id_fkey"
+            columns: ["couple_id"]
+            isOneToOne: false
+            referencedRelation: "couples"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "couple_pauses_ended_by_fkey"
+            columns: ["ended_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "couple_pauses_started_by_fkey"
+            columns: ["started_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       couple_plans: {
         Row: {
           cadence_days: number
@@ -265,18 +314,79 @@ export type Database = {
           },
         ]
       }
+      couple_requests: {
+        Row: {
+          couple_id: string
+          created_at: string
+          id: string
+          kind: string
+          requested_by: string
+          responded_at: string | null
+          responded_by: string | null
+          status: string
+        }
+        Insert: {
+          couple_id: string
+          created_at?: string
+          id?: string
+          kind: string
+          requested_by: string
+          responded_at?: string | null
+          responded_by?: string | null
+          status?: string
+        }
+        Update: {
+          couple_id?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          requested_by?: string
+          responded_at?: string | null
+          responded_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "couple_requests_couple_id_fkey"
+            columns: ["couple_id"]
+            isOneToOne: false
+            referencedRelation: "couples"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "couple_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "couple_requests_responded_by_fkey"
+            columns: ["responded_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       couples: {
         Row: {
           anniversary: string | null
           created_at: string | null
+          farewell_note: string | null
+          farewell_read_at: string | null
           freeze_days_used: number | null
           freeze_period_start: string | null
           id: string
           invite_code: string
           invite_expires_at: string
+          left_at: string | null
+          left_by: string | null
           paired_at: string | null
           partner_a_id: string
           partner_b_id: string | null
+          paused_at: string | null
+          paused_by: string | null
           streak_count: number | null
           streak_last_date: string | null
           timezone: string
@@ -284,14 +394,20 @@ export type Database = {
         Insert: {
           anniversary?: string | null
           created_at?: string | null
+          farewell_note?: string | null
+          farewell_read_at?: string | null
           freeze_days_used?: number | null
           freeze_period_start?: string | null
           id?: string
           invite_code: string
           invite_expires_at: string
+          left_at?: string | null
+          left_by?: string | null
           paired_at?: string | null
           partner_a_id: string
           partner_b_id?: string | null
+          paused_at?: string | null
+          paused_by?: string | null
           streak_count?: number | null
           streak_last_date?: string | null
           timezone?: string
@@ -299,19 +415,40 @@ export type Database = {
         Update: {
           anniversary?: string | null
           created_at?: string | null
+          farewell_note?: string | null
+          farewell_read_at?: string | null
           freeze_days_used?: number | null
           freeze_period_start?: string | null
           id?: string
           invite_code?: string
           invite_expires_at?: string
+          left_at?: string | null
+          left_by?: string | null
           paired_at?: string | null
           partner_a_id?: string
           partner_b_id?: string | null
+          paused_at?: string | null
+          paused_by?: string | null
           streak_count?: number | null
           streak_last_date?: string | null
           timezone?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "couples_left_by_fkey"
+            columns: ["left_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "couples_paused_by_fkey"
+            columns: ["paused_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       dreams: {
         Row: {
@@ -976,6 +1113,13 @@ export type Database = {
           target: Json
         }[]
       }
+      archive_summary: {
+        Args: { p_couple: string }
+        Returns: {
+          days: number
+          notes: number
+        }[]
+      }
       bump_ask_pamwe_usage: {
         Args: { p_user: string }
         Returns: {
@@ -1009,14 +1153,20 @@ export type Database = {
         Returns: {
           anniversary: string | null
           created_at: string | null
+          farewell_note: string | null
+          farewell_read_at: string | null
           freeze_days_used: number | null
           freeze_period_start: string | null
           id: string
           invite_code: string
           invite_expires_at: string
+          left_at: string | null
+          left_by: string | null
           paired_at: string | null
           partner_a_id: string
           partner_b_id: string | null
+          paused_at: string | null
+          paused_by: string | null
           streak_count: number | null
           streak_last_date: string | null
           timezone: string
@@ -1056,14 +1206,20 @@ export type Database = {
         Returns: {
           anniversary: string | null
           created_at: string | null
+          farewell_note: string | null
+          farewell_read_at: string | null
           freeze_days_used: number | null
           freeze_period_start: string | null
           id: string
           invite_code: string
           invite_expires_at: string
+          left_at: string | null
+          left_by: string | null
           paired_at: string | null
           partner_a_id: string
           partner_b_id: string | null
+          paused_at: string | null
+          paused_by: string | null
           streak_count: number | null
           streak_last_date: string | null
           timezone: string
@@ -1075,31 +1231,25 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      mark_reveal_seen: {
-        Args: { p_couple_plan: string; p_day: number }
-        Returns: undefined
-      }
-      notify_config: { Args: never; Returns: Record<string, unknown> }
-      plan_reader_counts: {
-        Args: { p_plan_ids: string[] }
-        Returns: {
-          couples: number
-          plan_id: string
-        }[]
-      }
-      regenerate_invite_code: {
-        Args: never
+      leave_couple: {
+        Args: { p_note?: string }
         Returns: {
           anniversary: string | null
           created_at: string | null
+          farewell_note: string | null
+          farewell_read_at: string | null
           freeze_days_used: number | null
           freeze_period_start: string | null
           id: string
           invite_code: string
           invite_expires_at: string
+          left_at: string | null
+          left_by: string | null
           paired_at: string | null
           partner_a_id: string
           partner_b_id: string | null
+          paused_at: string | null
+          paused_by: string | null
           streak_count: number | null
           streak_last_date: string | null
           timezone: string
@@ -1107,6 +1257,93 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "couples"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      mark_farewell_read: { Args: { p_couple: string }; Returns: undefined }
+      mark_reveal_seen: {
+        Args: { p_couple_plan: string; p_day: number }
+        Returns: undefined
+      }
+      my_couple_ids: { Args: never; Returns: string[] }
+      notify_config: { Args: never; Returns: Record<string, unknown> }
+      paused_days_between: {
+        Args: { p_couple: string; p_from: string; p_to: string; p_tz: string }
+        Returns: number
+      }
+      plan_reader_counts: {
+        Args: { p_plan_ids: string[] }
+        Returns: {
+          couples: number
+          plan_id: string
+        }[]
+      }
+      refresh_streak: { Args: { p_couple: string }; Returns: undefined }
+      regenerate_invite_code: {
+        Args: never
+        Returns: {
+          anniversary: string | null
+          created_at: string | null
+          farewell_note: string | null
+          farewell_read_at: string | null
+          freeze_days_used: number | null
+          freeze_period_start: string | null
+          id: string
+          invite_code: string
+          invite_expires_at: string
+          left_at: string | null
+          left_by: string | null
+          paired_at: string | null
+          partner_a_id: string
+          partner_b_id: string | null
+          paused_at: string | null
+          paused_by: string | null
+          streak_count: number | null
+          streak_last_date: string | null
+          timezone: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "couples"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      request_couple_change: {
+        Args: { p_kind: string }
+        Returns: {
+          couple_id: string
+          created_at: string
+          id: string
+          kind: string
+          requested_by: string
+          responded_at: string | null
+          responded_by: string | null
+          status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "couple_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      respond_to_couple_request: {
+        Args: { p_accept: boolean; p_id: string }
+        Returns: {
+          couple_id: string
+          created_at: string
+          id: string
+          kind: string
+          requested_by: string
+          responded_at: string | null
+          responded_by: string | null
+          status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "couple_requests"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -1175,6 +1412,25 @@ export type Database = {
       }
       sync_legacy_push_token: { Args: { p_user: string }; Returns: undefined }
       unread_activity_count: { Args: never; Returns: number }
+      withdraw_couple_request: {
+        Args: { p_id: string }
+        Returns: {
+          couple_id: string
+          created_at: string
+          id: string
+          kind: string
+          requested_by: string
+          responded_at: string | null
+          responded_by: string | null
+          status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "couple_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       [_ in never]: never

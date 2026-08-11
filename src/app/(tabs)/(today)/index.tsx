@@ -11,6 +11,8 @@ import { ProgressBar } from '../../../components/ui/ProgressBar';
 import { StreakBar } from '../../../components/ui/StreakBar';
 import { ThinkingButton } from '../../../components/ThinkingButton';
 import { DayClosed } from '../../../components/DayClosed';
+import { PausedToday } from '../../../components/PausedToday';
+import { CoupleRequestCard } from '../../../components/CoupleRequestCard';
 import { Floral } from '../../../components/ui/Floral';
 import { fonts } from '../../../constants/typography';
 import { GUTTER } from '../../../theme/tokens';
@@ -26,6 +28,8 @@ import { nudgePartner } from '../../../lib/notifications';
 import { lastFinishedPlan, FinishedPlan } from '../../../lib/planHistory';
 import { getUnseenReveals } from '../../../lib/entries';
 import { unreadActivityCount } from '../../../lib/activity';
+import { openRequests, CoupleRequest } from '../../../lib/coupleRequests';
+import { supabase } from '../../../lib/supabase';
 import { haptics } from '../../../lib/haptics';
 
 export default function HomeScreen() {
@@ -40,6 +44,38 @@ export default function HomeScreen() {
   // Only read when there's no active plan, to tell "you finished something"
   // apart from "you never started".
   const [finished, setFinished] = useState<FinishedPlan | null>(null);
+  // Pausing and starting again are both asks the other person answers, so Today
+  // has to carry whichever one is open. Realtime is on couple_requests, so the
+  // ask lands on the other phone without anyone reloading.
+  const [requests, setRequests] = useState<CoupleRequest[]>([]);
+
+  const reloadRequests = useCallback(() => {
+    openRequests().then(setRequests).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!couple?.id) return;
+    reloadRequests();
+    const channel = supabase
+      .channel(`couple-requests:${couple.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'couple_requests', filter: `couple_id=eq.${couple.id}` },
+        reloadRequests,
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [couple?.id, reloadRequests]);
+
+  const answerRequest = useCallback(async () => {
+    reloadRequests();
+    await refreshCouple();
+  }, [reloadRequests, refreshCouple]);
+
+  // A partial unique index allows only one pending request per kind, so
+  // "the first match" is always "the one".
+  const toAnswer = requests.find((r) => r.requested_by !== user?.id) ?? null;
+  const restartAsk = requests.find((r) => r.kind === 'restart') ?? null;
 
   // The cadence gate, and the verse the closed day holds. Both live up here
   // with the other hooks because there are early returns below, and a hook
@@ -113,12 +149,40 @@ export default function HomeScreen() {
     }
   };
 
+  // Needed above the early returns as well as below them, since the paused
+  // screen and the request card both name the other person.
+  const partnerName = partner?.display_name ?? 'Your partner';
+
   if (loading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
         <View style={styles.center}>
           <PamweLoading />
         </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Paused, and so before everything below: a couple who have agreed to stop
+  // should not be shown a reading, a streak or a nudge button. The restart ask
+  // is answered on the card, which is why it is above the paused screen rather
+  // than inside it.
+  if (couple?.paused_at) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top']}>
+        {toAnswer && (
+          <View style={styles.pausedAsk}>
+            <CoupleRequestCard request={toAnswer} partnerName={partnerName} onAnswered={answerRequest} />
+          </View>
+        )}
+        <PausedToday
+          pausedAt={couple.paused_at}
+          streak={couple.streak_count ?? 0}
+          partnerName={partnerName}
+          restartRequest={restartAsk}
+          mine={restartAsk?.requested_by === user?.id}
+          onChanged={answerRequest}
+        />
       </SafeAreaView>
     );
   }
@@ -210,7 +274,6 @@ export default function HomeScreen() {
     ?? (user?.user_metadata?.full_name || user?.email || 'Y')[0]?.toUpperCase()
     ?? 'Y';
   const partnerInitial = profileInitial(partner) ?? '?';
-  const partnerName = partner?.display_name ?? 'Your partner';
   const myStatus = mySubmitted ? 'Done' : 'Today';
   const partnerStatus = partnerSubmitted ? 'Done' : 'Reading…';
 
@@ -469,6 +532,7 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 32 },
   floral: { position: 'absolute', top: -6, left: -16, width: 116, height: 116, opacity: 0.82 },
   gearRow: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 16, zIndex: 2 },
+  pausedAsk: { paddingHorizontal: GUTTER, paddingTop: 12 },
   bell: { position: 'relative' },
   dot: { position: 'absolute', top: -1, right: -1, width: 9, height: 9, borderRadius: 4.5, borderWidth: 1.5 },
   header: { alignItems: 'center', marginTop: 4 },

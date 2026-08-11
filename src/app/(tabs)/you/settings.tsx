@@ -320,6 +320,10 @@ export default function SettingsScreen() {
               switchPlan). The old onboarding picker only knew the 4 curated
               plans. */}
           <ActionRow label="Change reading plan" onPress={() => router.push('/(tabs)/plans')} colors={colors} />
+          {/* Stopping for a while belongs beside the rhythm, not beside Delete
+              account. It is a break, not an ending. */}
+          <View style={[styles.divider, { backgroundColor: colors.line }]} />
+          <ActionRow label="Pause Pamwe" onPress={() => router.push('/(tabs)/you/pause')} colors={colors} />
         </Card>
 
         <Text variant="eyebrow" color={colors.muted} style={styles.sectionLabel}>Account</Text>
@@ -334,6 +338,11 @@ export default function SettingsScreen() {
             </>
           ) : null}
           <ActionRow label="Sign out" onPress={handleSignOut} colors={colors} />
+          <View style={[styles.divider, { backgroundColor: colors.line }]} />
+          {/* Leaving the pair is not deleting your account, and putting them
+              side by side is what makes people delete when they meant to
+              leave. This one keeps everything; the one below does not. */}
+          <ActionRow label="Leave the pair" onPress={() => router.push('/(tabs)/you/leave')} colors={colors} />
           <View style={[styles.divider, { backgroundColor: colors.line }]} />
           <ActionRow label="Delete account" destructive onPress={() => router.push('/(tabs)/you/delete-account')} colors={colors} />
         </Card>

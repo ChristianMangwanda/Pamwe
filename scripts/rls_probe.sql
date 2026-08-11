@@ -906,4 +906,265 @@ begin
 end $$;
 rollback;
 
+
+-- ==================================================================
+-- 19. Pausing takes two (20260814000001)
+-- ==================================================================
+begin;
+do $$
+declare
+  v_a uuid := (select alice from probe_ids);
+  v_b uuid := (select bob from probe_ids);
+  v_c uuid := (select couple from probe_ids);
+  v_req public.couple_requests;
+  v_paused timestamptz;
+  v_open int;
+begin
+  perform pg_temp.asowner();
+  delete from public.couple_requests where couple_id = v_c;
+  delete from public.couple_pauses where couple_id = v_c;
+  update public.couples set paused_at = null, paused_by = null where id = v_c;
+
+  -- Alice asks.
+  perform pg_temp.be(v_a);
+  v_req := public.request_couple_change('pause');
+  if v_req.status <> 'pending' then raise exception 'FAIL: the ask was not pending'; end if;
+
+  -- Asking twice is the same ask, not a second one. A double tap on a slow
+  -- connection must not leave a request the partner can never clear.
+  if (public.request_couple_change('pause')).id <> v_req.id then
+    raise exception 'FAIL: asking twice opened a second request';
+  end if;
+
+  -- The whole point: she cannot answer herself.
+  begin
+    perform public.respond_to_couple_request(v_req.id, true);
+    raise exception 'FAIL: the person who asked was allowed to answer';
+  exception when others then
+    if sqlerrm like 'FAIL:%' then raise; end if;
+  end;
+
+  -- Nor can an outsider.
+  perform pg_temp.be((select mallory from probe_ids));
+  begin
+    perform public.respond_to_couple_request(v_req.id, true);
+    raise exception 'FAIL: an outsider answered a couple''s request';
+  exception when others then
+    if sqlerrm like 'FAIL:%' then raise; end if;
+  end;
+  -- And cannot even see it.
+  if exists (select 1 from public.couple_requests where id = v_req.id) then
+    raise exception 'FAIL: an outsider could read a couple''s request';
+  end if;
+
+  -- The table takes no writes from the client, whoever they are.
+  perform pg_temp.be(v_a);
+  begin
+    update public.couple_requests set status = 'accepted' where id = v_req.id;
+    raise exception 'FAIL: a request was answered by writing the table directly';
+  exception when insufficient_privilege then null;
+  end;
+
+  -- Bob agrees, and only then does anything change.
+  perform pg_temp.be(v_b);
+  perform pg_temp.asowner();
+  select paused_at into v_paused from public.couples where id = v_c;
+  if v_paused is not null then raise exception 'FAIL: the couple paused before anyone agreed'; end if;
+
+  perform pg_temp.be(v_b);
+  perform public.respond_to_couple_request(v_req.id, true);
+
+  perform pg_temp.asowner();
+  select paused_at into v_paused from public.couples where id = v_c;
+  if v_paused is null then raise exception 'FAIL: agreeing did not pause the couple'; end if;
+  select count(*) into v_open from public.couple_pauses where couple_id = v_c and ended_at is null;
+  if v_open <> 1 then raise exception 'FAIL: expected exactly one open pause, got %', v_open; end if;
+
+  -- Answering a settled request is not a second decision.
+  perform pg_temp.be(v_b);
+  begin
+    perform public.respond_to_couple_request(v_req.id, false);
+    raise exception 'FAIL: a settled request was answered again';
+  exception when others then
+    if sqlerrm like 'FAIL:%' then raise; end if;
+  end;
+
+  -- Coming back closes the interval rather than opening a second one.
+  perform pg_temp.be(v_b);
+  v_req := public.request_couple_change('restart');
+  perform pg_temp.be(v_a);
+  perform public.respond_to_couple_request(v_req.id, true);
+
+  perform pg_temp.asowner();
+  select paused_at into v_paused from public.couples where id = v_c;
+  if v_paused is not null then raise exception 'FAIL: restarting left the couple paused'; end if;
+  select count(*) into v_open from public.couple_pauses where couple_id = v_c and ended_at is null;
+  if v_open <> 0 then raise exception 'FAIL: restarting left an open pause'; end if;
+end $$;
+rollback;
+
+-- ==================================================================
+-- 20. A pause does not break the streak (20260814000001)
+-- ==================================================================
+begin;
+do $$
+declare
+  v_c uuid := (select couple from probe_ids);
+  v_days int;
+begin
+  perform pg_temp.asowner();
+  delete from public.couple_pauses where couple_id = v_c;
+
+  -- Thirty days of pause sitting between two readings is thirty days the gap
+  -- must not count, which is the whole promise of "your streak stays where it
+  -- is". Measured through the function the streak actually calls.
+  insert into public.couple_pauses (couple_id, started_at, ended_at)
+  values (v_c, now() - interval '40 days', now() - interval '10 days');
+
+  select public.paused_days_between(
+    v_c, (now() - interval '45 days')::date, (now() - interval '5 days')::date, 'UTC'
+  ) into v_days;
+
+  if v_days < 29 or v_days > 31 then
+    raise exception 'FAIL: a 30 day pause counted as % days', v_days;
+  end if;
+
+  -- A gap that does not overlap the pause is untouched.
+  select public.paused_days_between(
+    v_c, (now() - interval '4 days')::date, now()::date, 'UTC'
+  ) into v_days;
+  if v_days <> 0 then
+    raise exception 'FAIL: a pause was subtracted from a gap it does not overlap (%)', v_days;
+  end if;
+end $$;
+rollback;
+
+
+-- ==================================================================
+-- 21. Leaving keeps the archive, and keeps the locked reveal (20260814000002)
+-- ==================================================================
+begin;
+do $$
+declare
+  v_a uuid := (select alice from probe_ids);
+  v_b uuid := (select bob from probe_ids);
+  v_m uuid := (select mallory from probe_ids);
+  v_c uuid := (select couple from probe_ids);
+  v_cp uuid;
+  v_seen int;
+  v_left timestamptz;
+begin
+  perform pg_temp.asowner();
+  select id into v_cp from public.couple_plans where couple_id = v_c limit 1;
+  if v_cp is null then raise exception 'probe fixtures missing: no couple_plan'; end if;
+
+  delete from public.entries where couple_plan_id = v_cp and day_number in (901, 902);
+  -- A day they BOTH wrote, and a day only Alice wrote.
+  insert into public.entries (couple_plan_id, day_number, user_id, entry_type, text_content, submitted_at)
+  values (v_cp, 901, v_a, 'text', 'mutual, alice', now()),
+         (v_cp, 901, v_b, 'text', 'mutual, bob',   now()),
+         (v_cp, 902, v_a, 'text', 'alice alone',   now());
+
+  -- Alice leaves, with a note.
+  perform pg_temp.be(v_a);
+  perform public.leave_couple('Thank you for the year.');
+
+  perform pg_temp.asowner();
+  select left_at into v_left from public.couples where id = v_c;
+  if v_left is null then raise exception 'FAIL: leaving did not seal the couple'; end if;
+
+  -- BOTH are free, not just the one who tapped.
+  if exists (select 1 from public.users where id in (v_a, v_b) and couple_id is not null) then
+    raise exception 'FAIL: someone was left attached to a sealed couple';
+  end if;
+
+  -- The archive is still readable, by the one who left...
+  perform pg_temp.be(v_a);
+  if not exists (select 1 from public.couples where id = v_c) then
+    raise exception 'FAIL: the leaver lost the archive';
+  end if;
+  select count(*) into v_seen from public.entries where couple_plan_id = v_cp and day_number in (901, 902);
+  if v_seen <> 3 then
+    raise exception 'FAIL: leaver saw % of her own 3 archived entries', v_seen;
+  end if;
+
+  -- ...and by the one who was left.
+  perform pg_temp.be(v_b);
+  if not exists (select 1 from public.couples where id = v_c) then
+    raise exception 'FAIL: the partner lost the archive';
+  end if;
+  -- Bob wrote day 901 so he has earned both sides of it; he never wrote 902, so
+  -- Alice's words there stay shut. Leaving is not a way to collect a reveal you
+  -- did not earn.
+  select count(*) into v_seen from public.entries where couple_plan_id = v_cp and day_number = 901;
+  if v_seen <> 2 then raise exception 'FAIL: a sealed mutual day was not readable (% rows)', v_seen; end if;
+  select count(*) into v_seen from public.entries where couple_plan_id = v_cp and day_number = 902;
+  if v_seen <> 0 then
+    raise exception 'FAIL: leaving unlocked a reflection the partner never earned (% rows)', v_seen;
+  end if;
+
+  -- A stranger gets nothing, archive or not.
+  perform pg_temp.be(v_m);
+  if exists (select 1 from public.couples where id = v_c) then
+    raise exception 'FAIL: an outsider could read a sealed couple';
+  end if;
+  if exists (select 1 from public.entries where couple_plan_id = v_cp) then
+    raise exception 'FAIL: an outsider could read archived reflections';
+  end if;
+  begin
+    perform public.mark_farewell_read(v_c);
+    raise exception 'FAIL: an outsider marked a farewell note read';
+  exception when others then
+    if sqlerrm like 'FAIL:%' then raise; end if;
+  end;
+
+  -- A sealed couple takes no writes from anybody.
+  perform pg_temp.be(v_b);
+  begin
+    update public.couples set left_at = null where id = v_c;
+    raise exception 'FAIL: a sealed couple was un-sealed from the client';
+  exception when insufficient_privilege then null;
+  end;
+
+  -- The note is for the person who did not write it, and is stamped once.
+  perform pg_temp.be(v_a);
+  perform public.mark_farewell_read(v_c);
+  perform pg_temp.asowner();
+  if (select farewell_read_at from public.couples where id = v_c) is not null then
+    raise exception 'FAIL: the writer reading her own note counted as it being read';
+  end if;
+
+  perform pg_temp.be(v_b);
+  perform public.mark_farewell_read(v_c);
+  perform pg_temp.asowner();
+  if (select farewell_read_at from public.couples where id = v_c) is null then
+    raise exception 'FAIL: the note was never marked read';
+  end if;
+end $$;
+rollback;
+
+-- ==================================================================
+-- 22. archive_summary answers only to the people in it (20260814000002)
+-- ==================================================================
+begin;
+do $$
+declare
+  v_a uuid := (select alice from probe_ids);
+  v_m uuid := (select mallory from probe_ids);
+  v_c uuid := (select couple from probe_ids);
+  v_notes int;
+begin
+  perform pg_temp.be(v_a);
+  select notes into v_notes from public.archive_summary(v_c);
+  if v_notes is null then raise exception 'FAIL: a partner got no summary of her own archive'; end if;
+
+  -- Not an error, no rows: the count of somebody else's life is not a thing to
+  -- answer at all, and a zero would still confirm the couple exists.
+  perform pg_temp.be(v_m);
+  if exists (select 1 from public.archive_summary(v_c)) then
+    raise exception 'FAIL: an outsider was told how much a couple had written';
+  end if;
+end $$;
+rollback;
+
 select 'rls_probe: all probes held' as result;

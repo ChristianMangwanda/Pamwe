@@ -106,6 +106,20 @@ export async function getPartnerProfile(couple: any, userId?: string) {
   return data;
 }
 
+/** One person by id.
+ *
+ *  For the archive, where entries carry a user id and there is no longer a
+ *  couple to work out who is who from. `users_select_partner` still governs
+ *  what comes back, so this reaches nobody the caller could not already see. */
+export async function getProfile(userId: string) {
+  const { data } = await supabase
+    .from('users')
+    .select('id, email, display_name, avatar_initial')
+    .eq('id', userId)
+    .maybeSingle();
+  return data;
+}
+
 export function profileInitial(
   profile: { avatar_initial?: string | null; display_name?: string | null; email?: string | null } | null,
 ): string | null {

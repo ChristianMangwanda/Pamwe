@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../providers/AuthProvider';
 import { getUserCouple } from '../lib/couples';
 import { getActiveCouPlan } from '../lib/plans';
+import { myArchives } from '../lib/archive';
 import { View } from 'react-native';
 import { useTheme } from '../providers/ThemeProvider';
 import { Text } from '../components/ui/Text';
@@ -11,7 +12,7 @@ import { Button } from '../components/ui/Button';
 import { PamweLoading } from '../components/ui/PamweLoading';
 import { hideSplashOnce } from '../lib/splash';
 
-type RouteState = 'loading' | 'auth' | 'unpaired' | 'waiting' | 'plan-select' | 'tabs' | 'error';
+type RouteState = 'loading' | 'auth' | 'unpaired' | 'left' | 'waiting' | 'plan-select' | 'tabs' | 'error';
 
 // Where this account landed last time. Only 'tabs' is ever remembered, because
 // it is the only destination that stays true for months: the four onboarding
@@ -30,7 +31,15 @@ export default function Index() {
   const resolveRoute = useCallback(async (userId: string) => {
     try {
       const couple = await getUserCouple(userId);
-      if (!couple) { setRoute('unpaired'); return; }
+      if (!couple) {
+        // No couple is two different situations. Somebody who has just left a
+        // partnership of a hundred and fifty days is not a new user, and
+        // dropping them into the value slides would be the app pretending none
+        // of it happened.
+        const archives = await myArchives().catch(() => []);
+        setRoute(archives.length > 0 ? 'left' : 'unpaired');
+        return;
+      }
       if (!couple.paired_at) { setRoute('waiting'); return; }
 
       const plan = await getActiveCouPlan(couple.id);
@@ -49,7 +58,7 @@ export default function Index() {
   // that ended, or a pair that ended, cannot keep opening Today.
   useEffect(() => {
     if (!session?.user) return;
-    if (route === 'unpaired' || route === 'waiting' || route === 'plan-select') {
+    if (route === 'unpaired' || route === 'left' || route === 'waiting' || route === 'plan-select') {
       AsyncStorage.removeItem(rememberedKey(session.user.id)).catch(() => {});
     }
   }, [route, session?.user?.id]);
@@ -125,6 +134,8 @@ export default function Index() {
 
   // No couple yet → start the onboarding funnel (value slides → name → pair).
   if (route === 'unpaired') return <Redirect href="/(onboarding)/value-slides" />;
+  // Left a partnership, and has not started another. The archive lives here.
+  if (route === 'left') return <Redirect href="/(onboarding)/left" />;
   // Couple created but partner hasn't joined → the invite screen shows the code + waits.
   if (route === 'waiting') return <Redirect href="/(onboarding)/invite" />;
   if (route === 'plan-select') return <Redirect href="/(onboarding)/plan-select" />;
