@@ -1,6 +1,17 @@
 # Pamwe Build Progress Summary
 
-**Last Updated:** August 11, 2026
+**Last Updated:** August 12, 2026
+
+---
+
+## 🎯 LAUNCH DEADLINE (set 2026-08-12): LIVE ON THE APP STORE MON AUG 24
+
+Submit for review **Wed Aug 19**. Full schedule and decisions in
+[`launch-plan.md`](launch-plan.md). The short version: b28 to both phones +
+the two-phone pause/leave pass with Ammy by Sun Aug 16, privacy policy on
+GitHub Pages (launching WITHOUT a domain, decided 2026-08-12), listing +
+privacy questionnaire Mon–Tue, submit Wednesday, buffer for one rejection
+round. If the two-phone pass is clean, **b28 is the launch build**.
 
 ---
 

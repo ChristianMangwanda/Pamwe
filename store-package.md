@@ -20,10 +20,10 @@ placeholder check refuses to publish an unfinished policy. This is the policy
 that names dreams, verse notes, the widget and the anniversary, so it is the
 one that matches the nutrition labels.
 
-⚠️ The old pamwe-site pages (christianmangwanda.github.io/pamwe-site/) are STALE
-(July 16: no dreams, no verse notes, no widget). Take that site down or redirect
-it before submitting, so two contradictory policies are not both live.
-**[Christian]**
+~~⚠️ The old pamwe-site pages are STALE~~ **RESOLVED 2026-08-12:** all three
+pamwe-site pages (index, privacy, terms) now serve zero-delay redirects to the
+canonical site above, with `rel=canonical` set. Old links keep working, and only
+one policy is live. The old content stays in that repo's git history.
 
 ## 2. App information
 
@@ -86,25 +86,18 @@ couples,devotional,bible,marriage,prayer,journal,reading plan,scripture,together
 
 ## 4. Privacy nutrition labels
 
-Data collection declaration (Collect → Yes):
+**This section is superseded. The authoritative answers live in
+[docs/app-store-privacy-answers.md](docs/app-store-privacy-answers.md)
+(2 August audit), which declares EIGHT types, not the six drafted here, and is
+what `ios/Pamwe/PrivacyInfo.xcprivacy` in the shipped binary mirrors.** Filling
+ASC from this older table would contradict the binary's privacy manifest, which
+is a rejection. The two additions the audit made:
 
-| ASC category | Data | Linked to identity? | Tracking? | Purpose |
-|---|---|---|---|---|
-| Contact Info → Email Address | Sign-in email | Yes | No | App functionality |
-| Contact Info → Name | Display name from Apple/Google or typed | Yes | No | App functionality |
-| User Content → Audio Data | Voice reflections | Yes | No | App functionality |
-| User Content → Other User Content | Written reflections, prayers, verse notes/highlights, custom plans | Yes | No | App functionality |
-| Identifiers → User ID | Account UUID, Expo push token | Yes | No | App functionality |
-| Diagnostics → Crash Data | Sentry crash reports | No | No | App functionality |
+- **Sensitive Info** (religious beliefs; the entire content layer)
+- **Device ID** (the Expo push token, split out from User ID)
 
-Everything else: not collected. **Tracking: No** (nothing is used for cross-app
-tracking or advertising; no ATT prompt needed). No Usage Data category: there
-are no analytics events.
-
-Processors to keep in mind if Apple asks (matches the privacy page): Supabase
-(storage), Anthropic (Ask Pamwe queries only, never journal content), Apple and
-Google (auth), Expo and APNs (push delivery), bible-api.com and bible.helloao.org
-(passage fetch, no user data), Sentry (crash data).
+Answer the questionnaire from that doc, top to bottom. Its "Not Collected" table
+and the two flagged judgment calls are part of the answers.
 
 ## 5. Screenshots — 6.9" set (required)
 
@@ -126,24 +119,45 @@ de-identified content, since every visible word ships to the store page.
 
 ## 6. App Review notes (paste into the Notes field)
 
-**The demo-couple path was removed 2026-08-11** (Christian's call: review runs
-on his own account). The `@review.pamwe.app` password sign-in, the seed script
-and the hosted Grace/Daniel accounts are all gone. When submitting, write the
-review notes around whatever access Christian provides at that time; Apple's
-guideline 2.1 still requires that a reviewer can reach the core loop, which
-needs a paired couple, so the notes must say how the reviewer sees a reveal
-(demo video, or credentials supplied then).
+**The demo-couple path was removed 2026-08-11** (Christian's call; the leaked
+`@review.pamwe.app` accounts and the password sign-in are gone). Mechanically
+that means no credentials CAN be supplied: release builds have no password
+field, his own account signs in by magic link or Apple ID, and neither works
+from a reviewer's desk. **So the plan is a demo video**, recorded on the two
+phones during the pause/leave pass (same evening, same setup). Guideline 2.1
+prefers a demo account; video is the documented alternative when an account
+cannot demonstrate the app alone. **If Apple rejects on 2.1, the fallback is a
+fresh pre-paired review couple with a password path in b29, credentials only in
+the ASC notes field, never in git.** That is a new decision for Christian at
+that point, not a standing one.
 
-## 7. Anthropic spend alert (Ask Pamwe cost guard)
+Draft notes (fill the video link before submitting):
 
-The server already rate-limits Ask Pamwe to 20 calls/day per user with a 10s
-cooldown. Add a billing-level guard at https://console.anthropic.com:
+> Pamwe is a devotional app for exactly two people, a couple. Every feature is
+> built around one pair of accounts: the couple reads the same passage, each
+> writes a private reflection, and both reflections unlock only after both
+> partners have submitted. There is no solo mode, no public content, no feed,
+> and no way to see any writing except your one partner's. This is enforced by
+> the database, not just the UI.
+>
+> Signing in alone (Sign in with Apple works immediately) shows onboarding and
+> ends at the invite-code screen, because the app cannot go further without a
+> second person. Since the core loop requires two paired humans, we have
+> recorded a full walkthrough on two phones showing sign-in, pairing, the daily
+> reading, both partners writing, the mutual reveal, prayers, and account
+> deletion: [VIDEO LINK]
+>
+> Account deletion (guideline 5.1.1(v)) is in the app: You tab, Settings,
+> Delete account. The app is free with no purchases, no ads, and no tracking.
+> Notifications are optional and configurable in Settings.
 
-1. Settings → Billing → **Spend limits**: set a monthly limit (suggest $25; at
-   Haiku pricing that is thousands of Ask Pamwe calls).
-2. Same page: add an **email alert** at 50% of the limit.
-3. This needs your console login, so it can't be automated from here. Two
-   minutes, one time.
+## 7. Model spend guard — DONE, superseded
+
+Resolved 2026-08-11: **OpenAI auto-recharge is set** (the default provider for
+plan builds; the spend-alert story lives there now). Anthropic is parked with
+no credits by decision; the by-book builder falls back to its stock
+recommendations, which is the accepted state. The server-side limit (20/day
+per user, 10s cooldown) is live. Nothing left to do here.
 
 ## 8. Submission checklist (what remains after this doc)
 
@@ -156,8 +170,15 @@ cooldown. Add a billing-level guard at https://console.anthropic.com:
       `scripts/deidentify_screenshots.py`. The originals in `Screenshots/`
       still hold real content; the whole folder is gitignored (public repo)
       and only the `appstore/` set may leave the machine.
-- [ ] Fill nutrition labels (section 4) + age rating (section 2) in ASC.
+- [x] Stale pamwe-site policies redirected to the canonical site (2026-08-12).
+- [x] ~~Anthropic spend limit~~ superseded: OpenAI auto-recharge set 2026-08-11
+      (section 7).
+- [ ] Record the two-phone demo video for the review notes (section 6) during
+      the pause/leave verification pass. Same evening, same two phones.
+- [ ] Fill nutrition labels from
+      [docs/app-store-privacy-answers.md](docs/app-store-privacy-answers.md)
+      (EIGHT types; section 4 here is superseded) + age rating (section 2).
 - [ ] Paste description/promo/keywords (section 3) + URLs (section 1).
-- [ ] Set the Anthropic spend limit (section 7).
-- [ ] Then: production archive → upload → submit for review with the notes in
-      section 6.
+- [ ] Attach **build 28** (already uploaded) to version 1.0.0 and submit with
+      the section 6 notes. No new archive unless the two-phone pass forces a
+      fix; then it is b29 through the usual pipeline.

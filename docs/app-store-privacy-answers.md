@@ -49,7 +49,7 @@ App Functionality is the only purpose to tick anywhere. Do not tick Analytics, P
 
 **User ID.** Each account has a UUID used throughout the database, and rows are keyed to it.
 
-**Device ID.** The Expo push notification token, stored in `users.expo_push_token`. See the judgment call below.
+**Device ID.** The Expo push notification token, stored in the `push_tokens` table, one row per signed-in device (the legacy `users.expo_push_token` column was dropped 2026-08-11). See the judgment call below.
 
 **Crash Data.** Sentry, enabled in release builds through `EXPO_PUBLIC_SENTRY_DSN`. Marked **not linked to identity**, and that is verified rather than assumed: `Sentry.init` is called with `sendDefaultPii: false`, and the codebase never calls `Sentry.setUser`, `setContext` or `setTag`, so no account identifier is ever attached to a crash report.
 
@@ -81,7 +81,7 @@ App Functionality is the only purpose to tick anywhere. Do not tick Analytics, P
 
 **1. Device ID: I recommend declaring Yes.**
 
-Apple's examples for Device ID are the IDFA and IDFV, and Pamwe uses neither. But Apple's definition is broad: any identifier that relates to a device. The Expo push token is a device-level identifier, we store it against the user's row, and it is what lets a message reach one specific phone.
+Apple's examples for Device ID are the IDFA and IDFV, and Pamwe uses neither. But Apple's definition is broad: any identifier that relates to a device. The Expo push token is a device-level identifier, we store it in `push_tokens` keyed to the account, and it is what lets a message reach one specific phone.
 
 Some developers do not declare push tokens here. Declaring it costs nothing, since the answer to tracking is still No, and it is the honest reading. Under-declaring is what gets apps rejected. If you disagree, the alternative is defensible, but change the policy to match.
 
