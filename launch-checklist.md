@@ -1,5 +1,29 @@
 # Pamwe — App Store Launch Checklist
 
+> # ⚠️ RETIRED 2026-08-16. Read [launch-plan.md](launch-plan.md) instead.
+>
+> This file stopped being true somewhere around build 27 and is kept only as a
+> record of the July launch-prep round. It is wrong in ways that will cost you
+> real work if you act on it:
+>
+> - **Section C recommends building a password sign-in path for App Review demo
+>   accounts.** That approach was deliberately REMOVED on 2026-08-11: the
+>   `@review.pamwe.app` accounts, the password UI and `scripts/seed_review_accounts.sql`
+>   are all gone, and `seed_review_accounts.sql` no longer exists at all. Review
+>   access is Christian's own account plus a demo video. See
+>   [store-package.md](store-package.md). Do not re-add a production password path.
+> - **#19 "CoupleProvider has no realtime" is closed.** It has had a realtime
+>   subscription plus a foreground resync since build 28.
+> - **#45 "three pre-auth components import the frozen palette" is closed.**
+>   Two migrated to `useTheme()` and the third file no longer exists. One
+>   importer of `src/constants/colors.ts` remains, `RouteErrorBoundary`, and it
+>   is deliberate and permanent (see CLAUDE.md).
+>
+> Everything below this line is preserved as written in July. Trust nothing in
+> it without checking the code first.
+
+---
+
 > **STATUS UPDATE 2026-07-16:** Section C largely closed by the launch-prep round: privacy/support/terms URLs LIVE (GitHub Pages, `pamwe-site` repo), nutrition labels + age rating + description/keywords + review-notes drafted in [store-package.md](store-package.md), review demo-account strategy implemented (password sign-in for `@review.pamwe.app` + `scripts/seed_review_accounts.sql`, seed pending hosted access). From section E now code-complete: dead push-token cleanup (`_shared/push.ts` in all notify-*), P2s #18/#23/#25/#30/#45 (three new migrations `20260716000001/2/3`, pending hosted). Still open in C: screenshots. Still open in E: Supabase Pro, custom SMTP, Anthropic spend alert (2-min console task, steps in store-package.md).
 >
 > **STATUS UPDATE 2026-07-10 (end of day):** TestFlight is LIVE — builds 1–7 shipped, Christian + Ammy testing as internal testers. Now DONE from the lists below: A1 app icon (floral P; splash/android marks still template), A2 key rotated + hosted secret set, A4 auth providers configured (Google needs Skip-nonce ON — done), A5 Sentry wired (DSN in .env.production), C1 app record created, D1 internal TestFlight, D2 in progress (couples beta running; feedback loop = Notion "Pamwe Ramblings"). P0 #5 (reveal skipped for first submitter) STILL OPEN. A6 (push banner end-to-end) still to verify on device. Remaining big rocks: section C store package (privacy URL, screenshots, review strategy), section E scale hardening, green-list features (progress.md top banner).

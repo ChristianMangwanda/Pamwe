@@ -7,6 +7,7 @@ import { LockSimple } from 'phosphor-react-native';
 import { Text } from '../../../components/ui/Text';
 import { Button } from '../../../components/ui/Button';
 import { BackLink } from '../../../components/ui/BackLink';
+import { PamweLoading } from '../../../components/ui/PamweLoading';
 import { SegmentedControl } from '../../../components/ui/SegmentedControl';
 import { VoiceRecorder, VoiceRecorderResult } from '../../../components/VoiceRecorder';
 import { fonts } from '../../../constants/typography';
@@ -41,7 +42,7 @@ function isNetworkError(err: any): boolean {
 export default function JournalScreen() {
   const router = useRouter();
   const { colors } = useTheme();
-  const { couple, couplePlan, partner } = useCouple();
+  const { couple, couplePlan, partner, loading: coupleLoading } = useCouple();
   // Pinned to the day this reflection is for. Unpinned, a partner tapping Amen
   // moved current_day out from under the open journal, and the next autosave
   // wrote these words into the NEXT day's entry, a day neither partner had
@@ -257,6 +258,29 @@ export default function JournalScreen() {
     </View>
   );
 
+  // Nobody writes into a journal whose plan has not arrived yet.
+  //
+  // Every write on this screen is guarded by `if (!couplePlan) return`, which
+  // is correct but silent, so on a cold launch the writing surface was live
+  // while all of it was inert: the autosave no-opped (the 5s interval caught up
+  // once the plan landed, so typed words survived), but leaving by the Back
+  // link saves and navigates in one breath, and a voice recording finishing in
+  // that window was dropped on the floor with no draft row to attach it to.
+  // Holding the surface until the plan is known makes all three safe at once,
+  // rather than teaching each one to wait.
+  if (!couplePlan && coupleLoading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top', 'bottom']}>
+        <View style={styles.header}>
+          <BackLink onPress={() => router.back()} label="Back" />
+        </View>
+        <View style={styles.tooEarly}>
+          <PamweLoading />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   // Refused, gently and with a date. A locked door with no reason on it reads
   // as a bug; a rhythm reads as a rhythm.
   if (tooEarly) {
@@ -319,6 +343,12 @@ export default function JournalScreen() {
                 placeholderTextColor={colors.muted}
                 value={text}
                 onChangeText={setText}
+                // The database ceiling (entries_text_content_length), mirrored
+                // here so a long reflection is stopped by the field rather than
+                // rejected by a save it has no way to explain. Nobody reaches it
+                // by writing: the longest reflection anyone has written is 510
+                // characters.
+                maxLength={10000}
                 editable={!isSubmitted}
                 textAlignVertical="top"
               />

@@ -5,6 +5,9 @@ jest.mock('expo-notifications', () => ({
   cancelScheduledNotificationAsync: jest.fn(() => Promise.resolve()),
 }));
 jest.mock('expo-device', () => ({ isDevice: true }));
+// A failed getExpoPushTokenAsync is reported rather than swallowed now, and
+// the real SDK pulls in native modules this suite deliberately does not have.
+jest.mock('@sentry/react-native', () => ({ captureException: jest.fn() }));
 jest.mock('expo-constants', () => ({ default: { expoConfig: {} } }));
 jest.mock('../lib/supabase', () => ({ supabase: { auth: {}, from: jest.fn() } }));
 jest.mock('../lib/couples', () => ({ getUserCouple: jest.fn() }));

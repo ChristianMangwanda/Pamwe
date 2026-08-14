@@ -1,4 +1,4 @@
-import { expectedDay, daysBehind, todayInTimezone } from '../lib/catchup';
+import { expectedDay, daysBehind, todayInTimezone, owedDays } from '../lib/catchup';
 
 describe('catch-up math', () => {
   it('expects day 1 on the start date', () => {
@@ -65,5 +65,43 @@ describe('catch-up math honours the cadence', () => {
   it('formats today as an ISO date for a timezone', () => {
     const iso = todayInTimezone('America/New_York', new Date('2026-07-10T12:00:00Z'));
     expect(iso).toBe('2026-07-10');
+  });
+});
+
+// Falling behind was a dead end before this: Today renders current_day and
+// nothing else, so the days between it and today were open but unreachable.
+describe('the days a couple still owes', () => {
+  it('lists every open day from where they are up to today', () => {
+    // On day 2, should be on day 4: days 2 and 3 were missed, day 4 is today's.
+    expect(owedDays(2, '2026-08-10', '2026-08-13', 21)).toEqual([2, 3, 4]);
+  });
+
+  it('runs one longer than daysBehind, because today is owed too', () => {
+    const behind = daysBehind('2026-08-10', 2, '2026-08-13', 21);
+    expect(owedDays(2, '2026-08-10', '2026-08-13', 21)).toHaveLength(behind + 1);
+  });
+
+  it('is just today when the couple is on pace', () => {
+    expect(owedDays(4, '2026-08-10', '2026-08-13', 21)).toEqual([4]);
+  });
+
+  it('never offers a day the gate has not opened', () => {
+    // Ahead of pace. Reading tomorrow's tonight is the one thing the gate
+    // exists to stop, and catch-up must not be a way around it.
+    expect(owedDays(9, '2026-08-10', '2026-08-13', 21)).toEqual([]);
+  });
+
+  it('never runs past the end of the plan', () => {
+    // A month away from a 21 day plan owes 21 days, not 30.
+    expect(owedDays(19, '2026-07-10', '2026-08-13', 21)).toEqual([19, 20, 21]);
+  });
+
+  it('honours a slower rhythm rather than calling it a backlog', () => {
+    // Every other day, 6 days in, on day 4: dead on pace, so only today's.
+    expect(owedDays(4, '2026-07-01', '2026-07-07', 21, 2)).toEqual([4]);
+  });
+
+  it('stays empty without a start date rather than inventing a backlog', () => {
+    expect(owedDays(3, null, '2026-08-13', 21)).toEqual([]);
   });
 });

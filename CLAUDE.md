@@ -17,7 +17,9 @@ Mobile app for couples to read the Bible together using the M'Cheyne Reading Pla
 **Tracking docs:**
 - [`progress.md`](progress.md) — phase-by-phase status, where we are and what's next
 - [`trial-and-error.md`](trial-and-error.md) — issues hit during development and how each was solved. **Check this first** when you hit a bug class you might've seen before (RLS recursion, Xcode/Swift compat, release-pipeline snags, `expo prebuild` damage).
-- [`build8-plan.md`](build8-plan.md) / [`round4-plan.md`](round4-plan.md) / [`build10-plan.md`](build10-plan.md) — per-round plans + implementation records for beta rounds 3-5
+- [`launch-plan.md`](launch-plan.md) — **the current launch doc**: submit Wed 2026-08-19, live Mon 2026-08-24, b28 is the launch build. ⚠️ [`launch-checklist.md`](launch-checklist.md) is its retired predecessor and is stale in ways that will actively mislead: read the banner at its top before believing anything in it.
+- [`store-package.md`](store-package.md) — App Store listing copy, screenshots, and the review-notes strategy (a demo video, since the demo-account path was removed 2026-08-11)
+- [`build8-plan.md`](build8-plan.md) / [`round4-plan.md`](round4-plan.md) / [`build10-plan.md`](build10-plan.md) / [`build27-plan.md`](build27-plan.md) — per-round plans + implementation records. build27 is the one to read for the pause / leave / archive flow.
 - [`AGENTS.md`](AGENTS.md) — one line: read `https://docs.expo.dev/versions/v56.0.0/` before writing Expo code
 
 ---
@@ -81,6 +83,12 @@ supabase status                        # local URLs/keys · Studio http://127.0.
 
 ```bash
 # TestFlight release (terminal pipeline; Apple Dev approved, ASC record exists).
+# NOTE: `eas.json` is vestigial. Nothing invokes EAS (no workflow, no npm
+# script); builds ship by xcodebuild archive + exportArchive, below. Its two
+# `env` blocks were stripped 2026-08-16: they carried the hosted anon key, both
+# Google client IDs and the Sentry DSN in a PUBLIC repo, which is exactly what
+# .env.production was untracked for on 2026-08-02. If EAS is ever picked back
+# up, put those values in EAS secrets, not back in the file.
 # 1. Bump CURRENT_PROJECT_VERSION in ios/Pamwe.xcodeproj/project.pbxproj (NOW 4 spots:
 #    2 for the Pamwe app + 2 for the VerseWidget target's Debug/Release configs).
 #    Both Info.plists read $(CURRENT_PROJECT_VERSION) — never hardcode there. The
@@ -181,7 +189,7 @@ src/app/
 
 A shared plan travels by link (`pamwe://plan/<token>`, [src/app/plan/[token].tsx](src/app/plan/%5Btoken%5D.tsx)), which opens a preview and never enrols anyone automatically. `plans.share_token` is minted on Share; `plans.is_public` is the separate, deliberate step of offering it in Browse. Popularity does not graduate a plan on its own.
 
-The design-handoff rebuild (2026-07) replaced the 2-tab app with this 6-tab shell. **Theming:** every screen reads colors from `useTheme()` ([src/providers/ThemeProvider.tsx](src/providers/ThemeProvider.tsx)) over the light+dark palettes in [src/theme/tokens.ts](src/theme/tokens.ts); the user toggles light/dark in the You tab. Legacy [src/constants/colors.ts](src/constants/colors.ts) is a **frozen light-only palette** kept for a few pre-auth/onboarding files only — **never import it in new code; use `useTheme()`.**
+The design-handoff rebuild (2026-07) replaced the 2-tab app with this 6-tab shell. **Theming:** every screen reads colors from `useTheme()` ([src/providers/ThemeProvider.tsx](src/providers/ThemeProvider.tsx)) over the light+dark palettes in [src/theme/tokens.ts](src/theme/tokens.ts); the user toggles light/dark in the You tab. Legacy [src/constants/colors.ts](src/constants/colors.ts) is a **frozen light-only palette** with exactly one importer left, and it cannot be deleted: [RouteErrorBoundary.tsx](src/components/RouteErrorBoundary.tsx) is expo-router's `ErrorBoundary` for the ROOT layout, so when the thing that failed is the layout that mounts `ThemeProvider`, calling `useTheme()` would throw inside the boundary itself and turn a recoverable screen error into a dead app. It is an architectural constraint, not leftover debt (the pre-auth/onboarding files it used to also serve have all migrated). The cost is that a dark-mode user's crash screen renders light, which is the right trade for a screen that only appears when something is already broken. **Never import it in new code; use `useTheme()`.**
 
 Auth gate in [src/app/index.tsx](src/app/index.tsx) sequences:
 1. No session → `(auth)/welcome`
@@ -190,16 +198,18 @@ Auth gate in [src/app/index.tsx](src/app/index.tsx) sequences:
 4. Session, paired, no plan → `(onboarding)/plan-select`
 5. Session, paired, has plan → `(tabs)`
 
-### Supabase data model (13 tables, all RLS-enabled)
+### Supabase data model (all RLS-enabled)
 
 | Table | Purpose |
 |---|---|
-| `users` | Profile mirror of `auth.users`. Created by `handle_new_user` trigger. Holds `couple_id`, push token, notification prefs, `accepted_terms_at`. **UPDATE is a column-level grant, not a policy** (2026-08-08): the client may write display_name, avatar_initial, the six notification_* prefs and accepted_terms_at, and nothing else (`expo_push_token` dropped 2026-08-11 with the legacy column; device tokens live in `push_tokens` via the `save_push_token`/`clear_push_token` RPCs). `couple_id` was self-assignable, and `users_select_partner` / `share_plan()` / `plan_days_update_custom` all trusted it. A new client-written column needs adding to that grant. |
-| `couples` | Invite code + partner_a/b + paired_at + streak state + timezone + `anniversary` (nullable DATE, written via the `set_couple_anniversary` RPC). **No INSERT or UPDATE reaches this table from the client at all** (2026-08-08): pairing goes through `create_couple` / `join_couple` / `regenerate_invite_code`, and `couples_select_own` is the only policy left. |
+| `users` | Profile mirror of `auth.users`. Created by `handle_new_user` trigger. Holds `couple_id`, push token, notification prefs, `accepted_terms_at`. **UPDATE is a column-level grant, not a policy** (2026-08-08): the client may write display_name, avatar_initial, the eight notification_* prefs (the original six plus `notification_morning` and `notification_preview`, 2026-08-13), `last_seen_activity_at` (2026-08-11) and accepted_terms_at, and nothing else (`expo_push_token` dropped 2026-08-11 with the legacy column; device tokens live in `push_tokens` via the `save_push_token`/`clear_push_token` RPCs). `couple_id` was self-assignable, and `users_select_partner` / `share_plan()` / `plan_days_update_custom` all trusted it. A new client-written column needs adding to that grant. **SELECT has a third policy since 2026-08-16**: `users_select_archived_partner` reaches a person through `couples.partner_a_id/partner_b_id` (via `my_couple_ids()`) rather than through `users.couple_id`, because `leave_couple()` nulls that column on both partners and the archive could no longer say whose words were whose. |
+| `couples` | Invite code + partner_a/b + paired_at + streak state + timezone + `anniversary` (nullable DATE, written via the `set_couple_anniversary` RPC). Build 27 added the pause and ending columns: `paused_at`/`paused_by`, and `left_at`/`left_by`/`farewell_note`/`farewell_read_at`. **No INSERT or UPDATE reaches this table from the client at all** (2026-08-08): pairing goes through `create_couple` / `join_couple` / `regenerate_invite_code`, pause and ending through the RPCs below, and `couples_select_own` plus `couples_select_archived` are the only policies left. `partner_a_id`/`partner_b_id` are never cleared, deliberately: that row is the record that the two of them were a couple, and the archive policies read it. |
+| `couple_requests` / `couple_pauses` | Build 27's "a pause is a mutual decision" flow: one partner asks (`couple_requests`, kind + status), the other answers, and an agreed pause is logged as an interval in `couple_pauses` so the streak can subtract it. Written only through `ask_couple_change` / `respond_to_request` / `withdraw_request` / `leave_couple`. `notify-couple-request` pushes on both the ask and the answer. |
+| `push_tokens` | The device-token registry since b26, one row per device, written via the `save_push_token` / `clear_push_token` RPCs. It replaced `users.expo_push_token`, which was dropped 2026-08-15 once every notify function had been redeployed to read this table instead. Every notify-* function fans out over it. |
 | `plans` | Reading plans. Curated (M'Cheyne 365, John 21, Psalms 30, Cord 21) + couple-built custom plans (`is_curated=false`, `couple_id`, `created_by`). Browse metadata cols: `tagline/about/explore/gain/minutes_label/rhythm_label/book_label`. |
 | `plan_days` | Rows per plan-day: passage ref, text (**nullable** — custom plans store NULL and live-fetch), pull quote, reflection prompt. |
-| `couple_plans` | A couple's enrollment in a plan (current_day, start_date, status, `cadence_days`). |
-| `entries` | Per-user per-day reflection. Type text or voice. `submitted_at` is the locked-reveal trigger. `transcript` (nullable) holds the on-device voice transcript. |
+| `couple_plans` | A couple's enrollment in a plan (current_day, start_date, status, `cadence_days`). **Enrolling is an authorization decision** (2026-08-16): `couple_plans_insert` checked only `couple_id` and ignored `plan_id`, and since `plans_select` grants read to any plan a couple is enrolled in, naming a stranger's plan by uuid was a way to READ it. The check now also calls `plan_is_enrollable(plan_id, couple_id)` (SECURITY DEFINER, so it is not filtered by the very policy it is closing), which allows curated, public, own, and **share_token-bearing** plans. That last term is load-bearing: `pamwe://plan/<token>` resolves through `get_shared_plan` and then enrols here, so tightening it breaks sharing. `switch_plan()` is SECURITY INVOKER and inherits this, which is why it needs no check of its own. |
+| `entries` | Per-user per-day reflection. Type text or voice. `submitted_at` is the locked-reveal trigger. `transcript` (nullable) holds the on-device voice transcript. Length caps landed 2026-08-16 (`text_content` 10000, `transcript` 20000, mirrored as the journal input's `maxLength`); they are abuse ceilings, not editorial ones. **`day_number` is still only gated client-side** (`canOpenDay` in journal.tsx): there is no BEFORE INSERT trigger, deliberately deferred past launch rather than put new date maths on the core write path in submit week. |
 | `entry_responses` | Hearts/amens/replies/kept-lines a partner leaves on a revealed reflection (`kind`: heart/amen/reply/quote). RLS mirrors locked-reveal via `can_respond_to_entry()`; in the realtime publication. **`parent_id` (2026-08-07) makes replies a chain of any depth**: hearts, amens and kept lines stay flat and stay on the partner's entry, but a reply may answer a reply, which is the one case where your words sit under your OWN reflection. `can_respond_to_entry()` refuses that by design, so a reply carrying a parent is authorised against the parent instead (`can_reply_to_response()`). |
 | `prayers` / `prayer_marks` | Shared prayer requests with "I prayed today" marks. `prayers.category` (family/health/work/guidance/thanks/other); author-only update/delete. |
 | `dreams` | Couple-shared dream journal (both partners read, author-only edit/delete). **Pamwe never interprets a dream** (see the rule below). |
@@ -627,6 +637,8 @@ The voice recorder, audio upload, and partner-push flow only behave correctly on
 | Reflection responses + reply chains | [src/lib/entryResponses.ts](src/lib/entryResponses.ts), [src/components/ReflectionResponses.tsx](src/components/ReflectionResponses.tsx) |
 | Verse discussion (note + reactions + comments) | [src/lib/verseDiscussion.ts](src/lib/verseDiscussion.ts), screen [bible/verse.tsx](src/app/(tabs)/bible/verse.tsx) |
 | Prayers (category, edit/delete) + reminders | [src/lib/prayers.ts](src/lib/prayers.ts), [src/lib/prayerReminders.ts](src/lib/prayerReminders.ts) |
+| Pause / leave / the shared archive | [src/lib/coupleRequests.ts](src/lib/coupleRequests.ts), [src/lib/archive.ts](src/lib/archive.ts), screens [you/leave.tsx](src/app/(tabs)/you/leave.tsx) and [archive.tsx](src/app/archive.tsx) (outside the tabs on purpose: it outlives the couple) |
+| Activity feed (what changed since you last looked) | `activity_feed()` in [20260811000002](supabase/migrations/20260811000002_activity_feed.sql), client [src/lib/activity.ts](src/lib/activity.ts). Derived from existing tables, never stored. |
 | Dreams (couple-shared journal) | [src/lib/dreams.ts](src/lib/dreams.ts), [src/components/DreamCard.tsx](src/components/DreamCard.tsx) |
 | Push notifications + nudge | [src/lib/notifications.ts](src/lib/notifications.ts) |
 | Voice transcription (on-device) | [src/lib/transcription.ts](src/lib/transcription.ts) |

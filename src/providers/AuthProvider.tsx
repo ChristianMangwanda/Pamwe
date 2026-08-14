@@ -3,8 +3,7 @@ import { AppState } from 'react-native';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import {
-  getPushTokenIfGranted,
-  savePushToken,
+  reconcilePushRegistration,
   clearPushToken,
   watchPushTokenRotation,
   scheduleMorningFromPrefs,
@@ -101,9 +100,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // sign-in, before there was a partner or a reflection to point at; iOS
     // asks once, so a no there was permanent. The onboarding "connected"
     // screen asks now, and Settings offers it later.
-    getPushTokenIfGranted().then((token) => {
-      if (token) savePushToken(token);
-    });
+    //
+    // It VERIFIES the row rather than trusting the write, because a granted
+    // phone with no push_tokens row is silent and says nothing about it: every
+    // notify-* function answers no_token with a 200. The row can go without
+    // this app ever knowing (another account claiming the handset, a dead-token
+    // sweep), so the launch that follows puts it back.
+    reconcilePushRegistration();
     const rotationSub = watchPushTokenRotation();
     return () => rotationSub.remove();
   }, [session?.user?.id]);

@@ -22,9 +22,10 @@ jest.mock('../lib/supabase', () => ({
 // exercise session state only.
 jest.mock('../lib/notifications', () => ({
   // Registration only: the prompt moved to the connected screen, so nothing
-  // AuthProvider calls can put a permission dialog in front of anyone.
-  getPushTokenIfGranted: jest.fn(() => Promise.resolve(null)),
-  savePushToken: jest.fn(() => Promise.resolve()),
+  // AuthProvider calls can put a permission dialog in front of anyone. It
+  // verifies the row rather than trusting the write, because a granted phone
+  // with no push_tokens row receives nothing and says nothing about it.
+  reconcilePushRegistration: jest.fn(() => Promise.resolve('registered')),
   clearPushToken: jest.fn(() => Promise.resolve()),
   watchPushTokenRotation: jest.fn(() => ({ remove: jest.fn() })),
   scheduleMorningFromPrefs: jest.fn(() => Promise.resolve()),

@@ -411,6 +411,13 @@ verify_jwt = false
 [functions.notify-verse-comment]
 verify_jwt = false
 
+# DB webhook target for couple_requests (asked, and answered). Declared like the
+# rest: the function guards itself with requireWebhookSecret either way, but
+# without this block a deploy picks up the platform default of true and the
+# trigger's calls start bouncing at the gateway.
+[functions.notify-couple-request]
+verify_jwt = false
+
 # User-invoked: a couple member nudges their partner to read. JWT identifies
 # the sender; the function enforces a one-per-hour cooldown.
 [functions.notify-nudge]

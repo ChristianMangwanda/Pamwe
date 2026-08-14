@@ -333,6 +333,29 @@ export async function getUnseenReveals(couplePlanId: string, currentDay: number)
     .sort((a, b) => a - b);
 }
 
+/** Which of these days I have already sealed, for the catch-up list.
+ *
+ *  One query for the whole range rather than one per day: someone coming back
+ *  after a fortnight away owes fourteen rows, and fourteen round trips is a
+ *  screen that loads visibly slowly at exactly the moment it is asking for
+ *  patience. */
+export async function getMySealedDays(couplePlanId: string, days: number[]): Promise<Set<number>> {
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
+  if (!user || days.length === 0) return new Set();
+
+  const { data, error } = await supabase
+    .from('entries')
+    .select('day_number')
+    .eq('couple_plan_id', couplePlanId)
+    .eq('user_id', user.id)
+    .in('day_number', days)
+    .not('submitted_at', 'is', null);
+
+  if (error) throw error;
+  return new Set((data ?? []).map((r: { day_number: number }) => r.day_number));
+}
+
 export async function countMySubmittedEntries(couplePlanId: string) {
   const { data: { session } } = await supabase.auth.getSession();
   const user = session?.user;

@@ -40,8 +40,8 @@ module.exports = defineConfig([
   {
     // The 2026-08-11 backlog burn (179 errors -> 0). Two kinds of decision
     // live here, and they are different in kind: copy rules tuned to what the
-    // rule is actually for, and the react-hooks v6 compiler preset switched
-    // off because this app does not run the React Compiler.
+    // rule is actually for, and the react-hooks v6 compiler preset, switched
+    // off for the reasons set out above each group.
     rules: {
       // Keep the part that catches a stray `>` or `}` in JSX (a real typo),
       // drop the part that wants &apos; in prose. The copy is written in
@@ -49,15 +49,31 @@ module.exports = defineConfig([
       // apostrophe makes the source unreadable for zero rendered difference.
       'react/no-unescaped-entities': ['error', { forbid: ['>', '}'] }],
 
-      // The react-hooks v6 compiler rules assume the React Compiler will
-      // memoize renders, and they flag three patterns this codebase uses
-      // deliberately: load-then-setState in effects (every data screen),
-      // reanimated shared-value writes (`sv.value = x`, which `immutability`
-      // and `refs` read as mutation during render), and theme-closing helper
-      // components in the static legal screens (hoisting them means threading
-      // `colors` through 57 call sites of frozen copy). Without the compiler
-      // these are style opinions, not bugs. Revisit if the compiler is ever
-      // adopted.
+      // ⚠️ This block used to say the app "does not run the React Compiler".
+      // That was false and had been since the experiment was turned on:
+      // app.json sets experiments.reactCompiler = true, a production export
+      // prints "React Compiler enabled", and babel-plugin-react-compiler is
+      // installed. Corrected 2026-08-12. The rules stay off, but on the real
+      // reason rather than that one.
+      //
+      // They flag three patterns this codebase uses deliberately:
+      // load-then-setState in effects (every data screen), reanimated
+      // shared-value writes (`sv.value = x`, which `immutability` and `refs`
+      // read as mutation), and theme-closing helper components in the static
+      // legal screens (hoisting them means threading `colors` through 57 call
+      // sites of frozen copy).
+      //
+      // The reanimated one is the only group that touches anything the
+      // compiler could actually break, and it does not: `SharedValue` is a
+      // ref-like box the rules do not model, and every write is in an event
+      // handler or an effect, never during render, which is the only place
+      // memoization can be fooled. The two flagged sites in a ceremony are
+      // RevealCeremony.tsx:255,258, both inside a tap handler; PlantingCeremony
+      // is clean.
+      //
+      // Measured 2026-08-12, if these are ever revisited: turning all six on
+      // yields 109 problems. static-components 57, set-state-in-effect 29,
+      // preserve-manual-memoization 13, immutability 8, refs 2, purity 0.
       'react-hooks/set-state-in-effect': 'off',
       'react-hooks/preserve-manual-memoization': 'off',
       'react-hooks/static-components': 'off',

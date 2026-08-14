@@ -1165,4 +1165,119 @@ begin
 end $$;
 rollback;
 
+-- ==================================================================
+-- 23. A plan you may not read is a plan you may not enrol in (20260816000001)
+-- ==================================================================
+-- couple_plans_insert used to check couple_id and ignore plan_id, and
+-- plans_select hands read access to any plan a couple is enrolled in. So
+-- enrolling was a way to READ: name another couple's private plan by uuid and
+-- its plan_days opened up, past the share_token / is_public gate.
+begin;
+do $$
+declare
+  v_a uuid := (select alice from probe_ids);
+  v_couple uuid := (select couple from probe_ids);
+  v_stranger_couple uuid;
+  v_private uuid;
+  v_shared uuid;
+  v_curated uuid;
+  v_days int;
+begin
+  -- A couple Alice is not in, and a plan of theirs she was never shown.
+  insert into public.couples (invite_code, partner_a_id, timezone, invite_expires_at)
+  values ('PROBE1', (select mallory from probe_ids), 'UTC', now() + interval '7 days')
+  returning id into v_stranger_couple;
+
+  insert into public.plans (title, duration_days, is_curated, couple_id, created_by)
+  values ('Their private plan', 3, false, v_stranger_couple, (select mallory from probe_ids))
+  returning id into v_private;
+  insert into public.plan_days (plan_id, day_number, passage_reference, reflection_prompt)
+  values (v_private, 1, 'John 1', 'What did you notice?');
+
+  -- The same, but deliberately shared by its authors.
+  insert into public.plans (title, duration_days, is_curated, couple_id, created_by, share_token)
+  values ('Their shared plan', 3, false, v_stranger_couple, (select mallory from probe_ids), gen_random_uuid())
+  returning id into v_shared;
+
+  insert into public.plans (title, duration_days, is_curated)
+  values ('A curated plan', 3, true) returning id into v_curated;
+
+  perform pg_temp.be(v_a);
+
+  -- The hole: a private plan nobody shared with her. Enrolled as 'completed'
+  -- deliberately, so couple_plans_one_active cannot refuse it first and let
+  -- this probe pass for a reason that has nothing to do with authorization.
+  begin
+    insert into public.couple_plans (couple_id, plan_id, start_date, current_day, cadence_days, status)
+    values (v_couple, v_private, current_date, 1, 1, 'completed');
+    raise exception 'FAIL: a couple enrolled in another couple''s private plan';
+  exception when insufficient_privilege then null;
+  end;
+
+  -- And the read it was worth: still nothing, which is the point.
+  select count(*) into v_days from public.plan_days where plan_id = v_private;
+  if v_days <> 0 then
+    raise exception 'FAIL: an unshared plan''s days are readable (% rows)', v_days;
+  end if;
+
+  -- switch_plan is SECURITY INVOKER, so the same policy has to refuse it there
+  -- too. If this ever passes while the insert above fails, the RPC has grown a
+  -- second authorization path.
+  begin
+    perform public.switch_plan(v_couple, v_private, 1);
+    raise exception 'FAIL: switch_plan enrolled a couple in a private plan';
+  exception when insufficient_privilege then null;
+  end;
+
+  -- What must keep working: a curated plan, and a plan whose authors shared it.
+  -- pamwe://plan/<token> resolves through get_shared_plan and then enrols right
+  -- here, so a refusal on this line is a broken share link, not a tighter app.
+  insert into public.couple_plans (couple_id, plan_id, start_date, current_day, cadence_days, status)
+  values (v_couple, v_curated, current_date, 1, 1, 'completed');
+
+  insert into public.couple_plans (couple_id, plan_id, start_date, current_day, cadence_days, status)
+  values (v_couple, v_shared, current_date, 1, 1, 'completed');
+
+  -- And a couple's own plan, which is the ordinary case.
+  perform pg_temp.asowner();
+  insert into public.plans (title, duration_days, is_curated, couple_id, created_by)
+  values ('Our own plan', 3, false, v_couple, v_a) returning id into v_private;
+  perform pg_temp.be(v_a);
+  insert into public.couple_plans (couple_id, plan_id, start_date, current_day, cadence_days, status)
+  values (v_couple, v_private, current_date, 1, 1, 'completed');
+end $$;
+rollback;
+
+-- ==================================================================
+-- 24. An archive keeps both names, after the couple ends (20260816000002)
+-- ==================================================================
+-- leave_couple nulls couple_id on both partners and users_select_partner keys
+-- on that column, so leaving made each ex-partner permanently nameless in the
+-- other's archive: getProfile() returned null and the keepsake export said
+-- "Your partner" where her name should be.
+begin;
+do $$
+declare
+  v_a uuid := (select alice from probe_ids);
+  v_b uuid := (select bob from probe_ids);
+  v_m uuid := (select mallory from probe_ids);
+  v_name text;
+begin
+  perform pg_temp.be(v_a);
+  perform public.leave_couple('goodbye');
+
+  perform pg_temp.be(v_a);
+  select display_name into v_name from public.users where id = v_b;
+  if v_name is null then
+    raise exception 'FAIL: after leaving, an ex-partner is nameless in her own archive';
+  end if;
+
+  -- And it reaches no further than the couple it is about.
+  perform pg_temp.be(v_m);
+  if exists (select 1 from public.users where id = v_b) then
+    raise exception 'FAIL: the archive policy leaked a user row to an outsider';
+  end if;
+end $$;
+rollback;
+
 select 'rls_probe: all probes held' as result;

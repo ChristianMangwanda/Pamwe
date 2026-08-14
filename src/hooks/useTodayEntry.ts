@@ -45,7 +45,7 @@ type TodayState = {
  * exactly its job.
  */
 export function useTodayEntry(dayOverride?: number, pinPlan = false): TodayState {
-  const { couplePlan: livePlan } = useCouple();
+  const { couplePlan: livePlan, loading: coupleLoading } = useCouple();
   // Keyed on the id so a refreshed object does not re-pin, and only ever read
   // once the live plan is gone.
   const [pinnedPlan, setPinnedPlan] = useState<any | null>(null);
@@ -80,7 +80,13 @@ export function useTodayEntry(dayOverride?: number, pinPlan = false): TodayState
       setMyEntry(null);
       setPartnerEntry(null);
       loadedOnce.current = false;
-      setLoading(false);
+      // A null plan means one of two very different things, and reporting both
+      // as "done, nothing here" is what put "you have no reading plan" in front
+      // of couples on every cold launch. CoupleProvider has not answered yet, or
+      // it has answered and there really is no plan. Its own `loading` starts
+      // true and only ever falls to false, so it is exactly the "first fetch
+      // landed" marker needed to tell those apart. Stay loading until it does.
+      setLoading(coupleLoading);
       return;
     }
 
@@ -108,7 +114,11 @@ export function useTodayEntry(dayOverride?: number, pinPlan = false): TodayState
     } finally {
       setLoading(false);
     }
-  }, [couplePlanId, planId, dayNumber]);
+    // coupleLoading is a dependency because of the branch above: while it is
+    // true and there is no plan, this callback's identity must change when the
+    // provider settles, or the effect never re-runs and the spinner it just
+    // held would never come down.
+  }, [couplePlanId, planId, dayNumber, coupleLoading]);
 
   useEffect(() => {
     refresh();

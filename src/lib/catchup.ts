@@ -70,6 +70,37 @@ export function canOpenDay(
 }
 
 /**
+ * Every plan day that is open and still unread, oldest first.
+ *
+ * current_day is the pointer the ritual moves through, and it only ever
+ * advances when a partner taps Amen on a reveal, so it IS the oldest day the
+ * couple has not finished together. Everything from there up to expectedDay is
+ * both open (the gate is directional: behind your rhythm, every day up to today
+ * stays open) and unread. That range is the catch-up.
+ *
+ * The last entry is today's own reading rather than something missed, so the
+ * list is one longer than `daysBehind`. Both are true and the screen says which
+ * is which: a list that hid today's would leave a couple who cleared it still
+ * looking at an empty screen and a plan they had not finished for the day.
+ *
+ * Empty without a start date, and empty when on pace. Never longer than the
+ * plan: a couple who left a 21 day plan for a month owes 21 days, not 30.
+ */
+export function owedDays(
+  currentDay: number,
+  startDate: string | null | undefined,
+  todayISO: string,
+  totalDays: number,
+  cadenceDays = 1,
+): number[] {
+  if (!startDate) return [];
+  const last = expectedDay(startDate, todayISO, totalDays, cadenceDays);
+  const days: number[] = [];
+  for (let d = Math.max(1, currentDay); d <= last; d++) days.push(d);
+  return days;
+}
+
+/**
  * The date a plan day becomes openable, as YYYY-MM-DD.
  *
  * expectedDay counts floor(elapsed / interval) + 1, so day N needs

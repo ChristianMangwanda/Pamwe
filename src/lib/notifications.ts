@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
+import * as Sentry from '@sentry/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from './supabase';
 import { getUserCouple } from './couples';
@@ -81,7 +82,12 @@ export async function registerForPushNotifications(): Promise<string | null> {
   try {
     const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
     return tokenData.data;
-  } catch {
+  } catch (err) {
+    // This used to swallow the error entirely, and that is how a phone with
+    // notifications switched ON sat silent for days: APNs registration fails
+    // here, no token is ever minted, save_push_token is never called, and every
+    // notify-* function answers no_token with a 200. Nothing anywhere said so.
+    Sentry.captureException(err);
     return null;
   }
 }
@@ -97,24 +103,89 @@ let lastSavedTokenKey: string | null = null;
 // because sign-out can happen on a launch where registration never ran.
 const DEVICE_TOKEN_KEY = 'pamwe:pushToken';
 
-export async function savePushToken(token: string) {
+// The memo above is only written once the RPC answers, so two callers that
+// start in the same tick (the launch effect and the rotation listener both fire
+// on a cold start) each see an empty memo and each write. Harmless, since the
+// upsert is idempotent, but it is the shape the b7 storm had.
+let saveInFlight: string | null = null;
+
+/** Register this device. `force` re-writes a token the memo believes is saved,
+ *  which is what repairing a missing row needs: the row can go while the app
+ *  stays open (a dead-token sweep, or another account claiming this handset),
+ *  and the memo would otherwise refuse to write it back until a restart. */
+export async function savePushToken(token: string, opts?: { force?: boolean }): Promise<boolean> {
   const { data: { session } } = await supabase.auth.getSession();
   const user = session?.user;
-  if (!user) return;
+  if (!user) return false;
 
   const key = `${user.id}:${token}`;
-  if (key === lastSavedTokenKey) return;
+  if (!opts?.force && key === lastSavedTokenKey) return true;
+  if (saveInFlight === key) return true;
+  saveInFlight = key;
 
-  // A row per device (push_tokens), not a column per account. The single
-  // column meant a second phone overwrote the first and the first went quiet.
-  const { error } = await supabase.rpc('save_push_token', {
-    p_token: token,
-    p_platform: Platform.OS,
-  });
-  if (!error) {
+  try {
+    // A row per device (push_tokens), not a column per account. The single
+    // column meant a second phone overwrote the first and the first went quiet.
+    const { error } = await supabase.rpc('save_push_token', {
+      p_token: token,
+      p_platform: Platform.OS,
+    });
+    if (error) return false;
     lastSavedTokenKey = key;
     AsyncStorage.setItem(DEVICE_TOKEN_KEY, token).catch(() => {});
+    return true;
+  } finally {
+    saveInFlight = null;
   }
+}
+
+/** What this handset's registration actually looks like in the database.
+ *
+ *  Permission granted is NOT the same as registered, and the gap between them
+ *  is silent: every notify-* function early-returns `no_token` with an HTTP
+ *  200, so a phone in that state receives nothing while Settings shows every
+ *  toggle on. It is reachable in ordinary use, because save_push_token keys on
+ *  the TOKEN and reassigns it (`on conflict (token) do update set user_id`), so
+ *  signing into a partner's account on this handset moves the row off yours.
+ *
+ *  'unknown' is deliberate and distinct from 'unregistered': a failed lookup
+ *  must never put an alarming banner in front of someone whose network blipped. */
+export type PushRegistration =
+  | 'registered'    // the row is there
+  | 'repaired'      // it was missing and has just been written back
+  | 'unregistered'  // it is missing and the write did not land
+  | 'no_token'      // iOS says yes, but no token can be minted for this device
+  | 'no_permission' // iOS has not granted, so there is no token to register
+  | 'unknown';      // could not tell (signed out, lookup failed)
+
+export async function reconcilePushRegistration(): Promise<PushRegistration> {
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
+  if (!user) return 'unknown';
+
+  // Permission is checked FIRST and separately, because "allowed but no token"
+  // and "never allowed" need different words and only one of them is the
+  // phone's own settings. Folding them together is what would have let a
+  // handset with notifications switched on show no banner at all: it reports
+  // granted, mints nothing, and every screen agrees it is fine.
+  const status = await getNotificationPermissionStatus().catch(() => null);
+  if (status !== 'granted') return 'no_permission';
+
+  // Never prompts. Null here means getExpoPushTokenAsync threw, which is a real
+  // device fault (APNs registration failing), not an answer anyone gave.
+  const token = await getPushTokenIfGranted().catch(() => null);
+  if (!token) return 'no_token';
+
+  const { data, error } = await supabase
+    .from('push_tokens')
+    .select('token')
+    .eq('user_id', user.id)
+    .eq('token', token)
+    .maybeSingle();
+  if (error) return 'unknown';
+  if (data) return 'registered';
+
+  return (await savePushToken(token, { force: true })) ? 'repaired' : 'unregistered';
 }
 
 // On sign-out: this device no longer speaks for that user. Without this, an

@@ -27,7 +27,7 @@ export default function PlanDetailScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { couple, couplePlan, refresh: refreshCouple } = useCouple();
+  const { couple, couplePlan, loading: coupleLoading, refresh: refreshCouple } = useCouple();
 
   const [plan, setPlan] = useState<any | null>(null);
   const [days, setDays] = useState<any[]>([]);
@@ -104,6 +104,12 @@ export default function PlanDetailScreen() {
 
   const onPrimary = async () => {
     if (!couple?.id || !plan) return;
+    // Until CoupleProvider has answered, couplePlan is null for a couple who
+    // may well be reading this very plan. Acting on that reads "no current
+    // plan", so the branch below skipped the "Switch reading plan?" confirm and
+    // enrolled straight away, restarting an active plan at day 1. Wait for the
+    // answer rather than guess it.
+    if (coupleLoading) return;
     if (isActive) {
       haptics.tap();
       router.push('/(tabs)/(today)');
@@ -388,7 +394,7 @@ export default function PlanDetailScreen() {
 
         <View style={[styles.footer, { backgroundColor: colors.bg, paddingBottom: 14 }]}>
           {/* Tab bar is docked below the content area, so the CTA only needs its own breathing room. */}
-          <Button title={isActive ? 'Continue reading' : 'Begin together'} onPress={onPrimary} loading={busy} />
+          <Button title={isActive ? 'Continue reading' : 'Begin together'} onPress={onPrimary} loading={busy || coupleLoading} />
           {isActive && (
             <TouchableOpacity onPress={onMarkComplete} disabled={busy} style={styles.markComplete} hitSlop={8}>
               <Text variant="chip" color={colors.accent2} style={styles.markCompleteText}>

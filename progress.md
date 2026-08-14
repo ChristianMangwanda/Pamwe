@@ -125,8 +125,11 @@ pre-launch checks, per Christian.
 - **ESLint backlog burned: 179 errors to 0, and lint now GATES CI.** Real
   fixes for the unused vars, the ternary-as-statement, `Array<T>` types. The
   react-hooks v6 compiler-preset rules are off with reasons written in
-  eslint.config.js (no React Compiler here; reanimated shared-value writes and
-  load-then-set effects are deliberate patterns). `react/no-unescaped-entities`
+  eslint.config.js (reanimated shared-value writes and load-then-set effects are
+  deliberate patterns, and are safe under the compiler because every one of them
+  is in a handler or an effect, never during render. NOTE: this line used to say
+  "no React Compiler here", which was false, the experiment is on in app.json;
+  corrected 2026-08-12). `react/no-unescaped-entities`
   keeps only its typo-catching half. Tests keep the jest.mock hoisting idiom.
   The 18 exhaustive-deps warnings stay advisory on purpose. tsc clean, 402
   tests green.

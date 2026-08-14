@@ -24,6 +24,15 @@ type CoupleContextType = {
   me: any | null;
   couplePlan: any | null;
   loading: boolean;
+  /** The last refresh threw.
+   *
+   *  Only meaningful together with the state beside it: a blip that kept
+   *  last-known couple state is not worth a word to anyone, but a FIRST fetch
+   *  that failed leaves couple and couplePlan null with loading already false,
+   *  which is indistinguishable from a genuine "no couple, no plan" and sent
+   *  couples to an empty state that offered to enrol them in a plan they were
+   *  already reading. Screens pair this with `!couple` to tell the two apart. */
+  error: boolean;
   refresh: () => Promise<void>;
 };
 
@@ -33,6 +42,7 @@ const CoupleContext = createContext<CoupleContextType>({
   me: null,
   couplePlan: null,
   loading: true,
+  error: false,
   refresh: async () => {},
 });
 
@@ -43,6 +53,7 @@ export function CoupleProvider({ children }: { children: React.ReactNode }) {
   const [me, setMe] = useState<any | null>(null);
   const [couplePlan, setCouplePlan] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   // Keyed on the user id, NOT the session object: token refresh on foreground
   // mints a new session object for the same user, and keying on it made every
@@ -55,6 +66,8 @@ export function CoupleProvider({ children }: { children: React.ReactNode }) {
       setPartner(null);
       setMe(null);
       setCouplePlan(null);
+      // Signed out is an answer, not a failure.
+      setError(false);
       setLoading(false);
       return;
     }
@@ -67,19 +80,31 @@ export function CoupleProvider({ children }: { children: React.ReactNode }) {
 
       const c = await getUserCouple(userId);
       setCouple(c);
-      setPartner(c ? await getPartnerProfile(c, userId) : null);
 
       if (c?.id) {
-        const plan = await getActiveCouPlan(c.id);
+        // Both of these need only the couple id, which is already in hand, so
+        // awaiting them one after the other spent a whole round trip for
+        // nothing. The plan is the slow half of the cold start and every screen
+        // that renders "no plan yet" is waiting on it.
+        const [p, plan] = await Promise.all([
+          getPartnerProfile(c, userId),
+          getActiveCouPlan(c.id),
+        ]);
+        setPartner(p);
         setCouplePlan(plan);
       } else {
         // No couple means no plan: without this, an unpair or partner-left
         // leaves every consumer reading the previous couple's plan.
+        setPartner(null);
         setCouplePlan(null);
       }
+      setError(false);
     } catch {
       // A failed refresh (network blip) keeps the last-known couple state
       // rather than nulling it, which would bounce the user to onboarding.
+      // On a COLD start there is no last-known state to keep, so the flag is
+      // what stops that failure reading as "you have no couple and no plan".
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -167,7 +192,7 @@ export function CoupleProvider({ children }: { children: React.ReactNode }) {
   }, [loading, hadCouple, paused]);
 
   return (
-    <CoupleContext.Provider value={{ couple, partner, me, couplePlan, loading, refresh }}>
+    <CoupleContext.Provider value={{ couple, partner, me, couplePlan, loading, error, refresh }}>
       {children}
     </CoupleContext.Provider>
   );

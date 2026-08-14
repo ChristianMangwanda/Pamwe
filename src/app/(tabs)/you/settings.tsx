@@ -21,8 +21,9 @@ import {
   getNotificationPrefs, updateNotificationPrefs, getNotificationPermissionStatus,
   scheduleMorningNotification, scheduleWeeklyRecap, cancelWeeklyRecap,
   schedulePrayerReview, cancelPrayerReview, NotificationPrefs,
-  requestPushPermission, getPushTokenIfGranted, savePushToken,
+  requestPushPermission,
   scheduleMorningFromPrefs, cancelMorningNotification,
+  reconcilePushRegistration, type PushRegistration,
 } from '../../../lib/notifications';
 
 const MORNING_PRESETS = ['06:00', '06:30', '07:00', '07:30', '08:00'];
@@ -46,6 +47,10 @@ export default function SettingsScreen() {
 
   const [prefs, setPrefs] = useState<NotificationPrefs | null>(null);
   const [permission, setPermission] = useState<string>('granted');
+  // Starts registered for the same reason permission starts granted: the shell
+  // paints before the lookup lands, and a banner that flashes an accusation and
+  // withdraws it is worse than one that arrives a beat late.
+  const [registration, setRegistration] = useState<PushRegistration>('registered');
   const [pickingTime, setPickingTime] = useState(false);
   const cadence = (couplePlan?.cadence_days ?? 1) as Cadence;
 
@@ -60,6 +65,12 @@ export default function SettingsScreen() {
         .catch(() => { /* leave defaults */ });
       getNotificationPermissionStatus()
         .then((status) => { if (active) setPermission(status); })
+        .catch(() => { /* leave defaults */ });
+      // Repairs a missing row on the spot, so the usual outcome here is that
+      // nothing is shown and pushes simply start working again. The banner
+      // below is only for the case where the repair itself failed.
+      reconcilePushRegistration()
+        .then((r) => { if (active) setRegistration(r); })
         .catch(() => { /* leave defaults */ });
       return () => { active = false; };
     }, []),
@@ -144,13 +155,21 @@ export default function SettingsScreen() {
   // scheduleMorningFromPrefs and friends skip while permission is unresolved.
   // Without that, saying yes from Settings turned on partner pushes but left
   // the morning reminder silently unscheduled until the next sign-in.
+  // The retry behind the banner above. Permission is already granted here, so
+  // there is nothing to ask for: this is only the write that did not land.
+  const reconnectPush = async () => {
+    haptics.tap();
+    setRegistration(await reconcilePushRegistration().catch(() => 'unknown' as PushRegistration));
+  };
+
   const enablePush = async () => {
     haptics.tap();
     const granted = await requestPushPermission().catch(() => false);
     setPermission(granted ? 'granted' : 'denied');
     if (!granted) return;
-    const token = await getPushTokenIfGranted().catch(() => null);
-    if (token) await savePushToken(token).catch(() => {});
+    // Same verified write as everywhere else, so saying yes here cannot leave
+    // the phone in the allowed-but-unregistered state this screen now names.
+    setRegistration(await reconcilePushRegistration().catch(() => 'unknown' as PushRegistration));
     scheduleMorningFromPrefs();
     if (prefs?.notification_recap ?? true) scheduleWeeklyRecap();
     if (prefs?.notification_prayer ?? true) schedulePrayerReview();
@@ -168,6 +187,21 @@ export default function SettingsScreen() {
             <TouchableOpacity style={[styles.banner, { backgroundColor: colors.line2 }]} activeOpacity={0.7} onPress={() => Linking.openSettings()}>
               <Text variant="body" color={colors.accent}>
                 Notifications are turned off for Pamwe in your phone settings. Tap to turn them back on.
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          {/* Allowed by the phone, unknown to the server. The toggles below
+              would all read on while nothing could ever arrive, so this is the
+              one state that has to say so out loud. Only shown when the
+              automatic repair on open failed, which leaves a retry as the
+              honest offer. */}
+          {(registration === 'unregistered' || registration === 'no_token') && (
+            <TouchableOpacity style={[styles.banner, { backgroundColor: colors.line2 }]} activeOpacity={0.7} onPress={reconnectPush}>
+              <Text variant="body" color={colors.accent}>
+                {registration === 'no_token'
+                  ? 'Notifications are on for Pamwe, but this phone could not register with Apple. Tap to try again, or restart the phone if it keeps failing.'
+                  : 'This phone is allowed to show notifications but is not connected to your account yet. Tap to reconnect it.'}
               </Text>
             </TouchableOpacity>
           )}

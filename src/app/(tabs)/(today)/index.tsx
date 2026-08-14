@@ -36,7 +36,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { user } = useAuth();
-  const { couple, partner, me, couplePlan, refresh: refreshCouple } = useCouple();
+  const { couple, partner, me, couplePlan, error: coupleError, refresh: refreshCouple } = useCouple();
   const { loading, error, planDay, myEntry, partnerEntry, dayNumber, refresh } = useTodayEntry();
   const [refreshing, setRefreshing] = useState(false);
   const [nudging, setNudging] = useState(false);
@@ -190,8 +190,13 @@ export default function HomeScreen() {
   // A plan we could not READ is not a plan you do not have. Both used to land
   // on the empty state below, so a cache miss on a train told a couple three
   // months into M'Cheyne to go and choose their first plan.
-  if (couplePlan && !planDay && error) {
-    const missing = error === 'missing-day';
+  //
+  // The second half is the same mistake one level up: when the couple fetch
+  // itself fails there is no couplePlan to have an opinion about, and on a cold
+  // start no last-known state either, so the failure arrived as a confident
+  // "you have no plan" that no amount of waiting cleared.
+  if ((couplePlan && !planDay && error) || (!couplePlan && coupleError)) {
+    const missing = !!couplePlan && error === 'missing-day';
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
         <View style={styles.center}>
@@ -449,14 +454,28 @@ export default function HomeScreen() {
           </TouchableOpacity>
         )}
 
+        {/* It used to be a View, and its multi-day line said reading today's
+            would put you "back in step", which was simply not true: one day
+            clears one day of a four day gap. Worse, there was nowhere to go.
+            Every missed day was open the whole time and reachable only through
+            Plans, so the banner named a problem and offered no door. */}
         {behind > 0 && !bothSubmitted && (
-          <View style={[styles.catchup, { backgroundColor: colors.surface2, borderColor: colors.lineAccent }]}>
+          <TouchableOpacity
+            onPress={() => { haptics.tap(); router.push('/(tabs)/(today)/catchup'); }}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel={`You are ${behind} ${behind === 1 ? 'day' : 'days'} behind. See the days you missed.`}
+            style={[styles.catchup, { backgroundColor: colors.surface2, borderColor: colors.lineAccent }]}
+          >
             <Text style={[styles.catchupText, { color: colors.ink }]}>
               {behind === 1
-                ? "You're a day behind. That's okay. Pick it back up together when you can."
-                : `You're ${behind} days behind. That's okay. Read today's together and you'll be back in step.`}
+                ? "You're a day behind. Let's get you back on track."
+                : `You're ${behind} days behind. Let's get you back on track.`}
             </Text>
-          </View>
+            <Text variant="chip" color={colors.accent} style={styles.catchupCta}>
+              See what you missed
+            </Text>
+          </TouchableOpacity>
         )}
 
         <View style={[styles.verseCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
@@ -546,8 +565,9 @@ const styles = StyleSheet.create({
   unseenCta: { fontSize: 11, letterSpacing: 0.8, marginTop: 2 },
   staleRow: { alignItems: 'center', marginTop: 14 },
   staleText: { fontSize: 11, letterSpacing: 0.6 },
-  catchup: { marginTop: 16, borderWidth: 1, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 13 },
+  catchup: { marginTop: 16, borderWidth: 1, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 13, gap: 6 },
   catchupText: { fontFamily: fonts.serif, fontSize: 14, lineHeight: 21, textAlign: 'center' },
+  catchupCta: { fontSize: 11, letterSpacing: 0.8, textAlign: 'center' },
   verseCard: {
     marginTop: 22,
     borderWidth: 1,
