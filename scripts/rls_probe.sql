@@ -1280,4 +1280,145 @@ begin
 end $$;
 rollback;
 
+-- ==================================================================
+-- 25. Catching up alone moves the couple correctly (20260817000001)
+-- ==================================================================
+-- advance_plan_day answers "the lowest day we have not both sealed" instead of
+-- incrementing. The old version guarded on `.eq('current_day', n)`, which
+-- matched zero rows when a day was amened out of order; PostgREST does not
+-- error on that, so the reveal returned you to the day you started on having
+-- changed nothing and said nothing.
+begin;
+do $$
+declare
+  v_a uuid := (select alice from probe_ids);
+  v_b uuid := (select bob from probe_ids);
+  v_m uuid := (select mallory from probe_ids);
+  v_cp uuid := (select couple_plan from probe_ids);
+  v_next int;
+  v_now int;
+begin
+  -- Alice catches up on three days by herself. Bob has written nothing, so no
+  -- day is finished together and the pointer must not move at all.
+  perform pg_temp.be(v_a);
+  insert into public.entries (couple_plan_id, day_number, user_id, entry_type, text_content, submitted_at)
+  values (v_cp, 1, v_a, 'text', 'one', now()),
+         (v_cp, 2, v_a, 'text', 'two', now()),
+         (v_cp, 3, v_a, 'text', 'three', now());
+
+  select public.advance_plan_day(v_cp) into v_next;
+  if v_next <> 1 then
+    raise exception 'FAIL: one partner writing alone moved the couple to day %', v_next;
+  end if;
+
+  -- Bob writes day 1 only. Day 1 is now sealed; 2 and 3 are still half done.
+  perform pg_temp.asowner();
+  insert into public.entries (couple_plan_id, day_number, user_id, entry_type, text_content, submitted_at)
+  values (v_cp, 1, v_b, 'text', 'one', now());
+
+  perform pg_temp.be(v_a);
+  select public.advance_plan_day(v_cp) into v_next;
+  if v_next <> 2 then
+    raise exception 'FAIL: expected day 2 after one sealed day, got %', v_next;
+  end if;
+
+  -- Bob clears the rest. ONE Amen must now carry the couple past all of it,
+  -- rather than demanding one tap per day.
+  perform pg_temp.asowner();
+  insert into public.entries (couple_plan_id, day_number, user_id, entry_type, text_content, submitted_at)
+  values (v_cp, 2, v_b, 'text', 'two', now()),
+         (v_cp, 3, v_b, 'text', 'three', now());
+
+  perform pg_temp.be(v_a);
+  select public.advance_plan_day(v_cp) into v_next;
+  if v_next <> 4 then
+    raise exception 'FAIL: a cleared backlog should land on day 4, got %', v_next;
+  end if;
+  select current_day into v_now from public.couple_plans where id = v_cp;
+  if v_now <> 4 then
+    raise exception 'FAIL: the pointer says % but the answer was 4', v_now;
+  end if;
+
+  -- Idempotent: a double tap, or a retry after a lost response, changes nothing.
+  perform public.advance_plan_day(v_cp);
+  perform public.advance_plan_day(v_cp);
+  select current_day into v_now from public.couple_plans where id = v_cp;
+  if v_now <> 4 then
+    raise exception 'FAIL: repeated calls walked the pointer to %', v_now;
+  end if;
+
+  -- Forward only. A day sealed out of order behind the pointer cannot drag the
+  -- couple back onto a reading they have already read together.
+  perform pg_temp.asowner();
+  update public.couple_plans set current_day = 9 where id = v_cp;
+  perform pg_temp.be(v_a);
+  perform public.advance_plan_day(v_cp);
+  select current_day into v_now from public.couple_plans where id = v_cp;
+  if v_now <> 9 then
+    raise exception 'FAIL: the pointer went backwards to %', v_now;
+  end if;
+
+  -- And it is not a way into someone else's plan.
+  perform pg_temp.be(v_m);
+  begin
+    perform public.advance_plan_day(v_cp);
+    raise exception 'FAIL: an outsider advanced a couple''s plan';
+  exception
+    when others then
+      if sqlerrm like 'FAIL:%' then raise; end if;
+  end;
+end $$;
+rollback;
+
+-- ==================================================================
+-- 26. A plan finished out of order still finishes (20260817000001)
+-- ==================================================================
+-- The trigger used to ask whether the final day landed on the day the couple
+-- were pointed at. Sealing days out of order made that the wrong question, and
+-- a plan finished that way stayed active forever: still offering days it had
+-- already read, never reaching the Grove.
+begin;
+do $$
+declare
+  v_a uuid := (select alice from probe_ids);
+  v_b uuid := (select bob from probe_ids);
+  v_couple uuid := (select couple from probe_ids);
+  v_plan uuid;
+  v_cp uuid;
+  v_status text;
+  d int;
+begin
+  perform pg_temp.asowner();
+
+  -- A three day plan of its own, so this probe cannot depend on M'Cheyne.
+  insert into public.plans (title, subtitle, duration_days, is_curated)
+  values ('Probe 3', 'three days', 3, true) returning id into v_plan;
+  insert into public.plan_days (plan_id, day_number, passage_reference, passage_text, reflection_prompt)
+  values (v_plan, 1, 'John 1', 'x', 'y'), (v_plan, 2, 'John 2', 'x', 'y'), (v_plan, 3, 'John 3', 'x', 'y');
+
+  update public.couple_plans set status = 'completed' where couple_id = v_couple and status = 'active';
+  insert into public.couple_plans (couple_id, plan_id, start_date, current_day, status)
+  values (v_couple, v_plan, current_date - 2, 1, 'active') returning id into v_cp;
+
+  -- Both of them write the LAST day first, while the pointer is still on day 1.
+  insert into public.entries (couple_plan_id, day_number, user_id, entry_type, text_content, submitted_at)
+  values (v_cp, 3, v_a, 'text', 'c', now()), (v_cp, 3, v_b, 'text', 'c', now());
+
+  select status into v_status from public.couple_plans where id = v_cp;
+  if v_status <> 'active' then
+    raise exception 'FAIL: one sealed day out of three completed the plan';
+  end if;
+
+  -- Then the rest, in any order. The plan is finished when every day is.
+  insert into public.entries (couple_plan_id, day_number, user_id, entry_type, text_content, submitted_at)
+  values (v_cp, 2, v_a, 'text', 'b', now()), (v_cp, 2, v_b, 'text', 'b', now()),
+         (v_cp, 1, v_a, 'text', 'a', now()), (v_cp, 1, v_b, 'text', 'a', now());
+
+  select status into v_status from public.couple_plans where id = v_cp;
+  if v_status <> 'completed' then
+    raise exception 'FAIL: a plan finished out of order is still %', v_status;
+  end if;
+end $$;
+rollback;
+
 select 'rls_probe: all probes held' as result;

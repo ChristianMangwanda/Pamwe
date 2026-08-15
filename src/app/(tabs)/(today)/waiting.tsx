@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -14,13 +14,16 @@ import { useTodayEntry } from '../../../hooks/useTodayEntry';
 import { useCouple } from '../../../providers/CoupleProvider';
 import { supabase } from '../../../lib/supabase';
 import { profileInitial } from '../../../lib/couples';
+import { getMySealedDays } from '../../../lib/entries';
+import { owedDays, myOwedDays, todayInTimezone } from '../../../lib/catchup';
+import { haptics } from '../../../lib/haptics';
 
 const FALLBACK_POLL_MS = 30000;
 
 export default function WaitingScreen() {
   const router = useRouter();
   const { colors } = useTheme();
-  const { partner } = useCouple();
+  const { couple, partner } = useCouple();
   // Pinned: if the partner submits and amens while this screen is open, an
   // unpinned wait would follow current_day onto the next day and sit there
   // waiting forever on a day neither partner has read. The plan is pinned for
@@ -41,6 +44,32 @@ export default function WaitingScreen() {
     const fallback = setInterval(refresh, FALLBACK_POLL_MS);
     return () => { supabase.removeChannel(channel); clearInterval(fallback); };
   }, [couplePlan?.id, refresh]);
+
+  // Mid-catch-up this screen used to be a wall. current_day only moves on Amen
+  // and Amen needs both partners, so someone clearing a backlog alone sealed one
+  // day and had nowhere to go but back to Today, with three days still owed and
+  // nothing offering them. The wait below is still true; it is just no longer
+  // the only thing on the screen.
+  const [stillOwed, setStillOwed] = useState<number[] | null>(null);
+  useEffect(() => {
+    if (!couplePlan) return;
+    const owed = owedDays(
+      couplePlan.current_day ?? 1,
+      couplePlan.start_date,
+      todayInTimezone(couple?.timezone ?? 'UTC'),
+      couplePlan.plan?.duration_days ?? 365,
+      couplePlan.cadence_days ?? 1,
+    );
+    if (owed.length === 0) { setStillOwed([]); return; }
+    let alive = true;
+    getMySealedDays(couplePlan.id, owed)
+      .then((s) => { if (alive) setStillOwed(myOwedDays(owed, s)); })
+      // Losing this costs the shortcut, not the wait, which is the screen.
+      .catch(() => { if (alive) setStillOwed([]); });
+    return () => { alive = false; };
+  }, [couplePlan?.id, couplePlan?.current_day, couple?.timezone]);
+
+  const owedLeft = stillOwed?.length ?? 0;
 
   // Once. A second replace remounts the reveal on top of the one already
   // playing, and the ceremony there is worth exactly one arrival.
@@ -76,7 +105,24 @@ export default function WaitingScreen() {
       </View>
 
       <View style={styles.footer}>
-        <Button title="Back to Today" onPress={() => router.replace('/(tabs)/(today)')} />
+        {owedLeft > 0 && (
+          <Button
+            title={owedLeft === 1 ? 'Keep going: 1 day left' : `Keep going: ${owedLeft} days left`}
+            onPress={() => {
+              haptics.tap();
+              // POP_TO: back to the catch-up list if it is already below us,
+              // which keeps that screen's run counter alive so clearing the
+              // last day still lands the moment. Pushed fresh otherwise.
+              router.dismissTo('/(tabs)/(today)/catchup');
+            }}
+          />
+        )}
+        <Button
+          title="Back to Today"
+          variant={owedLeft > 0 ? 'ghost' : 'primary'}
+          onPress={() => router.replace('/(tabs)/(today)')}
+          style={owedLeft > 0 ? styles.secondary : undefined}
+        />
       </View>
     </SafeAreaView>
   );
@@ -93,4 +139,5 @@ const styles = StyleSheet.create({
   avatarInitial: { fontFamily: fonts.serif, fontSize: 16 },
   errorHint: { fontFamily: fonts.sans, fontSize: 12, textAlign: 'center', marginTop: 20 },
   footer: { paddingBottom: 12 },
+  secondary: { marginTop: 4 },
 });

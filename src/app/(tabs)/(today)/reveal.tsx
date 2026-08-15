@@ -139,8 +139,9 @@ export default function RevealScreen() {
 
   // The tap is guarded by a ref, not by the state below: state is for the
   // button's look, and a second tap can land before React has re-rendered with
-  // it. advancePlanDay is already idempotent (it guards on current_day), but
-  // two taps also fired two navigations.
+  // it. advancePlanDay is already idempotent (it computes the day rather than
+  // incrementing, and only moves forward), but two taps also fired two
+  // navigations.
   const [amening, setAmening] = useState(false);
   const amenInFlight = useRef(false);
 
@@ -162,10 +163,16 @@ export default function RevealScreen() {
           cadence: String(couplePlan.cadence_days ?? 1),
         }
       : null;
-    // Move to the next day here, once the reveal has actually been read. The DB
+    // Move the couple on here, once the reveal has actually been read. The DB
     // used to do it the instant both partners submitted, which pulled every
     // ritual screen onto the next empty day and ate the reveal. The final day
     // has no next day: the submit trigger retires the plan instead.
+    //
+    // It moves to the lowest day the two of them have not both sealed, which is
+    // not always this day plus one: after a catch-up run several days can be
+    // revealed at once, and this clears all of them in one tap instead of
+    // demanding an Amen apiece. Any it skips past are unseen reveals, and Today
+    // offers those back.
     //
     // That trigger is paused on hosted (20260807000003) so a phone on build 23
     // could finish its plan; until 20260808000007 is applied, a plan's last day
@@ -173,7 +180,7 @@ export default function RevealScreen() {
     // plan screen.
     if (!completed && couplePlan) {
       try {
-        await advancePlanDay(couplePlan.id, dayNumber);
+        await advancePlanDay(couplePlan.id);
       } catch (err) {
         // This used to be swallowed into Sentry and then navigate anyway, so a
         // failed advance dropped you back on Today with the day unchanged and

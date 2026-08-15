@@ -1099,6 +1099,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      advance_plan_day: {
+        Args: { p_couple_plan: string }
+        Returns: number
+      }
       activity_feed: {
         Args: { p_before?: string; p_limit?: number }
         Returns: {

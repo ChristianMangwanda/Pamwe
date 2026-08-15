@@ -113,14 +113,20 @@ export default function HomeScreen() {
   // partner's Amen, so whoever did not tap it can land on a fresh day having
   // never seen the last one, and until this card there was nothing on Today
   // that said so. Re-read on focus, so watching one clears it on the way back.
-  const [unseenReveal, setUnseenReveal] = useState<number | null>(null);
+  //
+  // Several can queue now, and that is the good outcome rather than an edge
+  // case: after you have both caught up on three days, one Amen clears all
+  // three, and three reveals are waiting to be read. So the count is shown and
+  // the card opens the oldest, which is where the two of you left off.
+  const [unseen, setUnseen] = useState<number[]>([]);
+  const unseenReveal = unseen.length > 0 ? unseen[0] : null;
   const couplePlanId = couplePlan?.id ?? null;
   useFocusEffect(
     useCallback(() => {
-      if (!couplePlanId || dayNumber <= 1) { setUnseenReveal(null); return; }
+      if (!couplePlanId || dayNumber <= 1) { setUnseen([]); return; }
       let alive = true;
       getUnseenReveals(couplePlanId, dayNumber)
-        .then((days) => { if (alive) setUnseenReveal(days[0] ?? null); })
+        .then((days) => { if (alive) setUnseen(days); })
         .catch(() => {});
       return () => { alive = false; };
     }, [couplePlanId, dayNumber]),
@@ -434,7 +440,9 @@ export default function HomeScreen() {
           >
             <Text variant="eyebrow" color={colors.accent2}>Waiting for you</Text>
             <Text style={[styles.unseenText, { color: colors.ink }]}>
-              {unseenReveal === dayNumber - 1
+              {unseen.length > 1
+                ? `${unseen.length} days were revealed and you haven't read them together yet. Start with day ${unseenReveal}.`
+                : unseenReveal === dayNumber - 1
                 ? `${partnerName} marked yesterday complete. You haven't read it together yet.`
                 : `Day ${unseenReveal} was revealed and you haven't read it together yet.`}
             </Text>
@@ -458,8 +466,15 @@ export default function HomeScreen() {
             would put you "back in step", which was simply not true: one day
             clears one day of a four day gap. Worse, there was nowhere to go.
             Every missed day was open the whole time and reachable only through
-            Plans, so the banner named a problem and offered no door. */}
-        {behind > 0 && !bothSubmitted && (
+            Plans, so the banner named a problem and offered no door.
+
+            It also used to hide on `!bothSubmitted`, which took the door away at
+            the exact moment it was most needed: both of you sealed today and
+            neither has tapped Amen, so the pointer has not moved, the backlog
+            is untouched, and Today looked like there was nothing to do. Being
+            behind is the whole condition. Whether today happens to be sealed is
+            a different question, and the catch-up list answers it per day. */}
+        {behind > 0 && (
           <TouchableOpacity
             onPress={() => { haptics.tap(); router.push('/(tabs)/(today)/catchup'); }}
             activeOpacity={0.85}

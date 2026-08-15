@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -7,13 +7,14 @@ import { Text } from '../../../components/ui/Text';
 import { BackLink } from '../../../components/ui/BackLink';
 import { PamweLoading } from '../../../components/ui/PamweLoading';
 import { Floral } from '../../../components/ui/Floral';
+import { BackInStep } from '../../../components/BackInStep';
 import { fonts } from '../../../constants/typography';
 import { GUTTER } from '../../../theme/tokens';
 import { useTheme } from '../../../providers/ThemeProvider';
 import { useCouple } from '../../../providers/CoupleProvider';
 import { getPlanDayList } from '../../../lib/plans';
 import { getMySealedDays } from '../../../lib/entries';
-import { owedDays, todayInTimezone } from '../../../lib/catchup';
+import { owedDays, myOwedDays, todayInTimezone } from '../../../lib/catchup';
 import { parseReference } from '../../../lib/bible';
 import { haptics } from '../../../lib/haptics';
 
@@ -26,10 +27,17 @@ import { haptics } from '../../../lib/haptics';
 export default function CatchUpScreen() {
   const router = useRouter();
   const { colors } = useTheme();
-  const { couple, couplePlan } = useCouple();
+  const { couple, couplePlan, partner } = useCouple();
+  const partnerName = partner?.display_name ?? 'your partner';
 
   const [rows, setRows] = useState<any[] | null>(null);
   const [sealed, setSealed] = useState<Set<number>>(new Set());
+  // What I had already written when this screen opened. Everything sealed past
+  // it is work done in this sitting, which is the only thing the ceremony
+  // celebrates: a partner's Amen shrinking the list is not something I did.
+  const baseSealed = useRef<Set<number> | null>(null);
+  const [caught, setCaught] = useState<number[] | null>(null);
+  const played = useRef(false);
 
   const currentDay = couplePlan?.current_day ?? 1;
   const totalDays = couplePlan?.plan?.duration_days ?? 365;
@@ -56,7 +64,18 @@ export default function CatchUpScreen() {
         .catch(() => { if (alive) setRows([]); });
       if (couplePlanId) {
         getMySealedDays(couplePlanId, days)
-          .then((s) => { if (alive) setSealed(s); })
+          .then((s) => {
+            if (!alive) return;
+            setSealed(s);
+
+            // The run, judged on the fresh set rather than on state that has
+            // not landed yet. The first settle only takes the baseline: you
+            // cannot have caught up in a sitting you just started.
+            if (baseSealed.current === null) { baseSealed.current = s; return; }
+            if (played.current || myOwedDays(days, s).length > 0) return;
+            const cleared = [...s].filter((d) => !baseSealed.current!.has(d)).sort((a, b) => a - b);
+            if (cleared.length >= 2) { played.current = true; setCaught(cleared); }
+          })
           // A failed status lookup costs the "you've written yours" line, not
           // the list: the days themselves are what someone came here for.
           .catch(() => {});
@@ -67,11 +86,21 @@ export default function CatchUpScreen() {
     }, [planId, couplePlanId, days]),
   );
 
-  // Plan context is what puts the Reflect button in the reader, and only the
-  // day the ritual is actually on gets it. current_day advances one day at a
-  // time on Amen, so a reflection written three days ahead of it would sit
-  // there sealed while Today kept offering the day before it. Scripture is
-  // never locked, so the days after this one still open to read.
+  // Plan context is what puts the Reflect button in the reader, and every day I
+  // still owe gets it. It used to go only to current_day, which made this
+  // screen a list of four days you could open and one you could write: the
+  // pointer moves on Amen, Amen needs BOTH partners sealed, so a person
+  // catching up alone wrote one reflection and stopped. If their partner was
+  // behind too, nobody moved.
+  //
+  // Writing is solo and the reveal is shared, so they come apart here. Each day
+  // I seal stays sealed until my partner writes theirs, exactly as it always
+  // has: the locked reveal is keyed per (couple_plan_id, day_number), so day 4
+  // reveals on its own without waiting for day 2.
+  //
+  // A day I have already written gets no context, so the reader offers no
+  // second reflection on it. The gate still refuses anything past today:
+  // canOpenDay is directional and owedDays never runs past expectedDay.
   const open = (day: number, ref: string | null | undefined) => {
     haptics.tap();
     const parsed = parseReference(ref ?? '');
@@ -86,7 +115,7 @@ export default function CatchUpScreen() {
         chapter: String(parsed.chapter ?? 1),
         ...(parsed.verse ? { verse: String(parsed.verse) } : {}),
         ...(parsed.endVerse ? { to: String(parsed.endVerse) } : {}),
-        ...(day === currentDay && couplePlanId
+        ...(couplePlanId && !sealed.has(day)
           ? { couplePlanId, day: String(day), planTitle }
           : {}),
       },
@@ -94,8 +123,14 @@ export default function CatchUpScreen() {
   };
 
   const missed = Math.max(0, days.length - 1);
+  // "Start here" follows what I still owe, not the couple's pointer. Catching
+  // up alone leaves current_day where it was, and pinning the highlight to it
+  // would keep pointing at a day I had already written.
+  const mine = myOwedDays(days, sealed);
+  const startHere = mine.length > 0 ? mine[0] : null;
 
   return (
+    <>
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <BackLink label="Today" onPress={() => router.back()} />
@@ -121,7 +156,7 @@ export default function CatchUpScreen() {
           <View style={styles.list}>
             {days.map((day) => {
               const row = rows.find((r: any) => r.day_number === day);
-              const isNext = day === currentDay;
+              const isNext = day === startHere;
               const isToday = day === days[days.length - 1] && missed > 0;
               return (
                 <TouchableOpacity
@@ -166,13 +201,25 @@ export default function CatchUpScreen() {
           </View>
         )}
 
-        {days.length > 1 && (
+        {mine.length > 1 && (
           <Text style={[styles.footnote, { color: colors.muted }]}>
-            One at a time. Finishing the day you start here opens the next one.
+            Take them all in one sitting if you want to. Each one stays sealed
+            until {partnerName} has written theirs.
           </Text>
         )}
       </ScrollView>
     </SafeAreaView>
+
+    {/* A sibling of the SafeAreaView, not a child: an absolute fill inside the
+        safe area leaves the status bar showing the list underneath, and the
+        planting learned the same lesson on the completion screen.
+
+        It navigates away without clearing `caught` first, because dropping the
+        overlay would show the emptied list for a frame on the way out. */}
+    {caught !== null && (
+      <BackInStep days={caught} onDone={() => router.replace('/(tabs)/(today)')} />
+    )}
+    </>
   );
 }
 

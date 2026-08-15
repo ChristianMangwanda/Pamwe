@@ -1,4 +1,4 @@
-import { expectedDay, daysBehind, todayInTimezone, owedDays } from '../lib/catchup';
+import { expectedDay, daysBehind, todayInTimezone, owedDays, myOwedDays } from '../lib/catchup';
 
 describe('catch-up math', () => {
   it('expects day 1 on the start date', () => {
@@ -103,5 +103,38 @@ describe('the days a couple still owes', () => {
 
   it('stays empty without a start date rather than inventing a backlog', () => {
     expect(owedDays(3, null, '2026-08-13', 21)).toEqual([]);
+  });
+});
+
+describe('what I personally still owe', () => {
+  it('is the whole backlog when I have written none of it', () => {
+    expect(myOwedDays([2, 3, 4], new Set())).toEqual([2, 3, 4]);
+  });
+
+  it('drops the days I have already sealed', () => {
+    // The point of the whole round: I can write 2, 3 and 4 in one sitting
+    // without my partner writing anything, and each one leaves the list.
+    expect(myOwedDays([2, 3, 4], new Set([2]))).toEqual([3, 4]);
+    expect(myOwedDays([2, 3, 4], new Set([2, 3]))).toEqual([4]);
+  });
+
+  it('empties when I have caught up alone, even though the couple has not', () => {
+    // current_day is still 2 here: my partner has written nothing, so no day is
+    // finished together and owedDays still lists all three. I am done anyway.
+    expect(myOwedDays([2, 3, 4], new Set([2, 3, 4]))).toEqual([]);
+  });
+
+  it('handles holes, because days can now be written out of order', () => {
+    expect(myOwedDays([2, 3, 4, 5], new Set([3, 5]))).toEqual([2, 4]);
+  });
+
+  it('is empty when nothing is owed', () => {
+    expect(myOwedDays([], new Set([2]))).toEqual([]);
+  });
+
+  it('ignores sealed days outside the owed range', () => {
+    // getMySealedDays is queried on the owed range, but a stale set from a
+    // previous render must not remove a day that is genuinely owed.
+    expect(myOwedDays([4, 5], new Set([1, 2, 3]))).toEqual([4, 5]);
   });
 });

@@ -7,6 +7,11 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
 );
 
+/** How long one sitting lasts, for the purposes of not saying the same thing
+ *  twice. Long enough to cover writing several days back to back, short enough
+ *  that two genuinely separate readings in an evening both land. */
+const RUN_WINDOW_MS = 10 * 60 * 1000;
+
 Deno.serve(async (req) => {
   const denied = requireWebhookSecret(req, "notify-partner");
   if (denied) return denied;
@@ -93,6 +98,37 @@ Deno.serve(async (req) => {
     .maybeSingle();
 
   const partnerAlsoSubmitted = !!partnerEntry?.submitted_at;
+
+  // One banner per catch-up run, not one per day.
+  //
+  // A person clearing a four day backlog seals four entries in a couple of
+  // minutes, and each one used to buzz the partner's phone with the same
+  // sentence. The first is the news; the rest are the same news repeated.
+  //
+  // Only the "they wrote theirs" side is coalesced. A day where the partner has
+  // ALSO written is a reveal that just became readable, and every one of those
+  // is a different thing to open, so they all still push.
+  //
+  // Stateless on purpose: no ledger, no new column, no CHECK to widen, in a week
+  // where this function is the last thing that should carry new state. And it
+  // fails OPEN. `recent` is null on any query error, which sends the push, so a
+  // fault here can never silence the notification this app is built around.
+  if (!partnerAlsoSubmitted) {
+    const since = new Date(Date.now() - RUN_WINDOW_MS).toISOString();
+    const { data: recent } = await supabase
+      .from("entries")
+      .select("day_number")
+      .eq("couple_plan_id", couple_plan_id)
+      .eq("user_id", user_id)
+      .neq("day_number", day_number)
+      .not("submitted_at", "is", null)
+      .gte("submitted_at", since)
+      .limit(1);
+
+    if (recent && recent.length > 0) {
+      return new Response("Already told them about this run", { status: 200 });
+    }
+  }
 
   const message = partnerAlsoSubmitted
     ? {

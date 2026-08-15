@@ -1,6 +1,6 @@
 # Pamwe Build Progress Summary
 
-**Last Updated:** August 12, 2026
+**Last Updated:** August 15, 2026
 
 ---
 
@@ -12,6 +12,83 @@ the two-phone pause/leave pass with Ammy by Sun Aug 16, privacy policy on
 GitHub Pages (launching WITHOUT a domain, decided 2026-08-12), listing +
 privacy questionnaire Mon–Tue, submit Wednesday, buffer for one rejection
 round. If the two-phone pass is clean, **b28 is the launch build**.
+
+⚠️ **Superseded 2026-08-15: b30 is now the launch candidate**, because catching
+up was broken in a way that only showed once someone fell more than one day
+behind. See the build 30 entry directly below. b28's own changes are unaffected
+and still ship; b30 is b28 plus this round.
+
+---
+
+## 🚀 BUILD 30 (2026-08-15): catching up alone must not need your partner
+
+**`current_day` was deciding two different things**, and that was the whole bug.
+It is one pointer for the couple, it only moves on Amen, and Amen needs BOTH
+partners sealed for that day. The catch-up screen handed the Reflect button to
+`current_day` and nothing else, so a person four days behind wrote one
+reflection and stopped. If their partner was also behind, nobody moved and the
+gap kept growing. The screen's own footnote, "One at a time. Finishing the day
+you start here opens the next one", was false in exactly the case it was written
+for: finishing YOUR side opens nothing.
+
+Writing is solo and the reveal is shared, so those come apart. What you may
+write is now your own lowest unsealed day up to `expectedDay` (`myOwedDays`),
+and `current_day` goes back to meaning only "the day you two are on together".
+**RLS needed nothing**: the locked reveal is keyed per
+`(couple_plan_id, day_number)`, so day 4 reveals on its own without waiting for
+day 2, and `compute_streak` has credited same-day catch-up twice since
+2026-07-26. The database was ready the whole time; only the client serialised it.
+
+Three things found while tracing it, all closed:
+
+- **A silent no-op.** `plans/[id].tsx` already let you reach day 4's journal
+  while the pointer sat on 2 (the cadence gate is directional and allows it, and
+  the journal does not refuse). Amen then ran an UPDATE guarded on
+  `.eq('current_day', 4)`, which matched **zero rows** — and PostgREST does not
+  error on that. Nothing threw, no alert fired, and the reveal returned you to
+  Day 2 having changed nothing and said nothing.
+- **The banner hid itself when it was most needed.** It rendered on
+  `behind > 0 && !bothSubmitted`, so a couple who had both sealed today and
+  neither tapped Amen lost the door to the catch-up screen entirely, while the
+  pointer sat still and the backlog went untouched.
+- **Completion could strand.** The trigger asked whether the final day landed on
+  the day the couple were pointed at. Sealed out of order that is a different
+  question, and a finished plan would stay `active` forever, still offering days
+  it had already read, never reaching the Grove.
+
+**`advance_plan_day` answers rather than increments** (migration
+`20260817000001`): the lowest day the couple have not both sealed, forward-only,
+`SECURITY INVOKER`. The same move `compute_streak` made on 2026-07-26 and for
+the same reason, that a stored counter left wrong by an out-of-order write has
+no way back. INVOKER means RLS does the hard part for free: a partner's row is
+visible only on days you sealed too, so `count(distinct user_id) = 2` over what
+you can see IS the mutual-seal test, with no definer helper. One Amen now clears
+a whole revealed backlog instead of demanding one per day, and a double tap is a
+no-op by computation rather than by guard. **Amen still owns advancement** —
+20260714000002's call stands, the trigger still does not move the pointer on
+seal.
+
+**Catching up earns a moment, not a trophy.** `BackInStep.tsx`: the days you
+wrote land one after another on the same `landStep` keyframe the Grove's
+footprints use, then the count, then a line. The Grove rule holds — days do not
+mint a second award — so nothing accrues and nothing is stored; the trigger is a
+session-only route param like the Grove's `arrived=`. Haptics stop at `success`,
+because `celebrate` is used exactly once in the whole app when a tree settles,
+and a test asserts this never reaches for it.
+
+Also: `waiting.tsx` offers "Keep going: N days left" instead of being a wall,
+Today's unseen-reveal card counts a queue rather than showing one, and
+`notify-partner` (v16) coalesces a catch-up run into one banner, stateless and
+failing OPEN so a fault there can never silence the app's core notification.
+
+Verified: `tsc` clean, **435 Jest tests across 46 suites**, ESLint 0 errors,
+`rls_probe.sql` **26/26** including two new probes that run as a real signed-in
+session and prove writing three days alone does not move the couple, one sealed
+day moves it one, a cleared backlog moves it all at once, repeats are no-ops, it
+never goes backwards, outsiders are refused, and a plan sealed last-day-first
+still completes. Hosted: migration applied and `notify-partner` v16 deployed
+2026-08-15, both backfills touching **zero rows**, no new security advisors, and
+b28/b29 phones keep working because the old direct-table path is untouched.
 
 ---
 

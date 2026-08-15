@@ -75,8 +75,12 @@ export function canOpenDay(
  * current_day is the pointer the ritual moves through, and it only ever
  * advances when a partner taps Amen on a reveal, so it IS the oldest day the
  * couple has not finished together. Everything from there up to expectedDay is
- * both open (the gate is directional: behind your rhythm, every day up to today
- * stays open) and unread. That range is the catch-up.
+ * open (the gate is directional: behind your rhythm, every day up to today
+ * stays open) and unfinished. That range is the catch-up.
+ *
+ * Unfinished by the COUPLE, which is not the same as unwritten by me: catching
+ * up alone seals days this range still lists, because the day is not done until
+ * both have written it. `myOwedDays` is what I personally still owe.
  *
  * The last entry is today's own reading rather than something missed, so the
  * list is one longer than `daysBehind`. Both are true and the screen says which
@@ -98,6 +102,25 @@ export function owedDays(
   const days: number[] = [];
   for (let d = Math.max(1, currentDay); d <= last; d++) days.push(d);
   return days;
+}
+
+/**
+ * Of the days the couple owes, the ones I have not written yet.
+ *
+ * Writing is solo; the reveal is shared. current_day welded those together: it
+ * only moves on Amen, which needs BOTH partners sealed, so a person catching up
+ * alone wrote one day and stopped. If their partner was also behind, nobody
+ * moved and the gap kept growing.
+ *
+ * So what I may write is mine to answer, not the pointer's. Everything the
+ * couple still owes, minus what I have already sealed. The days I have written
+ * stay ON the catch-up list (seeing "you have written yours" is the point of
+ * going back); they just stop offering a second reflection on the same day,
+ * which the unique index on (couple_plan_id, day_number, user_id) would refuse
+ * anyway.
+ */
+export function myOwedDays(owed: number[], mySealed: Set<number>): number[] {
+  return owed.filter((d) => !mySealed.has(d));
 }
 
 /**

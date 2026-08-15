@@ -247,15 +247,23 @@ export async function setPlanCadence(couplePlanId: string, cadenceDays: Cadence)
   if (error) throw error;
 }
 
-// Called from the reveal's Amen. Guarding on the day we think we're on makes a
-// double tap (or a retry after a lost response) a no-op instead of skipping a
-// day, which is what the DB trigger used to do for itself.
-export async function advancePlanDay(couplePlanId: string, currentDay: number) {
-  const { error } = await supabase
-    .from('couple_plans')
-    .update({ current_day: currentDay + 1 })
-    .eq('id', couplePlanId)
-    .eq('current_day', currentDay);
+/**
+ * Called from the reveal's Amen. Moves the couple to the lowest day they have
+ * not both sealed, and returns it.
+ *
+ * This used to be an UPDATE of `currentDay + 1` guarded on
+ * `.eq('current_day', currentDay)`, which made a double tap a no-op but broke
+ * the moment days could be sealed out of order: amening a day the pointer was
+ * not on matched zero rows, PostgREST does not error on that, and the reveal
+ * returned you to the day you started on having changed nothing and said
+ * nothing. Clearing a backlog also needed one Amen per day even after every one
+ * of them had been revealed.
+ *
+ * The RPC answers the question instead of incrementing, so it is idempotent by
+ * computation rather than by guard, and it is forward-only in SQL.
+ */
+export async function advancePlanDay(couplePlanId: string) {
+  const { error } = await supabase.rpc('advance_plan_day', { p_couple_plan: couplePlanId });
 
   if (error) throw error;
 }
