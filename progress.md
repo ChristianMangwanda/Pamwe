@@ -105,7 +105,11 @@ on Christian's phone within an hour of the fix being written), which is why all
 nine call sites got the suffix rather than one. The quiet cost when it fired
 was a subscription that never re-armed until relaunch. Harmless to data, and
 the b26 error boundary caught it as designed. PAMWE-IOS-5 resolved;
-**PAMWE-IOS-6 stays open until b28 is on both phones**, then resolve it.
+**PAMWE-IOS-6 resolved 2026-08-15.** Neither phone ended up on b28 itself
+(Christian took b30, Ammy b29), but `3432d39` is an ancestor of both, so the fix
+is what that condition was actually asking for and it is running on both phones.
+It last fired 2026-08-11 on b27, two events across nineteen seconds, and b28,
+b29 and b30 have logged nothing since.
 
 Also closed 2026-08-11, between b27 and this build: the whole backlog (legacy
 push-token column dropped, ESLint gating at zero errors, iOS-only decision),

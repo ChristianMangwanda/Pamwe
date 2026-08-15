@@ -5,10 +5,17 @@
 
 The gap between "on TestFlight for two people" and "live for strangers" is
 small and known. Screenshots are captured and de-identified, the backlog is
-closed, hosted equals local at 67 migrations, and build 28 is cut and uploaded.
-What remains is one evening of two-phone verification, one day of listing and
-infrastructure work, and Apple's clock. The Aug 24 date buys a full buffer for
-one rejection round, which past processing rejections say is worth having.
+closed, and what remains is one evening of two-phone verification, one day of
+listing and infrastructure work, and Apple's clock. The Aug 24 date buys a full
+buffer for one rejection round, which past processing rejections say is worth
+having.
+
+**Updated 2026-08-15: the launch build is b30, not b28**, and hosted is at 71
+migrations rather than 67. Catching up was broken once someone fell more than
+one day behind: they could write one reflection and then had to wait for their
+partner, who might be behind too. b30 fixes it, the database half is already
+applied to hosted, and b30 is uploaded. The round is written up in progress.md.
+It has not been on a phone yet, so **b30 is a candidate, not yet the build**.
 
 **Domain decision (2026-08-12): launch WITHOUT one.** Apple accepts any public
 URL for the privacy policy, so it lives on GitHub Pages. The only thing a
@@ -24,8 +31,18 @@ links when there are users.
 
 ### Now → Sun Aug 16 — verification week
 
-- [ ] **b28 on both phones** (TestFlight). Then resolve PAMWE-IOS-6 in Sentry
-      (it stays open until b28 is on both phones, per progress.md).
+- [x] ~~**b28 on both phones** (TestFlight). Then resolve PAMWE-IOS-6.~~
+      **Done differently, 2026-08-15.** Neither phone landed on b28: Christian
+      is on b30 and Ammy on b29, and `3432d39` is an ancestor of both, so the
+      channel fix is running on both phones, which is what the condition meant.
+      PAMWE-IOS-6 **resolved**; nothing has fired since 2026-08-11 on b27.
+- [ ] **Get Ammy onto b30.** New 2026-08-15 and it now gates the item below.
+      b30 fixes catching up (see progress.md), but the client half only works
+      on b30: on b29 her catch-up screen still offers one day at a time, so a
+      two-phone catch-up test with her on b29 shows the OLD wall and reads as
+      the fix having failed. Her build is otherwise safe against the migrated
+      database, it is just half the feature. The server half (one push per
+      run, out-of-order completion) already reaches her.
 - [ ] **The two-phone pause/leave pass with Ammy.** The one item progress.md
       calls "the whole remaining risk": ask on one phone, accept on the other,
       withdraw, leave, and check the farewell note appears exactly once. Needs
