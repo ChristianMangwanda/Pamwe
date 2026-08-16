@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
   const { result } = await sendExpoPush(supabase, "notify-new-dream", fanOut(deviceTokens, {
     sound: "default",
     title: "Your partner wrote down a dream",
-    body: "Open Pamwe to read it together.",
+    body: "See what they wrote",
     data: { type: "dream" },
   }, partner?.notification_preview));
   return new Response(JSON.stringify(result), {

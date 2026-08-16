@@ -34,7 +34,7 @@ export function DayClosed({
   return (
     <View style={styles.wrap}>
       <View style={styles.head}>
-        <Text variant="eyebrow" color={colors.muted}>Today is done</Text>
+        <Text variant="eyebrow" color={colors.muted}>Well done</Text>
         <Text style={[styles.headline, { color: colors.ink }]}>
           You read Day {day} together.
         </Text>

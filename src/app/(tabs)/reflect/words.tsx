@@ -62,7 +62,7 @@ export default function TheirWordsScreen() {
             <BookmarkSimple size={38} color="#CBB99B" weight="regular" />
             <Text variant="h2" italic style={styles.emptyTitle}>Nothing kept yet</Text>
             <Text color={colors.muted} style={styles.emptyText}>
-              When a line in {partnerName}'s reflection stays with you, keep it from the reveal. It will live here.
+              When something in {partnerName}'s reflection stirs you, keep it from the reveal. It will live here.
             </Text>
           </View>
         ) : (

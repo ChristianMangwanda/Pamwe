@@ -121,7 +121,7 @@ export default function JournalScreen() {
 
   const handleSubmitText = () => {
     if (!text.trim()) return;
-    Alert.alert(`Share with ${partnerName}?`, "Once it's shared, it's sealed. No edits after this.", [
+    Alert.alert(`Share with ${partnerName}?`, "Once it's in, it's in. No edits after this.", [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Share',

@@ -7,22 +7,22 @@ and gets updated once the rewrites are applied.
 
 ## Where this stands (2026-08-16)
 
-Christian filled in **57 lines** in Notion. **48 are applied** in this commit;
-the Notion pages still hold the originals beside them.
+Christian filled in **57 lines** in Notion. **All 57 are settled and applied.**
+The Notion pages still hold the originals beside them.
 
-**Nine still need his decision.** Do not apply these without an answer:
+Nine were held for a decision and then resolved, on his word, as follows:
 
-| ID | Why it is held |
+| ID | Resolution |
 |---|---|
-| `T-92` | Missing word (*let your partner **know***), and it is a full-width button, so the sentence will wrap. |
-| `T-103` | "just waiting on your partner" sits under the writing field **before** you have written. Nobody is waiting yet. Belongs on the waiting screen. |
-| `T-106` | "once it's in, it's in not edit it after this" reads as missing a word. |
-| `T-183` | Run-on, and *grow* should be *grew*. |
-| `T-45` | It is an eyebrow: small, uppercase, letter-spaced. A full sentence renders as `WELL, DONE!! YOU COMPLETED TODAY'S READING`, and the headline below already says it. |
-| `F-23` | ALL CAPS, *MY* should be the partner's name, *STIR* should be *stirs*. |
-| `W-09` | Changes what the line does: the original warned that an email you stop reading takes your journal with it. |
-| `N-08` | "Read today's word" is the **dream** push body. Points at the reading, not the dream. **Edge function: needs a redeploy, not just a build.** |
-| `R-28` | Not copy. The six prayer categories are a DB enum with a check constraint; adding "relationship" is a migration plus chips plus recap phrases. |
+| `T-92` | Button is `Reflect on this`. His longer sentence did not fit a full-width button and was missing a word. |
+| `T-103` | **Unchanged.** "just waiting on your partner" was written for the lock hint, which appears *before* you have written, where nobody is waiting yet. The sentiment landed on `T-65` instead, where it is true. |
+| `T-106` | `Once it's in, it's in. No edits after this.` |
+| `T-183` | `Hey, you did amazing. You showed up, you did the work, and you grew.` |
+| `T-45` | Eyebrow is `Well done`; the headline beneath carries the rest. |
+| `F-23` | `When something in {partner}'s reflection stirs you, keep it from the reveal. It will live here.` |
+| `W-09` | His line kept: `How should we reach you?` |
+| `N-08` | `See what they wrote`, so the dream push stops pointing at the reading. Deployed (notify-new-dream v9). |
+| `R-28` | Label only: `Family & relationship`. The stored enum value stays `family`, so no migration, no check constraint, no touched rows. |
 
 **Five applied changes that cost something**, flagged so they can be reverted
 deliberately rather than discovered later:

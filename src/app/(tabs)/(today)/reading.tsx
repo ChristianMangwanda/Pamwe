@@ -91,7 +91,7 @@ export default function ReadingScreen() {
         ) : null}
 
         <Button
-          title="Write your reflection"
+          title="Reflect on this"
           onPress={() => router.push({ pathname: '/(tabs)/(today)/journal', params: { day: String(dayNumber) } })}
         />
       </ScrollView>

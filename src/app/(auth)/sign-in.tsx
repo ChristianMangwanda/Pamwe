@@ -108,7 +108,7 @@ export default function SignInScreen() {
             <PamweBloom motion="still" style={styles.bloom} />
             <Text variant="h1" style={styles.title}>{title}</Text>
             <Text italic color={colors.ink2} style={styles.subtitle}>
-              Whichever you choose is how your reflections find you again on a new phone.
+              How should we reach you?
             </Text>
           </View>
 

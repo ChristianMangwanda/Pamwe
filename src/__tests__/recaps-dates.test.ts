@@ -54,8 +54,11 @@ describe('recap copy', () => {
     expect(recapHeadline(1, 0, 'week')).toBe('1 day in the Word, together.');
   });
 
-  it('always ends with something to do next', () => {
-    expect(recapEncouragement(6, 'week')).toContain('keep it');
+  // A couple who read five days does not need prodding, so that branch is now
+  // just the fact (Christian's copy pass, 2026-08-16). The two branches that
+  // still need a way back in keep theirs.
+  it('gives a way back in to whoever needs one', () => {
+    expect(recapEncouragement(6, 'week')).toBe('You showed up 6 times this week.');
     expect(recapEncouragement(2, 'week')).toContain('Pick your next reading');
     expect(recapEncouragement(0, 'month')).toContain('Start small');
   });

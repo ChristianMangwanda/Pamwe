@@ -5,7 +5,10 @@ export type PrayerCategory = 'family' | 'health' | 'work' | 'guidance' | 'thanks
 
 export const PRAYER_CATEGORIES: PrayerCategory[] = ['family', 'health', 'work', 'guidance', 'thanks', 'other'];
 export const CATEGORY_LABEL: Record<PrayerCategory, string> = {
-  family: 'Family', health: 'Health', work: 'Work', guidance: 'Guidance', thanks: 'Thanks', other: 'Other',
+  // 'family' is the stored enum value and does not change: renaming the LABEL is
+  // copy, renaming the value would be a migration plus the check constraint plus
+  // every row already written.
+  family: 'Family & relationship', health: 'Health', work: 'Work', guidance: 'Guidance', thanks: 'Thanks', other: 'Other',
 };
 
 // "Today" in the couple's timezone — the same source the streak system uses —
