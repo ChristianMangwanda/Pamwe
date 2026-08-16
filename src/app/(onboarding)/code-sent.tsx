@@ -55,7 +55,7 @@ export default function WaitingScreen() {
         <PamweBloom faded style={styles.bloom} />
         <Text variant="h2" style={styles.title}>Waiting for your partner</Text>
         <Text italic color={colors.ink2} style={styles.subtitle}>
-          This screen moves on by itself the moment they join.
+          Just waiting for them to join…
         </Text>
       </View>
 

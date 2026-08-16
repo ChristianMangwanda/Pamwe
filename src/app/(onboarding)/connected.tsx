@@ -89,8 +89,7 @@ export default function ConnectedScreen() {
         {askPush && (
           <View style={[styles.prime, { backgroundColor: colors.surface, borderColor: colors.lineAccent }]}>
             <Text style={[styles.primeText, { color: colors.ink }]}>
-              Pamwe can tell you the moment {partner} has written, so neither of you is left waiting
-              without knowing.
+              We can tell you the moment {partner} has written, so you're both in the loop.
             </Text>
           </View>
         )}
@@ -108,7 +107,7 @@ export default function ConnectedScreen() {
             />
           </>
         ) : (
-          <Button title="Begin today's reading" onPress={() => router.replace('/')} />
+          <Button title="Let's start with today's reading" onPress={() => router.replace('/')} />
         )}
       </SafeAreaView>
     </View>

@@ -339,7 +339,7 @@ export default function JournalScreen() {
               <TextInput
                 style={[styles.textInput, { backgroundColor: colors.surface, borderColor: colors.line, color: colors.ink }]}
                 multiline
-                placeholder={`Write it as it is. Only ${partnerName} will ever see this, and only after they've written theirs.`}
+                placeholder="What's on your mind?"
                 placeholderTextColor={colors.muted}
                 value={text}
                 onChangeText={setText}

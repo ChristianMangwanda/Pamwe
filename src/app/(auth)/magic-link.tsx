@@ -17,7 +17,7 @@ export default function MagicLinkScreen() {
         <View style={[styles.icon, { backgroundColor: colors.surface2, borderColor: colors.lineAccent }]}>
           <EnvelopeSimple size={40} color={colors.accent} weight="regular" />
         </View>
-        <Text variant="h1" style={styles.title}>Check your email</Text>
+        <Text variant="h1" style={styles.title}>We sent you something. Check your email.</Text>
         <Text italic color={colors.ink2} style={styles.subtitle}>
           We've sent you a sign-in link. Tap it, then come back here.
         </Text>

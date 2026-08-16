@@ -86,8 +86,8 @@ export function PrayerCard({
       ? { label: `${partnerName} prayed today`, color: colors.accent, fill: true, tappable: false }
       : { label: `Waiting for ${partnerName}`, color: colors.muted, fill: false, tappable: false }
     : prayedByMe
-      ? { label: 'You prayed today', color: colors.accent, fill: true, tappable: false }
-      : { label: 'I prayed today', color: colors.accent2, fill: false, tappable: true };
+      ? { label: 'You prayed', color: colors.accent, fill: true, tappable: false }
+      : { label: 'I prayed', color: colors.accent2, fill: false, tappable: true };
 
   return (
     <View style={styles.wrap}>

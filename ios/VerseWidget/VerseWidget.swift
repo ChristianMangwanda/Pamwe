@@ -62,7 +62,7 @@ struct VerseWidget: Widget {
                 .widgetURL(URL(string: "pamwe://today"))
         }
         .configurationDisplayName("Verse of the Day")
-        .description("One verse each morning, to carry into the day.")
+        .description("One verse each morning")
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
         .contentMarginsDisabled()
     }

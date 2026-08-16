@@ -41,7 +41,7 @@ export default function WelcomeScreen() {
         <PamweBloom style={styles.bloom} />
         <View style={styles.words}>
           <Text variant="hero" color={colors.ink} style={styles.title}>Welcome to Pamwe</Text>
-          <Text color={colors.ink2} style={styles.tagline}>Growing in Christ</Text>
+          <Text color={colors.ink2} style={styles.tagline}>Drawing closer to God</Text>
         </View>
       </View>
 

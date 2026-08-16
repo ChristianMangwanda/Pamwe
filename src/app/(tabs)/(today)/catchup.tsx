@@ -190,7 +190,7 @@ export default function CatchUpScreen() {
                     </Text>
                     {sealed.has(day) && (
                       <Text style={[styles.rowNote, { color: colors.muted }]}>
-                        You have written yours.
+                        Yours is in. We're just waiting for your partner.
                       </Text>
                     )}
                   </View>

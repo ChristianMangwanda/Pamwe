@@ -152,7 +152,7 @@ export default function VerseDiscussion() {
           ) : !note ? (
             <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
               <Text color={colors.ink2} style={styles.empty}>
-                Neither of you has written on this verse yet. A note here is the start of the conversation.
+                What's on your mind?
               </Text>
               <TouchableOpacity onPress={editNote} activeOpacity={0.8}
                 style={[styles.noteBtn, { borderColor: colors.accent2 }]}

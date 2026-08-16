@@ -132,12 +132,12 @@ Deno.serve(async (req) => {
 
   const message = partnerAlsoSubmitted
     ? {
-        title: "Both reflections are in",
-        body: "Open Pamwe and read them together.",
+        title: "Both are in!",
+        body: "Read today's word",
       }
     : {
         title: "Your partner just wrote theirs",
-        body: "Write yours and open them together.",
+        body: "Write your reflection",
       };
 
   // Every phone they are signed in on, not just the last one to register.

@@ -50,7 +50,7 @@ export function recapHeadline(days: number, prayers: number, period: RecapPeriod
 
 export function recapEncouragement(days: number, period: RecapPeriod): string {
   const word = PERIOD_WORD[period];
-  if (days >= 5) return `You showed up ${days} times this ${word}. That rhythm is the rare thing: keep it.`;
+  if (days >= 5) return `You showed up ${days} times this ${word}.`;
   if (days > 0) return 'Every day you opened the Word planted something. Pick your next reading tonight and keep it growing.';
   return 'The Word will be here when you come back. Start small: one passage, read together.';
 }

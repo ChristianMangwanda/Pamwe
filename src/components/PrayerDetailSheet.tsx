@@ -82,7 +82,7 @@ export function PrayerDetailSheet({
       ? { label: `${partnerName} prayed today`, color: colors.accent, fill: true }
       : { label: `Waiting for ${partnerName}`, color: colors.muted, fill: false }
     : prayedByMe
-      ? { label: 'You prayed today', color: colors.accent, fill: true }
+      ? { label: 'You prayed', color: colors.accent, fill: true }
       : { label: 'Not prayed yet', color: colors.muted, fill: false };
 
   return (

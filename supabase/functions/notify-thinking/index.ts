@@ -111,7 +111,7 @@ Deno.serve(async (req) => {
   const { ok } = await sendExpoPush(admin, "notify-thinking", fanOut(deviceTokens, {
     sound: "default",
     title: `${myName} is thinking of you`,
-    body: "No task, no reading. Just that.",
+    body: "From me to you, and only you.",
     data: { type: "thinking" },
   }, partner?.notification_preview));
   if (!ok) return json({ ok: true, delivered: false, reason: "push_failed" }, 200);

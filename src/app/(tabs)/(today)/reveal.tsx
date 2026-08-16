@@ -225,7 +225,7 @@ export default function RevealScreen() {
         <View style={styles.centered}>
           <Text variant="h2" style={styles.errorTitle}>That plan is finished</Text>
           <Text color={colors.ink2} style={styles.errorText}>
-            Every day you read together is still in your reflections. Start a new plan whenever you're both ready.
+            Start a new plan whenever you are ready.
           </Text>
           <View style={styles.errorActions}>
             <Button title="Read your reflections" onPress={() => router.replace('/(tabs)/reflect')} />
@@ -279,8 +279,8 @@ export default function RevealScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.header}>
-          <SectionEyebrow color={colors.accent2}>Revealed together</SectionEyebrow>
-          <Text style={[styles.title, { color: colors.ink }]}>What you each wrote</Text>
+          <SectionEyebrow color={colors.accent2}>The big reveal</SectionEyebrow>
+          <Text style={[styles.title, { color: colors.ink }]}>Your reflections</Text>
           <Text style={[styles.ref, { color: colors.muted }]}>{planDay?.passage_reference}</Text>
           <Floral variant="divider" style={styles.divider} />
         </View>

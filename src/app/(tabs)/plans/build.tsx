@@ -110,7 +110,7 @@ export default function BuildPlanScreen() {
           <BackLink label="Plans" onPress={() => router.back()} />
           <Text variant="h1" style={styles.title}>Build a plan</Text>
           <Text style={[styles.blurb, { color: colors.ink2 }]}>
-            Say what the two of you are walking through. Pamwe finds the passages and shapes the days.
+            What does this current moment in your life need? Pamwe will help you find what you need.
           </Text>
 
           <View style={[styles.inputWrap, { backgroundColor: colors.surface, borderColor: colors.line }]}>

@@ -119,7 +119,7 @@ export default function ReflectScreen() {
             <BookmarkSimple size={20} color={colors.ink2} weight="regular" />
           </TouchableOpacity>
         </View>
-        <Text variant="journal" italic color={colors.ink2} style={styles.subtitle}>What you've come across, together.</Text>
+        <Text variant="journal" italic color={colors.ink2} style={styles.subtitle}>What you came across.</Text>
 
         {loading ? (
           <View style={styles.center}><PamweLoading /></View>
@@ -128,7 +128,7 @@ export default function ReflectScreen() {
             <Feather size={40} color="#CBB99B" weight="regular" />
             <Text variant="h2" italic style={styles.emptyTitle}>No reflections yet</Text>
             <Text color={colors.muted} style={styles.emptyText}>
-              When you read a day together and reflect, what you each write will gather here.
+              This is a place where reflections will gather.
             </Text>
           </View>
         ) : (

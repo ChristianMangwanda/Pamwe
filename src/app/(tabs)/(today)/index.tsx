@@ -332,7 +332,7 @@ export default function HomeScreen() {
 
   const cta = bothSubmitted
     ? {
-        label: 'Reveal together',
+        label: 'The big reveal',
         go: () => router.push({ pathname: '/(tabs)/(today)/reveal', params: { day: String(dayNumber) } }),
       }
     : mySubmitted
@@ -443,8 +443,8 @@ export default function HomeScreen() {
               {unseen.length > 1
                 ? `${unseen.length} days were revealed and you haven't read them together yet. Start with day ${unseenReveal}.`
                 : unseenReveal === dayNumber - 1
-                ? `${partnerName} marked yesterday complete. You haven't read it together yet.`
-                : `Day ${unseenReveal} was revealed and you haven't read it together yet.`}
+                ? `${partnerName} read yesterday's portion. Waiting on you now.`
+                : `Hey, you might want to check Day ${unseenReveal}'s reflection.`}
             </Text>
             <Text variant="chip" color={colors.accent} style={styles.unseenCta}>
               Open day {unseenReveal}

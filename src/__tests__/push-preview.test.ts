@@ -12,7 +12,7 @@ function fanOut(tokens: string[], message: Omit<Msg, 'to'>, preview?: string | n
 
 const REAL = {
   title: 'Ammy just wrote theirs',
-  body: 'Write yours and open them together.',
+  body: 'Write your reflection',
   data: { type: 'partner_entry', day: 4, reveal: true },
 };
 

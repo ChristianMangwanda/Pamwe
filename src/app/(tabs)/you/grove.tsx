@@ -204,7 +204,7 @@ export default function GroveScreen() {
         </View>
 
         <View style={styles.ledger}>
-          <Text variant="eyebrow" color={colors.muted}>Finished together</Text>
+          <Text variant="eyebrow" color={colors.muted}>Finished</Text>
           {rows.length === 0 ? (
             <Text style={[styles.ledgerEmpty, { color: colors.muted }]}>
               No plans finished yet. The first one goes here.

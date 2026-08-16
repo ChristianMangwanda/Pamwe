@@ -100,7 +100,7 @@ export default function WaitingScreen() {
         </View>
 
         {error && (
-          <Text color={colors.muted} style={styles.errorHint}>We can't reach the server right now. We'll keep trying.</Text>
+          <Text color={colors.muted} style={styles.errorHint}>Houston, we have a problem. We can't reach the server right now.</Text>
         )}
       </View>
 

@@ -341,7 +341,7 @@ export default function ChapterReader() {
 
             <View style={styles.hint}>
               <HandTap size={14} color="#B7A88C" />
-              <Text style={{ color: '#B7A88C', fontFamily: fonts.sans, fontSize: 12 }}>Press and hold a verse to highlight or note it.</Text>
+              <Text style={{ color: '#B7A88C', fontFamily: fonts.sans, fontSize: 12 }}>Press and hold the verse to highlight or add a note to it.</Text>
             </View>
 
             {/* The banner's Reflect button sits at the top of the chapter, which

@@ -52,7 +52,7 @@ export default function TheirWordsScreen() {
 
         <Text variant="h1">Their words</Text>
         <Text variant="journal" italic color={colors.ink2} style={styles.subtitle}>
-          The lines that stayed with you.
+          The lines that sat with you.
         </Text>
 
         {loading ? (

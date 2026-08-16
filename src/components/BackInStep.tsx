@@ -137,7 +137,7 @@ export function BackInStep({
         <Animated.View entering={words(lineAt)} style={styles.lineWrap}>
           <Floral variant="divider" style={styles.floral} />
           <Text variant="journal" color={colors.ink2} style={styles.line}>
-            You are back in step. Each one stays sealed until they have written theirs.
+            Back on track!
           </Text>
         </Animated.View>
 

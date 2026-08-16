@@ -48,7 +48,7 @@ export default function BibleBooks() {
   };
 
   const marksSub =
-    markCount === null ? "Everything you've marked, together" : markCount === 0 ? 'Nothing marked yet' : `${markCount} marked`;
+    markCount === null ? 'Things that grabbed our attention' : markCount === 0 ? 'Nothing marked yet' : `${markCount} marked`;
 
   return (
     <Screen>
@@ -88,7 +88,7 @@ export default function BibleBooks() {
       >
         <BookmarksSimple size={22} color={colors.accent2} weight="fill" />
         <View style={styles.jumpText}>
-          <Text style={[styles.marksTitle, { color: colors.accent }]}>My highlights & notes</Text>
+          <Text style={[styles.marksTitle, { color: colors.accent }]}>Our highlights and notes</Text>
           <Text color={colors.muted} style={styles.marksSub}>{marksSub}</Text>
         </View>
         <CaretRight size={16} color={colors.accent2} />

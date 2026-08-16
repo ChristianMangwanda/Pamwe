@@ -224,7 +224,7 @@ export default function PlansScreen() {
               </View>
               <Text style={[styles.doorTitle, { color: colors.bg }]}>Build a plan</Text>
               <Text style={[styles.doorSub, { color: colors.bg }]}>
-                Say what you are walking through. Pamwe shapes the readings.
+                What does this moment in your life need? Pamwe will help you find it.
               </Text>
             </TouchableOpacity>
 

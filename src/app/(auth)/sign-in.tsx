@@ -66,7 +66,7 @@ export default function SignInScreen() {
     } catch (e: any) {
       setLoading(false);
       if (e?.code === statusCodes.SIGN_IN_CANCELLED) return;
-      Alert.alert("Couldn't sign in with Google", e?.message || 'Something went wrong. Try again.');
+      Alert.alert("Couldn't sign in with Google", e?.message || "Sorry about that. Let's try that one more time.");
     }
   };
 
@@ -89,7 +89,7 @@ export default function SignInScreen() {
       }
     } catch (e: any) {
       setLoading(false);
-      if (e.code !== 'ERR_REQUEST_CANCELED') Alert.alert("Couldn't sign in with Apple", e.message || 'Something went wrong. Try again.');
+      if (e.code !== 'ERR_REQUEST_CANCELED') Alert.alert("Couldn't sign in with Apple", e.message || "Sorry about that. Let's try that one more time.");
     }
   };
 

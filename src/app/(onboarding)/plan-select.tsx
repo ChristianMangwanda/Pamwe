@@ -103,7 +103,7 @@ export default function PlanSelectScreen() {
         <Text variant="body" color={colors.ink2} style={styles.subtitle}>
           {isSwitch
             ? 'Pick a new reading plan. Your current one will be marked complete and the new plan starts at day 1.'
-            : 'You and your partner will read through Scripture together, one day at a time.'}
+            : 'Move through Scripture with your partner and grow in faith.'}
         </Text>
       </View>
 
@@ -111,7 +111,7 @@ export default function PlanSelectScreen() {
         {plans.length === 0 && (
           <View style={styles.empty}>
             <Text variant="body" color={colors.ink2} style={styles.emptyText}>
-              We couldn't load the reading plans. Check your connection and try again.
+              Houston, we have a problem. Check your connection and try again.
             </Text>
             <Button title="Try again" variant="secondary" onPress={() => { setLoading(true); loadPlans(); }} />
           </View>
@@ -163,7 +163,7 @@ export default function PlanSelectScreen() {
           </View>
         )}
         <Button
-          title={isSwitch ? 'Switch to this plan' : 'Begin together'}
+          title={isSwitch ? 'Switch to this plan' : "Let's get the ball rolling"}
           onPress={handleEnroll}
           loading={enrolling}
           disabled={!selectedId || enrolling}

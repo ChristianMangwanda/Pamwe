@@ -165,7 +165,7 @@ export type Cadence = 1 | 2 | 7;
 // Labels stay short because they sit in a 3-way segmented control; the blurb
 // carries the meaning.
 export const CADENCE_OPTIONS: { value: Cadence; label: string; blurb: string }[] = [
-  { value: 1, label: 'Every day', blurb: 'A reading a day, the way the plans are written.' },
+  { value: 1, label: 'Every day', blurb: 'A scripture a day keeps the bad vibes away.' },
   { value: 2, label: 'Every 2 days', blurb: 'A gentler rhythm, with room to breathe between readings.' },
   { value: 7, label: 'Once a week', blurb: 'One reading a week, for a slower season.' },
 ];

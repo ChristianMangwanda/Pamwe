@@ -41,7 +41,7 @@ export function DayClosed({
         {streakCount > 0 && (
           <Text style={[styles.streak, { color: colors.ink2 }]}>
             {streakCount === 1
-              ? 'One day kept. The next one is what makes it a rhythm.'
+              ? 'One day at a time, towards building a habit.'
               : `${streakCount} days kept, this one among them.`}
           </Text>
         )}

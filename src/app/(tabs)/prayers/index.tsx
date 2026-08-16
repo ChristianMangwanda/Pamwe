@@ -273,7 +273,7 @@ export default function PrayersScreen() {
       >
         <Text variant="h1">{isDreams ? 'Dreams' : 'Prayer requests'}</Text>
         <Text variant="journal" italic color={colors.ink2} style={styles.subtitle}>
-          {isDreams ? 'The ones that stayed with you.' : "What you're carrying to Him, together."}
+          {isDreams ? 'The ones that stayed with you.' : "What's weighing heavy on you?"}
         </Text>
 
         <SegmentedControl
@@ -304,7 +304,7 @@ export default function PrayersScreen() {
               <MoonStars size={40} color="#CBB99B" weight="regular" />
               <Text variant="h2" italic style={styles.emptyTitle}>No dreams written down yet</Text>
               <Text color={colors.muted} style={styles.emptyText}>
-                When one stays with you in the morning, put it here. {partnerName} can pray it with you.
+                What did you dream about? Care to share it?
               </Text>
             </View>
           ) : (
