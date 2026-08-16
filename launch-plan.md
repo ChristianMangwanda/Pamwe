@@ -87,10 +87,11 @@ Everything to paste lives in [store-package.md](store-package.md), updated
 
 ### Wed Aug 19 — submit
 
-- [ ] If the two-phone pass found nothing, **build 28 is the launch build**,
-      already uploaded: attach it to the 1.0.0 version and submit. No new
-      archive unless the pass forced a fix (then it's b29 through the usual
-      pipeline: `restore_ios_patches.rb --check` first, bump all 4
+- [ ] If the two-phone pass found nothing, **build 30 is the launch build**
+      (updated 2026-08-15; it was b28 before the catch-up round), already
+      uploaded: attach it to the 1.0.0 version and submit. No new archive
+      unless the pass forced a fix (then it's b31 through the usual pipeline:
+      `restore_ios_patches.rb --check` first, bump all 4
       CURRENT_PROJECT_VERSION spots, grep the bundle for the hosted ref).
 
 ### Aug 20–23 — Apple review + buffer

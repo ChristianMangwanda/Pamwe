@@ -179,6 +179,11 @@ per user, 10s cooldown) is live. Nothing left to do here.
       [docs/app-store-privacy-answers.md](docs/app-store-privacy-answers.md)
       (EIGHT types; section 4 here is superseded) + age rating (section 2).
 - [ ] Paste description/promo/keywords (section 3) + URLs (section 1).
-- [ ] Attach **build 28** (already uploaded) to version 1.0.0 and submit with
-      the section 6 notes. No new archive unless the two-phone pass forces a
-      fix; then it is b29 through the usual pipeline.
+- [ ] Attach **build 30** (already uploaded 2026-08-15) to version 1.0.0 and
+      submit with the section 6 notes. It was b28 until the catch-up round;
+      b30 is b28 plus that work, and its database half is already live on
+      hosted. No new archive unless the two-phone pass forces a fix; then it
+      is b31 through the usual pipeline.
+- [ ] **Ammy needs b30 installed** before the two-phone evening. The catch-up
+      fix only exists client-side on b30, so testing it with her on b29 shows
+      the old one-day-at-a-time wall and reads as a failure that is not one.
