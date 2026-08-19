@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 32 },
   hero: { alignItems: 'center', gap: 12, marginTop: 26, marginBottom: 30 },
-  bloom: { width: 104, height: 128 },
+  bloom: { width: 104, height: 117 },
   title: { textAlign: 'center' },
   subtitle: { fontSize: 15, textAlign: 'center', paddingHorizontal: 8 },
   form: { gap: 12, marginTop: 26 },

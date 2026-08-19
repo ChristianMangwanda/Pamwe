@@ -70,7 +70,7 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   hero: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 18, paddingHorizontal: 42 },
-  bloom: { width: 236, height: 291 },
+  bloom: { width: 236, height: 265 },
   words: { alignItems: 'center', gap: 8 },
   title: { textAlign: 'center' },
   tagline: { textAlign: 'center' },
