@@ -308,6 +308,12 @@ export async function cancelWeeklyRecap() {
 // Schedule (or re-schedule) the Sunday recap nudge. Cancels by id only, never
 // cancel-all: that once silently killed every prayer reminder on launch.
 export async function scheduleWeeklyRecap() {
+  // iOS refuses to save a notification for an unauthorized app and rejects with
+  // UNErrorDomain 2003. The Settings toggles call this directly and do not await
+  // it, so that became an unhandled rejection: the preference saved, no reminder
+  // was ever armed, and the only trace was a Sentry event. The *FromPrefs
+  // schedulers have always guarded; these two were the pair that did not.
+  if ((await getNotificationPermissionStatus()) !== 'granted') return;
   await cancelWeeklyRecap();
   await Notifications.scheduleNotificationAsync({
     identifier: RECAP_ID,
@@ -370,6 +376,8 @@ export async function cancelPrayerReview() {
 }
 
 export async function schedulePrayerReview() {
+  // Same guard, same reason as scheduleWeeklyRecap above.
+  if ((await getNotificationPermissionStatus()) !== 'granted') return;
   await cancelPrayerReview();
   await Notifications.scheduleNotificationAsync({
     identifier: PRAYER_REVIEW_ID,
