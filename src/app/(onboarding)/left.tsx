@@ -99,7 +99,7 @@ export default function LeftScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, paddingHorizontal: GUTTER },
   body: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 22 },
-  bloom: { width: 140, height: 157 },
+  bloom: { width: 140, height: 154 },
   words: { alignItems: 'center', gap: 10 },
   title: { textAlign: 'center' },
   blurb: { fontSize: 15, textAlign: 'center' },

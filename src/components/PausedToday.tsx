@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
   bannerInner: { height: 38, alignItems: 'center', justifyContent: 'center' },
   pill: { borderRadius: 99, paddingVertical: 5, paddingHorizontal: 14 },
   body: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 22 },
-  bloom: { width: 150, height: 169 },
+  bloom: { width: 150, height: 165 },
   words: { alignItems: 'center', gap: 10 },
   title: { textAlign: 'center' },
   blurb: { fontSize: 15, textAlign: 'center', lineHeight: 23 },

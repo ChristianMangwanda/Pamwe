@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, paddingHorizontal: GUTTER },
   header: { paddingTop: 8 },
   body: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 20, paddingHorizontal: 14 },
-  bloom: { width: 170, height: 191 },
+  bloom: { width: 170, height: 187 },
   title: { textAlign: 'center' },
   subtitle: { fontSize: 15, textAlign: 'center' },
   footer: { paddingBottom: 12 },

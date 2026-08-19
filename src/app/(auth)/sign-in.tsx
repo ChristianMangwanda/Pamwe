@@ -14,6 +14,9 @@ import { GUTTER } from '../../theme/tokens';
 import { useTheme } from '../../providers/ThemeProvider';
 import { supabase } from '../../lib/supabase';
 
+/** Addresses on this domain get a password field. Nothing else does. */
+const REVIEW_EMAIL_DOMAIN = '@appreview.pamwe.app';
+
 export default function SignInScreen() {
   const router = useRouter();
   const { colors } = useTheme();
@@ -22,6 +25,16 @@ export default function SignInScreen() {
   const [loading, setLoading] = useState(false);
   // Email is a door, not the front door (see the render).
   const [showEmail, setShowEmail] = useState(false);
+  const [password, setPassword] = useState('');
+
+  // App Review cannot be handed a magic link or an Apple ID, and the core loop
+  // needs a partner who has already written, so review signs in as one half of
+  // a real, already-paired couple. That needs a password, and this is the only
+  // way one exists in a release build: the field appears solely for addresses
+  // on the review domain, so no general password path is open to real users.
+  // The credentials live in the App Store Connect notes field and nowhere in
+  // this repo, which is how the previous review accounts leaked.
+  const isReviewAccount = email.trim().toLowerCase().endsWith(REVIEW_EMAIL_DOMAIN);
 
   // Which door on welcome was used. The screen is the same either way, since
   // "Continue with Apple" creates an account or signs into one without being
@@ -30,6 +43,18 @@ export default function SignInScreen() {
 
   const handleEmailSignIn = async () => {
     if (!email.trim()) return;
+    if (isReviewAccount) {
+      setLoading(true);
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+      setLoading(false);
+      if (error) Alert.alert("Couldn't sign in", error.message);
+      // Every sign-in success routes back through the gate, same as the others.
+      else router.replace('/');
+      return;
+    }
     setLoading(true);
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
@@ -136,7 +161,23 @@ export default function SignInScreen() {
                 autoCorrect={false}
                 autoFocus
               />
-              <Button title="Continue with email" onPress={handleEmailSignIn} loading={loading} />
+              {isReviewAccount && (
+                <TextInput
+                  style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.line, color: colors.ink }]}
+                  placeholder="Password"
+                  placeholderTextColor={colors.muted}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              )}
+              <Button
+                title={isReviewAccount ? 'Sign in' : 'Continue with email'}
+                onPress={handleEmailSignIn}
+                loading={loading}
+              />
             </View>
           )}
 
@@ -158,7 +199,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   scroll: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 32 },
   hero: { alignItems: 'center', gap: 12, marginTop: 26, marginBottom: 30 },
-  bloom: { width: 104, height: 117 },
+  bloom: { width: 104, height: 114 },
   title: { textAlign: 'center' },
   subtitle: { fontSize: 15, textAlign: 'center', paddingHorizontal: 8 },
   form: { gap: 12, marginTop: 26 },

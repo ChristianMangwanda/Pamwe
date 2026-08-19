@@ -11,7 +11,7 @@ every value it needs is inline rather than referenced. If you change
 **Two things it cannot do, which stay yours:**
 
 1. **Upload the 14 screenshots.** They are local files in
-   `Screenshots/appstore/` and a browser agent cannot reach your filesystem.
+   `Screenshots/appstore-1284x2778/` (already resized to an accepted size) and a browser agent cannot reach your filesystem.
 2. **Submit.** The prompt tells it to stop before submitting, on purpose.
 
 ---
@@ -159,11 +159,15 @@ This label has to match the privacy policy at the URL above, so do not add or
 drop a type to make a form easier to finish. If App Store Connect will not
 accept one of these answers, stop and tell me exactly which and why.
 
-## 6. Review notes
+## 6. Review notes and demo account
 
-Paste this into the App Review Notes field, but **stop first and ask me for
-the demo video link**. There is a placeholder in it and it must not be
-submitted with the placeholder still in.
+There IS a demo account now. **Stop and ask me for the password** before you
+fill anything in this section, and never guess or invent one.
+
+Fill the "Sign-In Required" section: tick that a sign-in is required, and enter
+the user name `grace@appreview.pamwe.app` with the password I give you.
+
+Then paste this into the App Review Notes field:
 
 ```
 Pamwe is a devotional app for exactly two people, a couple. Every feature is
@@ -173,21 +177,25 @@ partners have submitted. There is no solo mode, no public content, no feed,
 and no way to see any writing except your one partner's. This is enforced by
 the database, not just the UI.
 
-Signing in alone (Sign in with Apple works immediately) shows onboarding and
-ends at the invite-code screen, because the app cannot go further without a
-second person. Since the core loop requires two paired humans, we have
-recorded a full walkthrough on two phones showing sign-in, pairing, the daily
-reading, both partners writing, the mutual reveal, prayers, and account
-deletion: [VIDEO LINK]
+DEMO ACCOUNT
+Email: grace@appreview.pamwe.app
+Password: (in the credentials fields above)
+
+This account is one half of a couple that is already paired, so you can see
+the whole app without a second device. Enter the email on the sign-in screen
+and a password field will appear.
+
+TO SEE THE CORE FEATURE
+Open the Today tab and write a short reflection for Day 6. Her partner has
+already submitted his, so as soon as you submit yours, both unlock and you
+will see his writing. Before you submit, his words are not readable by this
+account at all.
 
 Account deletion (guideline 5.1.1(v)) is in the app: You tab, Settings,
-Delete account. The app is free with no purchases, no ads, and no tracking.
-Notifications are optional and configurable in Settings.
+Delete account. Please do not delete the demo account itself, as it is shared
+with other reviews. The app is free with no purchases, no ads, and no
+tracking. Notifications are optional and configurable in Settings.
 ```
-
-Sign-in contact details: use my Apple ID account details already on file. There
-is no demo account and no password to give, which is exactly why the video
-exists.
 
 ## 7. Pricing and availability
 

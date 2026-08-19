@@ -119,19 +119,31 @@ de-identified content, since every visible word ships to the store page.
 
 ## 6. App Review notes (paste into the Notes field)
 
-**The demo-couple path was removed 2026-08-11** (Christian's call; the leaked
-`@review.pamwe.app` accounts and the password sign-in are gone). Mechanically
-that means no credentials CAN be supplied: release builds have no password
-field, his own account signs in by magic link or Apple ID, and neither works
-from a reviewer's desk. **So the plan is a demo video**, recorded on the two
-phones during the pause/leave pass (same evening, same setup). Guideline 2.1
-prefers a demo account; video is the documented alternative when an account
-cannot demonstrate the app alone. **If Apple rejects on 2.1, the fallback is a
-fresh pre-paired review couple with a password path in b29, credentials only in
-the ASC notes field, never in git.** That is a new decision for Christian at
-that point, not a standing one.
+**A demo couple exists again as of 2026-08-19** (Christian's call, on submit
+day), replacing the demo-video plan. The 2026-08-11 removal stands as to WHY
+the old one went: `@review.pamwe.app` credentials were committed to a public
+repo. The rule that replaced it is not "no demo account", it is **credentials
+live in the App Store Connect notes field and nowhere in git**. Nothing below
+carries the password, deliberately.
 
-Draft notes (fill the video link before submitting):
+**How it works.** Grace and Daniel are two real accounts, really paired, on the
+hosted project. Nothing is bypassed and no policy was loosened: the reviewer is
+one half of an ordinary couple. Signing in as Grace shows a plan six days in,
+five days of reflections with both partners' words already revealed, prayers,
+dreams, a three year anniversary and a Grove with a planted fig.
+
+**The part that demonstrates the core mechanic.** Day 6 is seeded with Daniel
+already submitted and Grace not. So the reviewer writes one reflection, and the
+locked reveal opens on the spot, with Daniel's words appearing. They experience
+the whole point of the app alone, on one device. Verified against the live
+database: before Grace submits, Daniel's day 6 row is not readable by her at
+all, which is the RLS doing it rather than the interface.
+
+**Password sign-in in the release build** is limited to addresses on the review
+domain. A field appears for those and for nothing else, so no general password
+path is open to real users.
+
+Draft notes:
 
 > Pamwe is a devotional app for exactly two people, a couple. Every feature is
 > built around one pair of accounts: the couple reads the same passage, each
@@ -140,16 +152,27 @@ Draft notes (fill the video link before submitting):
 > and no way to see any writing except your one partner's. This is enforced by
 > the database, not just the UI.
 >
-> Signing in alone (Sign in with Apple works immediately) shows onboarding and
-> ends at the invite-code screen, because the app cannot go further without a
-> second person. Since the core loop requires two paired humans, we have
-> recorded a full walkthrough on two phones showing sign-in, pairing, the daily
-> reading, both partners writing, the mutual reveal, prayers, and account
-> deletion: [VIDEO LINK]
+> DEMO ACCOUNT
+> Email: grace@appreview.pamwe.app
+> Password: (in the credentials fields above)
+>
+> This account is one half of a couple that is already paired, so you can see
+> the whole app without a second device. Enter the email on the sign-in screen
+> and a password field will appear.
+>
+> TO SEE THE CORE FEATURE
+> Open the Today tab and write a short reflection for Day 6. Her partner has
+> already submitted his, so as soon as you submit yours, both unlock and you
+> will see his writing. Before you submit, his words are not readable by this
+> account at all.
 >
 > Account deletion (guideline 5.1.1(v)) is in the app: You tab, Settings,
-> Delete account. The app is free with no purchases, no ads, and no tracking.
-> Notifications are optional and configurable in Settings.
+> Delete account. Please do not delete the demo account itself, as it is shared
+> with other reviews. The app is free with no purchases, no ads, and no
+> tracking. Notifications are optional and configurable in Settings.
+
+**Fill the ASC "Sign-in required" fields** with the email above and the password
+Christian holds. Do not paste the password into this file.
 
 ## 7. Model spend guard — DONE, superseded
 
@@ -173,13 +196,13 @@ per user, 10s cooldown) is live. Nothing left to do here.
 - [x] Stale pamwe-site policies redirected to the canonical site (2026-08-12).
 - [x] ~~Anthropic spend limit~~ superseded: OpenAI auto-recharge set 2026-08-11
       (section 7).
-- [ ] Record the two-phone demo video for the review notes (section 6) during
-      the pause/leave verification pass. Same evening, same two phones.
+- [x] ~~Record the two-phone demo video~~ **Superseded 2026-08-19**: a real
+      pre-paired demo couple replaced it (section 6). No video needed.
 - [ ] Fill nutrition labels from
       [docs/app-store-privacy-answers.md](docs/app-store-privacy-answers.md)
       (EIGHT types; section 4 here is superseded) + age rating (section 2).
 - [ ] Paste description/promo/keywords (section 3) + URLs (section 1).
-- [ ] Attach **build 30** (already uploaded 2026-08-15) to version 1.0.0 and
+- [ ] Attach **build 32** (uploaded 2026-08-19) to version 1.0.0 and
       submit with the section 6 notes. It was b28 until the catch-up round;
       b30 is b28 plus that work, and its database half is already live on
       hosted. No new archive unless the two-phone pass forces a fix; then it
