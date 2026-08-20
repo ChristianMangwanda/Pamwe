@@ -186,7 +186,8 @@ the whole app without a second device. Enter the email on the sign-in screen
 and a password field will appear.
 
 TO SEE THE CORE FEATURE
-Open the Today tab and write a short reflection for Day 6. Her partner has
+Open the Today tab, tap "Read Day 6", then write a short reflection and send
+it. Her partner has
 already submitted his, so as soon as you submit yours, both unlock and you
 will see his writing. Before you submit, his words are not readable by this
 account at all.

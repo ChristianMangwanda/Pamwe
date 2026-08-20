@@ -139,6 +139,22 @@ the whole point of the app alone, on one device. Verified against the live
 database: before Grace submits, Daniel's day 6 row is not readable by her at
 all, which is the RLS doing it rather than the interface.
 
+⚠️ **The seeded day must stay inside the cadence gate, and it did not**
+(found 2026-08-20, after the first review). The couple was seeded on
+`current_day` 6 with a `start_date` only days old at cadence 2, so
+`expectedDay` computed 3: the couple was AHEAD of its own rhythm and
+[canOpenDay](src/lib/catchup.ts) refuses that, by design. The reviewer opened
+Today, read "Day 6 opens on Monday", and had no way to do the one thing the
+notes asked for. That is the likeliest reason Apple asked for a video at all.
+
+The plan now runs at `cadence_days = 7` from `2026-07-16`, which puts
+`expectedDay` at exactly 6 and holds it there for a week rather than a day.
+**Re-check it before every submission**, because it drifts: Day 6 is current
+through 2026-08-26, and after that opens as catch-up instead. To recentre,
+set the active `couple_plans` row's `start_date` to `current_date - 35`.
+Grace's day 1 to 5 reveals were also marked seen, so Today offers Day 6
+rather than a card pointing back at day 1.
+
 **Password sign-in in the release build** is limited to addresses on the review
 domain. A field appears for those and for nothing else, so no general password
 path is open to real users.
@@ -161,7 +177,8 @@ Draft notes:
 > and a password field will appear.
 >
 > TO SEE THE CORE FEATURE
-> Open the Today tab and write a short reflection for Day 6. Her partner has
+> Open the Today tab, tap "Read Day 6", then write a short reflection and send
+> it. Her partner has
 > already submitted his, so as soon as you submit yours, both unlock and you
 > will see his writing. Before you submit, his words are not readable by this
 > account at all.

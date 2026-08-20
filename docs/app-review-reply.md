@@ -1,12 +1,26 @@
 # App Review reply, Guideline 2.1 Information Needed (2026-08-20)
 
 Apple's 2026-08-20 "Changes needed" is their standard first-app information
-request: a screen recording plus seven informational items, answered as a
-**reply in the App Review message thread**. Their letter says this class needs
-no resubmission, so **build 32 stays attached and nothing is rebuilt**.
+request: a screen recording plus seven informational items.
 
-Verified before drafting: the reviewer signed in as Grace on 2026-08-19 (the
-credentials work), and the demo state survived intact.
+**This is now a resubmission, not a reply-only.** Two launch blockers were
+found while preparing the recording, so the binary has changed and **build 34
+must be attached**:
+
+1. **The reviewer could not do what the notes asked.** The demo couple's plan
+   was seeded ahead of its own cadence, so `expectedDay` computed 3 while
+   `current_day` was 6, and the directional gate refused to open Day 6. Grace's
+   Today screen said "Day 6 opens on Monday" with no way in. Fixed in the data
+   (the plan now starts 2026-07-16 at a weekly cadence, so Day 6 is exactly
+   current), not in the app.
+2. **Every couple-less account was trapped, then spinning.** Today lived at a
+   route that resolved to `/`, the same URL as the auth gate, so the gate never
+   ran; b33's CoupleFence then looped against it. Fixed by un-grouping the
+   route (commit `0772e1c`), verified on device for both a couple-less and a
+   paired account.
+
+Verified before drafting: the reviewer signed in as Grace on 2026-08-19, so the
+credentials work.
 
 ---
 
@@ -97,9 +111,11 @@ instructions stay true, and the Jordan/relay couple is cleaned up.
 >
 > 4. SETUP AND ACCESS
 > A demo account is provided in the credentials fields:
-> grace@appreview.pamwe.app. Grace is one half of a real, already-paired
-> couple. To see the core feature: open the Today tab and write a short
-> reflection for Day 6. Her partner has already submitted his, so as soon as
+> grace@appreview.pamwe.app. Enter that address on the sign-in screen and a
+> password field appears. Grace is one half of a real, already-paired couple.
+> To see the core feature: open the Today tab, tap "Read Day 6", then write a
+> short reflection and send it.
+> Her partner has already submitted his, so as soon as
 > you submit yours both unlock and his writing appears. Before you submit,
 > his words are not readable by this account at all; that is enforced by
 > database row security, not by the interface. Signing in alone with any new
@@ -148,3 +164,9 @@ instructions stay true, and the Jordan/relay couple is cleaned up.
 - [ ] Part B pasted and sent
 - [ ] Grace Day 6 reset confirmed after the take
 - [ ] Jordan/relay couple cleaned up after the take
+- [ ] **Build 34 attached** (the binary changed: route-collision fix, `0772e1c`)
+- [ ] **Day 6 confirmed open** on the demo account immediately before sending.
+      It is exactly current through 2026-08-26; after that Grace is behind and
+      Day 6 opens as catch-up, which still works but reads differently. To make
+      it current again, set the active `couple_plans` row's `start_date` to
+      `current_date - 35`.
