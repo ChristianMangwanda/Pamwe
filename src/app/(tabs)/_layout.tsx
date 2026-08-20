@@ -49,7 +49,7 @@ export default function TabLayout() {
       <CoupleFence>
       <Tabs screenOptions={dockedTabOptions}>
         <Tabs.Screen
-          name="(today)"
+          name="today"
           options={{
             title: 'Today',
             tabBarIcon: ({ color, focused }) => (

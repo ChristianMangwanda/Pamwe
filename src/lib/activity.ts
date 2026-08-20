@@ -94,7 +94,7 @@ export function activityRoute(item: ActivityItem):
       // The reveal for the day the response sits on. Pinned by day for the same
       // reason the partner push carries one: current_day may have moved on.
       return {
-        pathname: '/(tabs)/(today)/reveal',
+        pathname: '/(tabs)/today/reveal',
         params: { day: String(item.target.day) },
         anchored: false,
       };

@@ -92,7 +92,7 @@ export default function ReadingScreen() {
 
         <Button
           title="Reflect on this"
-          onPress={() => router.push({ pathname: '/(tabs)/(today)/journal', params: { day: String(dayNumber) } })}
+          onPress={() => router.push({ pathname: '/(tabs)/today/journal', params: { day: String(dayNumber) } })}
         />
       </ScrollView>
     </SafeAreaView>

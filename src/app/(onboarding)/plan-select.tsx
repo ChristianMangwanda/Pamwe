@@ -68,7 +68,7 @@ export default function PlanSelectScreen() {
       // before entering, or every tab sees a stale null plan.
       await refresh();
       haptics.success();
-      router.replace('/(tabs)/(today)');
+      router.replace('/(tabs)/today');
     } catch (err: any) {
       setEnrolling(false);
       Alert.alert("Couldn't set your plan", err?.message ?? "That didn't go through. Give it another try in a moment.");

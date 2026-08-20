@@ -105,7 +105,7 @@ export default function CatchUpScreen() {
     haptics.tap();
     const parsed = parseReference(ref ?? '');
     if (!parsed) {
-      router.push({ pathname: '/(tabs)/(today)/reading', params: { day: String(day) } });
+      router.push({ pathname: '/(tabs)/today/reading', params: { day: String(day) } });
       return;
     }
     router.push({
@@ -217,7 +217,7 @@ export default function CatchUpScreen() {
         It navigates away without clearing `caught` first, because dropping the
         overlay would show the emptied list for a frame on the way out. */}
     {caught !== null && (
-      <BackInStep days={caught} onDone={() => router.replace('/(tabs)/(today)')} />
+      <BackInStep days={caught} onDone={() => router.replace('/(tabs)/today')} />
     )}
     </>
   );

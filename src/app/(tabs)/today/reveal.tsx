@@ -129,11 +129,11 @@ export default function RevealScreen() {
     if (!myEntry) {
       // Nothing written yet, so this day is not a reveal at all. Today derives
       // the right next step from server state.
-      router.replace('/(tabs)/(today)');
+      router.replace('/(tabs)/today');
     } else {
       // You have written and they have not. That is the waiting screen, and it
       // carries you back here by itself the moment they submit.
-      router.replace({ pathname: '/(tabs)/(today)/waiting', params: { day: String(dayNumber) } });
+      router.replace({ pathname: '/(tabs)/today/waiting', params: { day: String(dayNumber) } });
     }
   }, [loading, coupleLoading, couplePlan, error, revealed, myEntry, dayNumber]);
 
@@ -194,7 +194,7 @@ export default function RevealScreen() {
           "Couldn't mark the day complete",
           'Your reflections are safe. Check your connection and try again.',
           [
-            { text: 'Back to Today', style: 'cancel', onPress: () => router.replace('/(tabs)/(today)') },
+            { text: 'Back to Today', style: 'cancel', onPress: () => router.replace('/(tabs)/today') },
             { text: 'Try again', onPress: () => { onAmen(); } },
           ],
         );
@@ -202,8 +202,8 @@ export default function RevealScreen() {
       }
     }
     await refreshCouple();
-    if (completed) router.replace({ pathname: '/(tabs)/(today)/complete', params: completed });
-    else router.replace('/(tabs)/(today)');
+    if (completed) router.replace({ pathname: '/(tabs)/today/complete', params: completed });
+    else router.replace('/(tabs)/today');
   };
 
   if ((loading || coupleLoading) && !revealed) {
@@ -247,7 +247,7 @@ export default function RevealScreen() {
           <Text color={colors.ink2} style={styles.errorText}>Check your connection and try again.</Text>
           <View style={styles.errorActions}>
             <Button title="Try again" onPress={refresh} />
-            <Button title="Back to Today" variant="secondary" onPress={() => router.replace('/(tabs)/(today)')} />
+            <Button title="Back to Today" variant="secondary" onPress={() => router.replace('/(tabs)/today')} />
           </View>
         </View>
       </SafeAreaView>

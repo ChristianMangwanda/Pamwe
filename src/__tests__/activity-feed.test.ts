@@ -59,7 +59,7 @@ describe('activityRoute', () => {
     // Pinned by day for the same reason the partner push carries one:
     // current_day may have moved on since.
     expect(activityRoute(item({ kind: 'response', target: { day: 4 } })))
-      .toEqual({ pathname: '/(tabs)/(today)/reveal', params: { day: '4' }, anchored: false });
+      .toEqual({ pathname: '/(tabs)/today/reveal', params: { day: '4' }, anchored: false });
   });
 
   it('refuses to guess when a response has no day', () => {

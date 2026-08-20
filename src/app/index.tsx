@@ -139,5 +139,5 @@ export default function Index() {
   // Couple created but partner hasn't joined → the invite screen shows the code + waits.
   if (route === 'waiting') return <Redirect href="/(onboarding)/invite" />;
   if (route === 'plan-select') return <Redirect href="/(onboarding)/plan-select" />;
-  return <Redirect href="/(tabs)/(today)" />;
+  return <Redirect href="/(tabs)/today" />;
 }

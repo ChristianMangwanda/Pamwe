@@ -74,7 +74,7 @@ export default function CompleteScreen() {
       await enrollInPlan(couple.id, params.planId, cadence);
       await refreshCouple();
       haptics.success();
-      router.replace('/(tabs)/(today)');
+      router.replace('/(tabs)/today');
     } catch (e: any) {
       setRetaking(false);
       Alert.alert("Couldn't start it again", e?.message ?? 'Try again in a moment.');

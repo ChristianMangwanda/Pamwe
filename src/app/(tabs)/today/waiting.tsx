@@ -77,7 +77,7 @@ export default function WaitingScreen() {
   useEffect(() => {
     if (partnerEntry?.submitted_at && !handedOver.current) {
       handedOver.current = true;
-      router.replace({ pathname: '/(tabs)/(today)/reveal', params: { day: String(dayNumber) } });
+      router.replace({ pathname: '/(tabs)/today/reveal', params: { day: String(dayNumber) } });
     }
   }, [partnerEntry?.submitted_at, dayNumber]);
 
@@ -113,14 +113,14 @@ export default function WaitingScreen() {
               // POP_TO: back to the catch-up list if it is already below us,
               // which keeps that screen's run counter alive so clearing the
               // last day still lands the moment. Pushed fresh otherwise.
-              router.dismissTo('/(tabs)/(today)/catchup');
+              router.dismissTo('/(tabs)/today/catchup');
             }}
           />
         )}
         <Button
           title="Back to Today"
           variant={owedLeft > 0 ? 'ghost' : 'primary'}
-          onPress={() => router.replace('/(tabs)/(today)')}
+          onPress={() => router.replace('/(tabs)/today')}
           style={owedLeft > 0 ? styles.secondary : undefined}
         />
       </View>

@@ -311,7 +311,7 @@ export default function HomeScreen() {
   const openReading = () => {
     const parsed = parseReference(planDay.passage_reference ?? '');
     if (!parsed) {
-      router.push({ pathname: '/(tabs)/(today)/reading', params: { day: String(dayNumber) } });
+      router.push({ pathname: '/(tabs)/today/reading', params: { day: String(dayNumber) } });
       return;
     }
     router.push({
@@ -333,10 +333,10 @@ export default function HomeScreen() {
   const cta = bothSubmitted
     ? {
         label: 'The big reveal',
-        go: () => router.push({ pathname: '/(tabs)/(today)/reveal', params: { day: String(dayNumber) } }),
+        go: () => router.push({ pathname: '/(tabs)/today/reveal', params: { day: String(dayNumber) } }),
       }
     : mySubmitted
-    ? { label: `Waiting for ${partnerName}`, go: () => router.push({ pathname: '/(tabs)/(today)/waiting', params: { day: String(dayNumber) } }) }
+    ? { label: `Waiting for ${partnerName}`, go: () => router.push({ pathname: '/(tabs)/today/waiting', params: { day: String(dayNumber) } }) }
     : { label: `Read Day ${dayNumber}`, go: openReading };
 
   const onCta = () => { haptics.tap(); cta.go(); };
@@ -374,7 +374,7 @@ export default function HomeScreen() {
           {/* A dot, never a count. The point is that something is there, and a
               number turns a quiet record into a tally to clear. */}
           <TouchableOpacity
-            onPress={() => { haptics.tap(); router.push('/(tabs)/(today)/activity'); }}
+            onPress={() => { haptics.tap(); router.push('/(tabs)/today/activity'); }}
             hitSlop={12}
             accessibilityRole="button"
             accessibilityLabel={unread > 0 ? 'Activity, new since you last looked' : 'Activity'}
@@ -405,7 +405,7 @@ export default function HomeScreen() {
             onPrayers={() => router.push('/(tabs)/prayers')}
             onGrove={() => router.push('/(tabs)/you/grove', { withAnchor: true })}
             onReread={() => router.push({
-              pathname: '/(tabs)/(today)/reveal',
+              pathname: '/(tabs)/today/reveal',
               params: { day: String(dayNumber - 1) },
             })}
           />
@@ -431,7 +431,7 @@ export default function HomeScreen() {
           <TouchableOpacity
             onPress={() => {
               haptics.tap();
-              router.push({ pathname: '/(tabs)/(today)/reveal', params: { day: String(unseenReveal) } });
+              router.push({ pathname: '/(tabs)/today/reveal', params: { day: String(unseenReveal) } });
             }}
             activeOpacity={0.85}
             style={[styles.unseen, { backgroundColor: colors.surface, borderColor: colors.lineAccent }]}
@@ -476,7 +476,7 @@ export default function HomeScreen() {
             a different question, and the catch-up list answers it per day. */}
         {behind > 0 && (
           <TouchableOpacity
-            onPress={() => { haptics.tap(); router.push('/(tabs)/(today)/catchup'); }}
+            onPress={() => { haptics.tap(); router.push('/(tabs)/today/catchup'); }}
             activeOpacity={0.85}
             accessibilityRole="button"
             accessibilityLabel={`You are ${behind} ${behind === 1 ? 'day' : 'days'} behind. See the days you missed.`}

@@ -177,7 +177,7 @@ src/app/
 ├── (auth)/                        # welcome, sign-in, magic-link
 ├── (onboarding)/                  # value-slides, name, pair-choice, invite, join, connected, plan-select
 └── (tabs)/                        # 6-tab DOCKED bar (DockedTabBar; the b7 glass oval is gone): Today · Bible · Plans · Prayers · Reflect · You
-    ├── (today)/                   # home (tree streak, catch-up, nudge) → reading → journal → waiting → reveal → complete
+    ├── today/                     # home (tree streak, catch-up, nudge) → reading → journal → waiting → reveal → complete
     ├── bible/                     # index → [book] → [book]/[chapter] reader (6 translations, 2 sources); marks, note, verse (the discussion on one verse)
     ├── plans/                     # index (search + Build/Browse doors, Your plans / Saved for later) → [id] detail; build (generate + save), builder (by book or topic), browse (topic/length grid), finished (list)
     ├── prayers/                   # index = Prayers|Dreams toggle (swipe cards + detail sheet w/ reminders) → add · dream-add → timeline (answered)
@@ -302,7 +302,7 @@ app's promise is that a reflection is yours until you decide to share it, and
 bytes on a server before that decision is not that, whatever RLS says about who
 can read them. A re-recorded take would also have to be chased and deleted.
 
-What the send does instead ([journal.tsx](src/app/(tabs)/(today)/journal.tsx)
+What the send does instead ([journal.tsx](src/app/(tabs)/today/journal.tsx)
 `handleVoiceComplete`), all of it latency removed without moving the bytes:
 
 - `ensureVoiceDraft` and `uploadVoiceRecording` run **in parallel**. The object
@@ -329,7 +329,7 @@ What the send does instead ([journal.tsx](src/app/(tabs)/(today)/journal.tsx)
 Two coupled rules, both from the 2026-07-14 round:
 
 **`current_day` only ever moves when a partner taps Amen on the reveal**
-([reveal.tsx](src/app/(tabs)/(today)/reveal.tsx) → `advancePlanDay`). The DB
+([reveal.tsx](src/app/(tabs)/today/reveal.tsx) → `advancePlanDay`). The DB
 trigger used to bump it the instant both partners submitted, which pulled every
 ritual screen onto the next, empty day and ate the reveal. `advancePlanDay`
 guards on `current_day` so a double tap is a no-op, and **the reveal pins its day
@@ -444,18 +444,40 @@ The one connection between the two halves is `handleDreamPray`: it carries the
 dream text into the add-prayer screen, trimmed to the prayers table's 280-char
 check, for the couple to word themselves.
 
+### Only the auth gate may answer `/`
+
+Expo Router elides route **groups** from URLs, so an `index.tsx` inside a
+group-only path resolves to `/`, the same URL as the gate at
+[src/app/index.tsx](src/app/index.tsx). Today used to live at
+`(tabs)/(today)/index.tsx` and did exactly that; the router gave `/` to the
+tabs, so **every `router.replace('/')` and every cold start mounted Today
+directly and the gate never ran**.
+
+Paired couples never saw it, because for them the gate's answer IS the tabs.
+It broke the moment an account had no couple, which is App Review's signup and
+every real signup at launch: they landed in a tab shell with no route to
+pairing, and once the `CoupleFence` began ejecting them to `/` the two halves
+looped, tabs to `/` to tabs, several times a second. Shipped in b33, found and
+fixed 2026-08-20 by renaming the directory to `today`, in line with the other
+five tabs, which were always plain names.
+
+[route-collision.test.ts](src/__tests__/route-collision.test.ts) fails if an
+index file ever lands at a group-only path again. It needs a test rather than
+vigilance: the symptom is a silent redirect, not an error, and it is invisible
+to any developer whose own account is paired.
+
 ### A notification that pushes into a nested stack must carry an anchor
 
 [usePushRouting.ts](src/hooks/usePushRouting.ts) routes taps by `data.type`. Any
 push into a screen that is **not** its tab's root must pass `{ withAnchor: true }`,
 and that tab's `_layout.tsx` must declare
 `export const unstable_settings = { initialRouteName: 'index' }` (the `you`,
-`bible` and `(today)` stacks do). Without both, a cold start from the banner
+`bible` and `today` stacks do). Without both, a cold start from the banner
 mounts the pushed screen as the stack's ONLY route: its back link falls through
 to the tab navigator, lands on Today, and **that tab stays stuck on the pushed
 screen until the app restarts**, with no in-app way back. Fixed 2026-08-02, after
 it was hit through the weekly recap. Tab-root pushes (`reflect`, `prayers`,
-`(today)`) need nothing.
+`today`) need nothing.
 
 ### The Grove: a walk, not a list
 

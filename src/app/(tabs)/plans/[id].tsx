@@ -112,7 +112,7 @@ export default function PlanDetailScreen() {
     if (coupleLoading) return;
     if (isActive) {
       haptics.tap();
-      router.push('/(tabs)/(today)');
+      router.push('/(tabs)/today');
       return;
     }
     const begin = async () => {
@@ -125,7 +125,7 @@ export default function PlanDetailScreen() {
         }
         await refreshCouple();
         haptics.success();
-        router.replace('/(tabs)/(today)');
+        router.replace('/(tabs)/today');
       } catch (err: any) {
         setBusy(false);
         Alert.alert("Couldn't start this plan", err?.message ?? 'Try again in a moment.');
@@ -229,7 +229,7 @@ export default function PlanDetailScreen() {
               // The params carry the just-completed plan, since it is no
               // longer the active one.
               router.replace({
-                pathname: '/(tabs)/(today)/complete',
+                pathname: '/(tabs)/today/complete',
                 params: {
                   title: plan?.title ?? '',
                   days: String(plan?.duration_days ?? ''),

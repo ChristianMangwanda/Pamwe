@@ -282,7 +282,7 @@ export default function ChapterReader() {
               <Text style={[styles.bannerTitle, { color: colors.accent }]} numberOfLines={1}>{params.planTitle}</Text>
               <Text style={[styles.bannerDay, { color: colors.muted }]}>Day {params.day}</Text>
             </View>
-            <TouchableOpacity onPress={() => router.push({ pathname: '/(tabs)/(today)/journal', params: { day: String(params.day) } }, { withAnchor: true })} style={[styles.reflectBtn, { backgroundColor: colors.accent }]}>
+            <TouchableOpacity onPress={() => router.push({ pathname: '/(tabs)/today/journal', params: { day: String(params.day) } }, { withAnchor: true })} style={[styles.reflectBtn, { backgroundColor: colors.accent }]}>
               <Feather size={13} color={colors.bg} />
               <Text style={[styles.reflectLabel, { color: colors.bg }]}>Reflect</Text>
             </TouchableOpacity>
@@ -349,7 +349,7 @@ export default function ChapterReader() {
                 Offer it again where the reading actually ends. */}
             {hasCtx && (
               <TouchableOpacity
-                onPress={() => { haptics.tap(); router.push({ pathname: '/(tabs)/(today)/journal', params: { day: String(params.day) } }, { withAnchor: true }); }}
+                onPress={() => { haptics.tap(); router.push({ pathname: '/(tabs)/today/journal', params: { day: String(params.day) } }, { withAnchor: true }); }}
                 activeOpacity={0.85}
                 style={[styles.reflectEnd, { backgroundColor: colors.accent }]}
                 accessibilityRole="button"

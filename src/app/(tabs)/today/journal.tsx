@@ -112,7 +112,7 @@ export default function JournalScreen() {
       const actual = await getMyEntry(couplePlan.id, dayNumber);
       if (!actual?.submitted_at) return false;
       await refresh();
-      router.replace({ pathname: '/(tabs)/(today)/waiting', params: { day: String(dayNumber) } });
+      router.replace({ pathname: '/(tabs)/today/waiting', params: { day: String(dayNumber) } });
       return true;
     } catch {
       return false;
@@ -133,7 +133,7 @@ export default function JournalScreen() {
             entryIdRef.current = entry.id;
             await submitEntry(entry.id);
             // Same as the voice path: waiting refetches for itself.
-            router.replace({ pathname: '/(tabs)/(today)/waiting', params: { day: String(dayNumber) } });
+            router.replace({ pathname: '/(tabs)/today/waiting', params: { day: String(dayNumber) } });
           } catch (err: any) {
             if (await landedAnyway()) return;
             Sentry.captureException(err);
@@ -216,7 +216,7 @@ export default function JournalScreen() {
       // arrival, so refreshing this screen's copy first only made the sender
       // watch a spinner through a round trip whose result nothing reads: this
       // screen is about to unmount, and Today holds its own hook instance.
-      router.replace({ pathname: '/(tabs)/(today)/waiting', params: { day: String(dayNumber) } });
+      router.replace({ pathname: '/(tabs)/today/waiting', params: { day: String(dayNumber) } });
     } catch (err: any) {
       if (await landedAnyway()) return;
       Sentry.captureException(err);

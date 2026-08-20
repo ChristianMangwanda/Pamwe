@@ -38,10 +38,10 @@ export function usePushRouting() {
           // sender had amened opened the next day instead, where neither
           // partner has written. Older pushes carry no day and stay unpinned.
           router.push({
-            pathname: '/(tabs)/(today)/reveal',
+            pathname: '/(tabs)/today/reveal',
             params: data.day != null ? { day: String(data.day) } : {},
           } as any, { withAnchor: true });
-        } else router.push('/(tabs)/(today)' as any);
+        } else router.push('/(tabs)/today' as any);
         break;
       case 'prayer':
       case 'prayer_reminder':
@@ -72,13 +72,13 @@ export function usePushRouting() {
         break;
       case 'morning':
       case 'thinking':
-        router.push('/(tabs)/(today)' as any);
+        router.push('/(tabs)/today' as any);
         break;
       // A pause or restart, asked or answered. Today is where the ask is
       // answered and where the paused screen lives, so both land there. Tab
       // root, so no anchor is needed.
       case 'couple-request':
-        router.push('/(tabs)/(today)' as any);
+        router.push('/(tabs)/today' as any);
         break;
       case 'partner_left':
         // couple state changed — let the auth gate re-route

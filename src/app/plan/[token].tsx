@@ -46,7 +46,7 @@ export default function SharedPlanScreen() {
       await enrollInPlan(couple.id, plan.id, 1 as Cadence);
       await refreshCouple();
       haptics.celebrate();
-      router.replace('/(tabs)/(today)');
+      router.replace('/(tabs)/today');
     } catch (e: any) {
       setJoining(false);
       Alert.alert("Couldn't start it", e?.message ?? 'Try again in a moment.');

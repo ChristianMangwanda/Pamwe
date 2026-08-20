@@ -16,7 +16,7 @@ import { join } from 'path';
 // them.
 
 const APP = join(__dirname, '..', 'app', '(tabs)');
-const TABS = ['(today)', 'bible', 'plans', 'prayers', 'reflect', 'you'];
+const TABS = ['today', 'bible', 'plans', 'prayers', 'reflect', 'you'];
 
 function walk(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
