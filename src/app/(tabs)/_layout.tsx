@@ -1,11 +1,31 @@
+import type { ReactNode } from 'react';
 import { Tabs, Redirect } from 'expo-router';
 import { SunHorizon, BookOpen, Books, HandsPraying, Feather, UserCircle } from 'phosphor-react-native';
-import { CoupleProvider } from '../../providers/CoupleProvider';
+import { CoupleProvider, useCouple } from '../../providers/CoupleProvider';
 import { useAuth } from '../../providers/AuthProvider';
 import { usePushRouting } from '../../hooks/usePushRouting';
 import { useDockedTabOptions } from '../../components/DockedTabBar';
 
 const ICON_SIZE = 21;
+
+// The couple half of the fence below. A signed-in account with NO couple must
+// never sit inside the tabs: every screen here assumes a couple, so the tabs
+// render as a trap (Today offers plans that cannot enrol, and nothing on any
+// tab can reach pairing). It happened in production on 2026-08-20: a fresh
+// magic-link signup landed here through deep-link navigation the auth gate
+// never saw, and Sign in with Apple on a couple-less account did the same.
+// Sending them to '/' lets the gate decide where they belong (value slides,
+// the left screen, or welcome), which is the same division of labour as the
+// session fence.
+//
+// `error` matters: a network blip on the FIRST fetch also leaves couple null
+// with loading false, and ejecting a real couple over a blip is the exact bug
+// the gate's own error state exists to prevent. When in doubt, stay put.
+function CoupleFence({ children }: { children: ReactNode }) {
+  const { couple, loading, error } = useCouple();
+  if (!loading && !couple && !error) return <Redirect href="/" />;
+  return <>{children}</>;
+}
 
 export default function TabLayout() {
   const { session, loading } = useAuth();
@@ -26,6 +46,7 @@ export default function TabLayout() {
 
   return (
     <CoupleProvider>
+      <CoupleFence>
       <Tabs screenOptions={dockedTabOptions}>
         <Tabs.Screen
           name="(today)"
@@ -82,6 +103,7 @@ export default function TabLayout() {
           }}
         />
       </Tabs>
+      </CoupleFence>
     </CoupleProvider>
   );
 }

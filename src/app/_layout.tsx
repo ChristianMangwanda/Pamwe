@@ -129,25 +129,38 @@ function RootLayout() {
       return;
     }
 
+    // Auth-carrying URLs only, from here down. A widget tap (pamwe://today,
+    // pamwe://bible/...) or a plan link carries none of these and must keep
+    // its own navigation.
+    if (!access_token && !code) return;
+
     try {
       if (access_token && refresh_token) {
-        const { error } = await supabase.auth.setSession({ access_token, refresh_token });
-        if (!error) {
-          // The "check your email" modal stays natively presented over a
-          // replaced stack — dismiss it before navigating.
-          if (router.canDismiss()) router.dismissAll();
-          router.replace('/');
-        }
+        await supabase.auth.setSession({ access_token, refresh_token });
       } else if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
-        if (!error) {
-          if (router.canDismiss()) router.dismissAll();
-          router.replace('/');
-        }
+        await supabase.auth.exchangeCodeForSession(code);
       }
     } catch {
-      // Malformed/expired link — leave the user where they are.
+      // Malformed or expired link. Fall through: the gate lands them signed
+      // out at welcome, which beats leaving them wherever iOS opened the app.
     }
+
+    // Route through the gate NO MATTER how the token exchange went, and never
+    // let the dismiss stop it. The old shape gated replace('/') behind a
+    // successful exchange AND an un-guarded dismissAll, so any failure left
+    // the user parked on whatever screen the deep link natively mounted. On
+    // 2026-08-20 that was the TABS, for a brand-new couple-less signup: the
+    // navigation the URL itself triggered was never corrected, and the account
+    // was stuck in a tab shell it could not pair from. The tabs layout now
+    // fences that state too; this is the other half.
+    try {
+      // The "check your email" modal stays natively presented over a
+      // replaced stack — dismiss it before navigating.
+      if (router.canDismiss()) router.dismissAll();
+    } catch {
+      // Nothing presented — fine.
+    }
+    router.replace('/');
   };
 
   if (!fontsLoaded && !fontError) {
