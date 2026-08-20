@@ -171,6 +171,32 @@ Draft notes:
 > with other reviews. The app is free with no purchases, no ads, and no
 > tracking. Notifications are optional and configurable in Settings.
 
+## 6b. Standing App Review information (added 2026-08-20, per Apple's request)
+
+Apple's 2.1 Information Needed reply (2026-08-20) asked that the following live
+in the Notes field of every future submission. The full reply that answered it,
+including the recording script, is [docs/app-review-reply.md](docs/app-review-reply.md).
+
+- **Devices tested**: iPhone 17 Pro Max and iPhone 16 Pro, physical devices on
+  iOS 26, via TestFlight (32 builds since 2026-07-10).
+- **External services**: Supabase (database, auth, storage, functions), Sign in
+  with Apple, Google Sign-In, Expo push + APNs, Sentry (no personal content),
+  OpenAI and Anthropic (only the sentence a user types when asking for a plan;
+  references come from the app's own catalogue, never model generation),
+  bible-api.com and bible.helloao.org (public domain Bible text). All disclosed
+  in the privacy policy.
+- **Regional differences**: none; identical in all territories.
+- **Regulated industry / protected material**: none; all six translations are
+  public domain (WEB, KJV, ASV, BBE, Darby, and BSB, public domain since
+  2023-04-30, "licensing is not required for any use"); the M'Cheyne plan is
+  from 1842.
+- **UGC**: visible only to the one paired partner, enforced server-side; no
+  strangers, feed, or discovery, so no reporting surface; the safety mechanisms
+  are pause/leave and in-app account deletion.
+- **Second demo account**: jordan@appreview.pamwe.app (created 2026-08-20 to
+  demonstrate pairing in the review recording; same password as Grace, held in
+  ASC only, never in git).
+
 **Fill the ASC "Sign-in required" fields** with the email above and the password
 Christian holds. Do not paste the password into this file.
 
