@@ -44,17 +44,20 @@ between takes, which takes seconds but must happen.
 
 1. Start the iOS screen recording (Control Center), go to the home screen,
    **launch Pamwe from the icon** (the recording must begin at launch).
-2. **Registration**: Welcome → Sign up → **Continue with Apple**. Value slides
-   → name (type anything neutral, e.g. "Alex") → pair choice → **create an
-   invite**.
+2. **The new user**: Welcome → Sign up → **"Use an email address"** → type
+   `alex@appreview.pamwe.app` → the password field appears → same password as
+   Grace → Sign in. Value slides → name → pair choice → **create an invite**.
 
-   **Use Apple, not email.** The free tier allows only a couple of magic-link
-   emails an hour and that limit was reached on 2026-08-20, which is what broke
-   the second take. Sign in with Apple sends nothing, is instant, and can be
-   repeated as often as a retake needs. It resolves to the private-relay
-   account, which is deliberately left with no couple so it walks the whole of
-   onboarding exactly as a new user does, and it is deleted on camera at the
-   end anyway.
+   **Neither email nor Apple works for this.** Magic links are capped on the
+   free tier and the daily limit was reached on 2026-08-20. Sign in with Apple
+   is worse: it resolves to whichever account that Apple ID is already tied to,
+   which on Christian's phone is his own, so the take starts inside a real
+   couple instead of onboarding. A review-domain address is the only
+   deterministic door: `sign-in.tsx` shows a password field for
+   `@appreview.pamwe.app` and nothing else, so it needs no email and behaves
+   identically every time. `alex@appreview.pamwe.app` is created couple-less
+   for exactly this, and is deleted on camera at the end. If a retake is
+   needed, Claude recreates it in seconds.
 3. On the invite-code screen, **hold**. Type the 6-character code into the
    Claude chat on the Mac. Within a few seconds Jordan joins and the screen
    flips to **connected** on camera, by itself. That flip is the pairing
@@ -78,10 +81,10 @@ between takes, which takes seconds but must happen.
 10. **Quick tour, 10 seconds each**: Reflect (history), Prayers (add one,
     mark "I prayed today"), Bible (open a chapter, highlight a verse, leave a
     note), You → the Grove.
-11. **Deletion**: You → Sign out → Welcome → **Continue with Apple** (straight
-    back into the relay account, no email) → You → **Settings → Account is the
-    first section now → Delete account** → confirm. It lands on the welcome
-    screen. Stop the recording.
+11. **Deletion**: You → Sign out → Welcome → Log in → `alex@appreview.pamwe.app`
+    + the password again → You → **Settings, where Account is now the first
+    section** → **Delete account** → confirm. It lands on the welcome screen.
+    Stop the recording.
 
     This half failed on the first attempt and the fix is server-side, so it
     needs no new build: `delete_account` had been revoked from every role that
