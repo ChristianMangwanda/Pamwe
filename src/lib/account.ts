@@ -7,9 +7,34 @@ export async function deleteMyAccount() {
   const { data, error } = await supabase.functions.invoke('delete-account', {
     method: 'POST',
   });
-  if (error) throw error;
+  if (error) throw new Error(await serverSaid(error));
   if (data?.error) throw new Error(data.error);
   return data;
+}
+
+/** What the function actually said, not "non-2xx status code".
+ *
+ *  functions.invoke() reports every non-2xx as an error with `data` null, so
+ *  the server's own sentence is thrown away and the screen shows the SDK's
+ *  generic line instead. That is how "permission denied for function
+ *  delete_account" hid for twelve days: account deletion was broken in every
+ *  shipped build, and the alert said only that a function had returned a
+ *  non-2xx status code, which is true of every possible failure and points at
+ *  nothing. Same fix as serverSaid() in lib/askPamwe.ts, and for the same
+ *  reason.
+ *
+ *  Falls back to the SDK's message when the body is unreadable, so this can
+ *  only ever add information. */
+async function serverSaid(error: unknown): Promise<string> {
+  const fallback = (error as { message?: string })?.message ?? 'Try again in a moment.';
+  const res = (error as { context?: Response })?.context;
+  if (!res || typeof res.json !== 'function') return fallback;
+  try {
+    const body = await res.json();
+    return typeof body?.error === 'string' && body.error.trim() ? body.error : fallback;
+  } catch {
+    return fallback;
+  }
 }
 
 // Sets the display name the partner sees, plus the derived avatar initial.

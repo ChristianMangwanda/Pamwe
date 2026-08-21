@@ -181,6 +181,33 @@ export default function SettingsScreen() {
         <BackLink label="You" onPress={() => router.back()} />
         <Text variant="h2" style={styles.title}>Settings</Text>
 
+        {/* Account sits first, above the notification toggles it used to sit
+            below. Everything a person comes to Settings to DO to their account,
+            check which one they are signed in as, sign out, leave the pair,
+            delete, was three screens of preferences down a scroll, and the
+            toggles are the part you set once and never revisit. Apple also asks
+            that account deletion be easy to find (5.1.1(v)), and it was not. */}
+        <Text variant="eyebrow" color={colors.muted} style={styles.sectionLabel}>Account</Text>
+        <Card style={styles.card}>
+          <ActionRow label="Your name" onPress={() => router.push('/(tabs)/you/name')} colors={colors} />
+          <View style={[styles.divider, { backgroundColor: colors.line }]} />
+          {user?.email ? (
+            <>
+              <Text variant="body" color={colors.ink2} style={styles.rowLabel}>Signed in as</Text>
+              <Text variant="body" color={colors.ink} style={styles.email}>{user.email}</Text>
+              <View style={[styles.divider, { backgroundColor: colors.line }]} />
+            </>
+          ) : null}
+          <ActionRow label="Sign out" onPress={handleSignOut} colors={colors} />
+          <View style={[styles.divider, { backgroundColor: colors.line }]} />
+          {/* Leaving the pair is not deleting your account, and putting them
+              side by side is what makes people delete when they meant to
+              leave. This one keeps everything; the one below does not. */}
+          <ActionRow label="Leave the pair" onPress={() => router.push('/(tabs)/you/leave')} colors={colors} />
+          <View style={[styles.divider, { backgroundColor: colors.line }]} />
+          <ActionRow label="Delete account" destructive onPress={() => router.push('/(tabs)/you/delete-account')} colors={colors} />
+        </Card>
+
         <Text variant="eyebrow" color={colors.muted} style={styles.sectionLabel}>Notifications</Text>
         <Card style={styles.card}>
           {notificationsOff && (
@@ -360,26 +387,6 @@ export default function SettingsScreen() {
           <ActionRow label="Pause Pamwe" onPress={() => router.push('/(tabs)/you/pause')} colors={colors} />
         </Card>
 
-        <Text variant="eyebrow" color={colors.muted} style={styles.sectionLabel}>Account</Text>
-        <Card style={styles.card}>
-          <ActionRow label="Your name" onPress={() => router.push('/(tabs)/you/name')} colors={colors} />
-          <View style={[styles.divider, { backgroundColor: colors.line }]} />
-          {user?.email ? (
-            <>
-              <Text variant="body" color={colors.ink2} style={styles.rowLabel}>Signed in as</Text>
-              <Text variant="body" color={colors.ink} style={styles.email}>{user.email}</Text>
-              <View style={[styles.divider, { backgroundColor: colors.line }]} />
-            </>
-          ) : null}
-          <ActionRow label="Sign out" onPress={handleSignOut} colors={colors} />
-          <View style={[styles.divider, { backgroundColor: colors.line }]} />
-          {/* Leaving the pair is not deleting your account, and putting them
-              side by side is what makes people delete when they meant to
-              leave. This one keeps everything; the one below does not. */}
-          <ActionRow label="Leave the pair" onPress={() => router.push('/(tabs)/you/leave')} colors={colors} />
-          <View style={[styles.divider, { backgroundColor: colors.line }]} />
-          <ActionRow label="Delete account" destructive onPress={() => router.push('/(tabs)/you/delete-account')} colors={colors} />
-        </Card>
       </ScrollView>
     </SafeAreaView>
   );

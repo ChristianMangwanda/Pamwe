@@ -4,7 +4,7 @@ Apple's 2026-08-20 "Changes needed" is their standard first-app information
 request: a screen recording plus seven informational items.
 
 **This is now a resubmission, not a reply-only.** Two launch blockers were
-found while preparing the recording, so the binary has changed and **build 34
+found while preparing the recording, so the binary has changed and **build 35
 must be attached**:
 
 1. **The reviewer could not do what the notes asked.** The demo couple's plan
@@ -18,6 +18,13 @@ must be attached**:
    ran; b33's CoupleFence then looped against it. Fixed by un-grouping the
    route (commit `0772e1c`), verified on device for both a couple-less and a
    paired account.
+3. **In-app account deletion did not work, in any build ever shipped.**
+   `delete_account` was revoked from every role that could call it during the
+   2026-08-08 security round, so the edge function answered 500 and the app
+   said only "Edge Function returned a non-2xx status code". This is guideline
+   5.1.1(v) and Apple tests it. The fix is a grant, so it is server-side and
+   already live; b35 additionally moves Account to the top of Settings and
+   makes the app repeat what the server actually said.
 
 Verified before drafting: the reviewer signed in as Grace on 2026-08-19, so the
 credentials work.
@@ -37,16 +44,17 @@ between takes, which takes seconds but must happen.
 
 1. Start the iOS screen recording (Control Center), go to the home screen,
    **launch Pamwe from the icon** (the recording must begin at launch).
-2. **Registration**: Welcome → Sign up → **"Use an email address"** → type
-   **your Yahoo address** (any address that has never been used with Pamwe, so
-   the recording shows a genuine first-time signup) → the check-your-email
-   screen → switch to the mail app on camera, tap the magic link → back into
-   Pamwe → value slides → name (type anything neutral, e.g. "Alex") → pair
-   choice → **create an invite**.
+2. **Registration**: Welcome → Sign up → **Continue with Apple**. Value slides
+   → name (type anything neutral, e.g. "Alex") → pair choice → **create an
+   invite**.
 
-   Type it correctly the first time: the free tier allows only a couple of
-   magic-link emails an hour. Do NOT use Sign in with Apple here, it resolves
-   to an existing account rather than a new one.
+   **Use Apple, not email.** The free tier allows only a couple of magic-link
+   emails an hour and that limit was reached on 2026-08-20, which is what broke
+   the second take. Sign in with Apple sends nothing, is instant, and can be
+   repeated as often as a retake needs. It resolves to the private-relay
+   account, which is deliberately left with no couple so it walks the whole of
+   onboarding exactly as a new user does, and it is deleted on camera at the
+   end anyway.
 3. On the invite-code screen, **hold**. Type the 6-character code into the
    Claude chat on the Mac. Within a few seconds Jordan joins and the screen
    flips to **connected** on camera, by itself. That flip is the pairing
@@ -70,9 +78,16 @@ between takes, which takes seconds but must happen.
 10. **Quick tour, 10 seconds each**: Reflect (history), Prayers (add one,
     mark "I prayed today"), Bible (open a chapter, highlight a verse, leave a
     note), You → the Grove.
-11. **Deletion**: You → Sign out → Welcome → Sign in with Apple (back into
-    the relay account) → You → Settings → **Delete account** → confirm. It
-    lands on the welcome screen. Stop the recording.
+11. **Deletion**: You → Sign out → Welcome → **Continue with Apple** (straight
+    back into the relay account, no email) → You → **Settings → Account is the
+    first section now → Delete account** → confirm. It lands on the welcome
+    screen. Stop the recording.
+
+    This half failed on the first attempt and the fix is server-side, so it
+    needs no new build: `delete_account` had been revoked from every role that
+    could call it. Deletion is verified working against hosted. Account was
+    also moved to the top of Settings for this (b35), so it is no longer three
+    screens of toggles down.
 
 **After the take, tell Claude it is done.** Two server-side steps follow
 before the reply is sent: Grace's Day 6 is reset so the reviewer's
@@ -88,8 +103,8 @@ instructions stay true, and the Jordan/relay couple is cleaned up.
 > 1. SCREEN RECORDING
 > Two recordings are attached, both captured on a physical iPhone 17 Pro Max.
 >
-> The first begins at app launch and shows: registration with an email
-> address and a one-time sign-in link; the onboarding, ending on the invite
+> The first begins at app launch and shows: registration with Sign in with
+> Apple; the onboarding, ending on the invite
 > code the app gives a new user; a second person joining with that code,
 > live, which is how Pamwe pairs two people and is the only way past this
 > point; declining the notification offer; choosing a reading plan and a
@@ -176,7 +191,7 @@ instructions stay true, and the Jordan/relay couple is cleaned up.
 - [ ] Part B pasted and sent
 - [ ] Grace Day 6 reset confirmed after the take
 - [ ] Jordan/relay couple cleaned up after the take
-- [ ] **Build 34 attached** (the binary changed: route-collision fix, `0772e1c`)
+- [ ] **Build 35 attached** (the binary changed: route-collision fix `0772e1c`, Settings reorder)
 - [ ] **Day 6 confirmed open** on the demo account immediately before sending.
       It is exactly current through 2026-08-26; after that Grace is behind and
       Day 6 opens as catch-up, which still works but reads differently. To make
