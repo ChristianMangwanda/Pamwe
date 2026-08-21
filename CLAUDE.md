@@ -391,6 +391,45 @@ clock time), topped up on each sign-in by `scheduleMorningFromPrefs`. It cancels
 which silently killed every prayer reminder on launch while their stored ids
 still claimed they were set. Never reintroduce a cancel-all here.
 
+### Revoking EXECUTE from `public` also takes it from `service_role`
+
+Postgres grants every new function EXECUTE to `PUBLIC`, and the API roles hold
+their permission through that default unless something granted it to them
+directly. So `revoke execute ... from public, anon, authenticated`, the obvious
+way to write "service role only", silently locks the service role out too. The
+ACL ends up `{postgres=X/postgres}` and the only caller that matters cannot
+call it. **A revoke must be paired with an explicit grant** to whichever role
+actually calls the function.
+
+It happened twice in the 2026-08-08 security round and neither was noticed for
+twelve days, because of how each one failed:
+
+- **`delete_account`** answered 500, and the client turned that into "Edge
+  Function returned a non-2xx status code". Nobody deletes their account twice,
+  so it surfaced only when the App Review recording walked the path on
+  2026-08-20. **That is guideline 5.1.1(v), so it would have failed review.**
+- **`bump_ask_pamwe_usage`** failed silently, which was worse. `ask-pamwe` calls
+  it and deliberately fails open, so a denied RPC meant the 20/day cap and the
+  10 second cooldown were never checked and every request reached the model. The
+  usage table stayed empty, so it cannot even say for how long.
+
+Fixed by [20260821000001](supabase/migrations/20260821000001_delete_account_grant_service_role.sql)
+and [20260821000002](supabase/migrations/20260821000002_bump_ask_pamwe_usage_grant.sql).
+Every other RPC the app calls was audited at the same time and is reachable by
+the role that calls it. To re-audit:
+
+```sql
+select p.proname, p.proacl::text from pg_proc p
+join pg_namespace n on n.oid = p.pronamespace
+where n.nspname = 'public' and p.proacl is not null
+  and p.proacl::text not like '%authenticated=X%'
+  and p.proacl::text not like '%service_role=X%';
+```
+
+Trigger functions are expected in that list and are fine: a trigger runs as the
+table owner and needs no role grant. Anything an edge function or a client calls
+is not.
+
 ### The invite code is a credential, so pairing lives in the database
 
 Christian's round, 2026-08-08, after a security review. The three pairing calls

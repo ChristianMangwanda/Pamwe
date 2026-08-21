@@ -1,0 +1,21 @@
+-- Ask Pamwe's rate limit has not been enforcing anything.
+--
+-- Same defect as 20260821000001, found in the same audit. bump_ask_pamwe_usage
+-- was revoked from the API roles so that only the service role could call it,
+-- but service_role held EXECUTE through the PUBLIC default rather than a grant
+-- of its own, so the revoke took it too. ACL was {postgres=X/postgres}.
+--
+-- This one failed quietly rather than loudly. ask-pamwe calls it with the admin
+-- client and deliberately fails OPEN, so that a missing rate limit never takes
+-- the builder down:
+--
+--     if (!error && data && data[0]) { ...check the cap... }
+--
+-- With the RPC denied, `error` was always set, the cap and the 10 second
+-- cooldown were never checked, and every request went straight through to the
+-- model. The counter rows were never written either, so the usage table cannot
+-- say how long this has been true. With OpenAI on auto-recharge, an unmetered
+-- endpoint is a spend risk, which matters more the moment the app is public.
+--
+-- Fail-open is still right: the limit protects the account, not the user.
+grant execute on function public.bump_ask_pamwe_usage(uuid) to service_role;

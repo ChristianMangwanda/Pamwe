@@ -1,0 +1,18 @@
+-- Account deletion has been failing since 20260808000006 landed.
+--
+-- That migration revoked EXECUTE from public, anon and authenticated, meaning
+-- to leave the function reachable only by the service role. But a Postgres
+-- function is granted EXECUTE to PUBLIC by default, and service_role held its
+-- permission THROUGH that default rather than through a grant of its own. The
+-- revoke therefore took it away from service_role as well, and the ACL was left
+-- as {postgres=X/postgres}: the one role that actually calls this could not.
+--
+-- The delete-account edge function got "permission denied for function
+-- delete_account", answered 500, and the client turned that into "Edge Function
+-- returned a non-2xx status code". Nobody hit it because deleting your account
+-- is not something anyone does twice, and it surfaced only when the App Review
+-- recording walked the path deliberately (2026-08-20). It is guideline
+-- 5.1.1(v), so it would have failed review.
+--
+-- The revoke stays: no API role may call this. Only the grant it always needed.
+grant execute on function public.delete_account(uuid) to service_role;
