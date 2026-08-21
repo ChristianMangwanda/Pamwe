@@ -28,29 +28,50 @@ export default function Index() {
   const { colors } = useTheme();
   const [route, setRoute] = useState<RouteState>('loading');
 
+  // Two attempts, because the FIRST query after a sign-in is not a fair test of
+  // whether the app can reach anything (2026-08-21). Signing in hands the client
+  // a new token and returns before every layer of it has settled, and the gate
+  // fires its query immediately; on a cold connection that first request can
+  // fail on its own. The queries themselves are fine, verified by replaying
+  // them against hosted with the same account's JWT, which is why the screen it
+  // produced always cleared on Try Again.
+  //
+  // "Can't reach Pamwe" is a heavy thing to tell someone who has this second
+  // signed in successfully, and heavier still when it is the first screen an
+  // App Review sign-in lands on. One quiet retry costs 700ms in the rare case
+  // and nothing in the common one. A second failure is still reported: this
+  // hides a blip, not a real outage.
   const resolveRoute = useCallback(async (userId: string) => {
-    try {
-      const couple = await getUserCouple(userId);
-      if (!couple) {
-        // No couple is two different situations. Somebody who has just left a
-        // partnership of a hundred and fifty days is not a new user, and
-        // dropping them into the value slides would be the app pretending none
-        // of it happened.
-        const archives = await myArchives().catch(() => []);
-        setRoute(archives.length > 0 ? 'left' : 'unpaired');
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const couple = await getUserCouple(userId);
+        if (!couple) {
+          // No couple is two different situations. Somebody who has just left a
+          // partnership of a hundred and fifty days is not a new user, and
+          // dropping them into the value slides would be the app pretending
+          // none of it happened.
+          const archives = await myArchives().catch(() => []);
+          setRoute(archives.length > 0 ? 'left' : 'unpaired');
+          return;
+        }
+        if (!couple.paired_at) { setRoute('waiting'); return; }
+
+        const plan = await getActiveCouPlan(couple.id);
+        if (!plan) { setRoute('plan-select'); return; }
+
+        setRoute('tabs');
+        AsyncStorage.setItem(rememberedKey(userId), 'tabs').catch(() => {});
         return;
+      } catch {
+        // Query failure is not "no couple". Routing to onboarding here let a
+        // paired user create a SECOND couple on a network blip, so the answer
+        // is a retry, once quietly and then on the screen.
+        if (attempt === 0) {
+          await new Promise((r) => setTimeout(r, 700));
+          continue;
+        }
+        setRoute('error');
       }
-      if (!couple.paired_at) { setRoute('waiting'); return; }
-
-      const plan = await getActiveCouPlan(couple.id);
-      if (!plan) { setRoute('plan-select'); return; }
-
-      setRoute('tabs');
-      AsyncStorage.setItem(rememberedKey(userId), 'tabs').catch(() => {});
-    } catch {
-      // Query failure ≠ "no couple". Routing to onboarding here let a paired
-      // user create a second couple on a network blip — show a retry instead.
-      setRoute('error');
     }
   }, []);
 
