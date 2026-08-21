@@ -4,7 +4,7 @@ Apple's 2026-08-20 "Changes needed" is their standard first-app information
 request: a screen recording plus seven informational items.
 
 **This is now a resubmission, not a reply-only.** Two launch blockers were
-found while preparing the recording, so the binary has changed and **build 36
+found while preparing the recording, so the binary has changed and **build 37
 must be attached**:
 
 1. **The reviewer could not do what the notes asked.** The demo couple's plan
@@ -89,7 +89,7 @@ between takes, which takes seconds but must happen.
     This half failed on the first attempt and the fix is server-side, so it
     needs no new build: `delete_account` had been revoked from every role that
     could call it. Deletion is verified working against hosted. Account was
-    also moved to the top of Settings for this (b36), so it is no longer three
+    also moved to the top of Settings for this (b37), so it is no longer three
     screens of toggles down.
 
 **After the take, tell Claude it is done.** Two server-side steps follow
@@ -197,7 +197,7 @@ instructions stay true, and the Jordan/relay couple is cleaned up.
 - [ ] Part B pasted and sent
 - [ ] Grace Day 6 reset confirmed after the take
 - [ ] Jordan/relay couple cleaned up after the take
-- [ ] **Build 36 attached** (the binary changed: route-collision fix `0772e1c`, Settings reorder)
+- [ ] **Build 37 attached** (the binary changed: route-collision fix `0772e1c`, Settings reorder)
 - [ ] **Day 6 confirmed open** on the demo account immediately before sending.
       It is exactly current through 2026-08-26; after that Grace is behind and
       Day 6 opens as catch-up, which still works but reads differently. To make
