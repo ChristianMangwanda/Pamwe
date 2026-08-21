@@ -149,7 +149,9 @@ instructions stay true, and the Jordan/relay couple is cleaned up.
 > Her partner has already submitted his, so as soon as
 > you submit yours both unlock and his writing appears. Before you submit,
 > his words are not readable by this account at all; that is enforced by
-> database row security, not by the interface. Signing in alone with any new
+> database row security, not by the interface. The demo account needs only
+> the email address and password above: no Apple or Google account is
+> required to review any part of the app. Signing in alone with any new
 > account ends at the invite-code screen, because the app cannot proceed
 > without a second person. Please do not delete the demo account, as it is
 > shared across review rounds.
