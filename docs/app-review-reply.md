@@ -86,18 +86,24 @@ instructions stay true, and the Jordan/relay couple is cleaned up.
 > screen recording is attached.
 >
 > 1. SCREEN RECORDING
-> The attached recording was captured on a physical iPhone 17 Pro Max and
-> begins at app launch. It shows: account registration with Sign in with
-> Apple and the full onboarding; a second account joining the new couple by
-> invite code, live, which is how Pamwe pairs two people; declining the
-> notification offer; choosing a reading plan; recording a voice reflection,
-> including the microphone and speech recognition permission prompts; the
-> waiting state, where a reflection stays sealed until the partner writes;
-> sign in with the demo account you hold credentials for; writing the second
-> reflection of a day and the mutual reveal opening; responses to a partner's
-> words; the prayers list, the Bible reader with highlights and notes, and
-> the couple's progress screen; and in-app account deletion, completed to the
-> welcome screen.
+> Two recordings are attached, both captured on a physical iPhone 17 Pro Max.
+>
+> The first begins at app launch and shows: registration with an email
+> address and a one-time sign-in link; the onboarding, ending on the invite
+> code the app gives a new user; a second person joining with that code,
+> live, which is how Pamwe pairs two people and is the only way past this
+> point; declining the notification offer; choosing a reading plan and a
+> rhythm; the day's passage; writing a reflection and sending it; the waiting
+> state, where that reflection stays sealed because the partner has not
+> written yet; signing out; signing in with the demo account you hold
+> credentials for; the Bible reader, the shared prayer list and the couple's
+> progress screen; and then the core mechanic end to end, writing the second
+> reflection of a day and the mutual reveal opening with the partner's words,
+> closed with Amen.
+>
+> The second shows in-app account deletion for guideline 5.1.1(v): You,
+> Settings, Delete account, confirm, ending on the welcome screen with the
+> account gone.
 >
 > 2. DEVICES AND SYSTEMS TESTED
 > iPhone 17 Pro Max and iPhone 16 Pro, both physical devices on iOS 26,
