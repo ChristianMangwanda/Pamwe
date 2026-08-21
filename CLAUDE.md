@@ -415,6 +415,13 @@ twelve days, because of how each one failed:
 
 Fixed by [20260821000001](supabase/migrations/20260821000001_delete_account_grant_service_role.sql)
 and [20260821000002](supabase/migrations/20260821000002_bump_ask_pamwe_usage_grant.sql).
+The permission bug hid a second one underneath it: while `delete_account` sat
+unexecutable, the 2026-08-15 column drop moved the schema out from under its
+body, and the very first post-grant run failed on `u.expo_push_token`. A
+function that has never run is a function whose schema drift nothing has
+caught; [20260821000003](supabase/migrations/20260821000003_delete_account_push_tokens.sql)
+fixed it to fan out over `push_tokens` and the delete-account edge function
+(v13) sends to every device.
 Every other RPC the app calls was audited at the same time and is reachable by
 the role that calls it. To re-audit:
 

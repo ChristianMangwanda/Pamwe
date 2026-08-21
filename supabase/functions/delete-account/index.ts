@@ -91,17 +91,22 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ error: delErr.message }), { status: 500 });
   }
 
-  // 4. Tell the surviving partner, best effort, now that it is true.
-  const partnerToken = outcome?.partner_push_token;
-  if (partnerToken) {
+  // 4. Tell the surviving partner, best effort, now that it is true. Every
+  //    device they have registered, the same fan-out as every notify-*
+  //    function: the RPC returns partner_push_tokens from push_tokens (the
+  //    users.expo_push_token column it used to read was dropped 2026-08-15).
+  const partnerTokens: string[] = Array.isArray(outcome?.partner_push_tokens)
+    ? outcome.partner_push_tokens.filter((t: unknown): t is string => typeof t === "string" && t.length > 0)
+    : [];
+  if (partnerTokens.length > 0) {
     try {
-      await sendExpoPush(admin, "delete-account", [{
-        to: partnerToken,
+      await sendExpoPush(admin, "delete-account", partnerTokens.map((to) => ({
+        to,
         sound: "default",
         title: "Your partner has left Pamwe",
         body: "Your own reflections are saved. You can pair again whenever you're ready.",
         data: { type: "partner_left" },
-      }]);
+      })));
     } catch (e) {
       console.error("delete-account: partner push failed", e);
     }
