@@ -245,11 +245,19 @@ per user, 10s cooldown) is live. Nothing left to do here.
       [docs/app-store-privacy-answers.md](docs/app-store-privacy-answers.md)
       (EIGHT types; section 4 here is superseded) + age rating (section 2).
 - [ ] Paste description/promo/keywords (section 3) + URLs (section 1).
-- [ ] Attach **build 32** (uploaded 2026-08-19) to version 1.0.0 and
-      submit with the section 6 notes. It was b28 until the catch-up round;
-      b30 is b28 plus that work, and its database half is already live on
-      hosted. No new archive unless the two-phone pass forces a fix; then it
-      is b31 through the usual pipeline.
+- [x] ~~Attach build 32 and submit~~ **DONE, then rewritten by the review
+      cycle.** b32 was submitted 2026-08-20 and came back as Guideline 2.1
+      Information Needed. Preparing the requested recording surfaced four
+      launch blockers (the "/" route collision, delete_account's missing
+      grant, the schema drift under it, the sign-in error screen) plus the
+      cadence-locked demo Day 6, each fixed in b33 through b37.
+      **Resubmitted 2026-08-21 with build 37**, the reply in
+      [docs/app-review-reply.md](docs/app-review-reply.md) Part B, and both
+      recordings attached in the thread.
+- [ ] ⚠️ **If review runs past 2026-08-26**: the demo Day 6 drifts from
+      current to catch-up. Recentre with
+      `update couple_plans set start_date = current_date - 35 where id =
+      '4c4d8493-0a88-4295-a611-744d324710a5'` before they pick it up.
 - [ ] **Ammy needs b30 installed** before the two-phone evening. The catch-up
       fix only exists client-side on b30, so testing it with her on b29 shows
       the old one-day-at-a-time wall and reads as a failure that is not one.

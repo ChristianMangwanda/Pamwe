@@ -193,12 +193,12 @@ instructions stay true, and the Jordan/relay couple is cleaned up.
 
 ## Record of what was sent
 
-- [ ] Video recorded per Part A, attached in the App Review thread
-- [ ] Part B pasted and sent
-- [ ] Grace Day 6 reset confirmed after the take
-- [ ] Jordan/relay couple cleaned up after the take
-- [ ] **Build 37 attached** (the binary changed: route-collision fix `0772e1c`, Settings reorder)
-- [ ] **Day 6 confirmed open** on the demo account immediately before sending.
+- [x] Video recorded per Part A (main take + separate deletion clip), attached
+- [x] Part B pasted and sent
+- [x] Grace Day 6 reset confirmed after the take (verified 2026-08-21)
+- [x] Jordan/alex couple cleaned up; alex deleted on camera through the app
+- [x] **Build 37 attached and resubmitted, 2026-08-21**
+- [x] **Day 6 confirmed open** immediately before sending.
       It is exactly current through 2026-08-26; after that Grace is behind and
       Day 6 opens as catch-up, which still works but reads differently. To make
       it current again, set the active `couple_plans` row's `start_date` to
