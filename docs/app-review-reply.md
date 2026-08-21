@@ -106,9 +106,10 @@ instructions stay true, and the Jordan/relay couple is cleaned up.
 > 1. SCREEN RECORDING
 > Two recordings are attached, both captured on a physical iPhone 17 Pro Max.
 >
-> The first begins at app launch and shows: registration with Sign in with
-> Apple; the onboarding, ending on the invite
-> code the app gives a new user; a second person joining with that code,
+> The first begins at app launch and shows: signing in with a second,
+> unpaired account created for this recording, which walks the full
+> onboarding a new user sees, ending on the invite
+> code the app gives them; a second person joining with that code,
 > live, which is how Pamwe pairs two people and is the only way past this
 > point; declining the notification offer; choosing a reading plan and a
 > rhythm; the day's passage; writing a reflection and sending it; the waiting
