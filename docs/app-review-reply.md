@@ -37,10 +37,16 @@ between takes, which takes seconds but must happen.
 
 1. Start the iOS screen recording (Control Center), go to the home screen,
    **launch Pamwe from the icon** (the recording must begin at launch).
-2. **Registration**: Welcome → Sign up → **Sign in with Apple**. (This signs
-   into the July private-relay account, which has no couple, so it walks the
-   full onboarding as a new user.) Value slides → name (type anything neutral,
-   e.g. "Alex") → pair choice → **create an invite**.
+2. **Registration**: Welcome → Sign up → **"Use an email address"** → type
+   **your Yahoo address** (any address that has never been used with Pamwe, so
+   the recording shows a genuine first-time signup) → the check-your-email
+   screen → switch to the mail app on camera, tap the magic link → back into
+   Pamwe → value slides → name (type anything neutral, e.g. "Alex") → pair
+   choice → **create an invite**.
+
+   Type it correctly the first time: the free tier allows only a couple of
+   magic-link emails an hour. Do NOT use Sign in with Apple here, it resolves
+   to an existing account rather than a new one.
 3. On the invite-code screen, **hold**. Type the 6-character code into the
    Claude chat on the Mac. Within a few seconds Jordan joins and the screen
    flips to **connected** on camera, by itself. That flip is the pairing
