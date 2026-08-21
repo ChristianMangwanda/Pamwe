@@ -1,5 +1,6 @@
 import { View, StyleSheet, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as WebBrowser from 'expo-web-browser';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Text } from '../../components/ui/Text';
@@ -55,7 +56,18 @@ export default function WelcomeScreen() {
           By continuing you agree to our{' '}
           <Text
             style={[styles.consent, styles.consentLink, { color: colors.accent }]}
-            onPress={() => Linking.openURL(PRIVACY_URL)}
+            // The in-app browser, not a hop to Safari. This is the only
+            // external link in the app and Sentry caught Linking.openURL
+            // REJECTING on it (2026-08-21, "Unable to open URL" on the
+            // welcome screen), which as an unhandled rejection opened nothing
+            // and told nobody. SFSafariViewController does not depend on
+            // leaving the app; plain openURL stays as the fallback, and
+            // neither path can throw past this handler.
+            onPress={() => {
+              WebBrowser.openBrowserAsync(PRIVACY_URL).catch(() => {
+                Linking.openURL(PRIVACY_URL).catch(() => {});
+              });
+            }}
             accessibilityRole="link"
           >
             Terms and Privacy Policy
